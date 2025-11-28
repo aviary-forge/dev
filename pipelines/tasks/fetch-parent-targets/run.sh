@@ -14,10 +14,8 @@ set -ueo pipefail
 # If no map is found, the failure mode is not critical: We simply
 # build all targets.
 
-readonly REPO_ROOT=$(git rev-parse --show-toplevel)
-
-: ${DRVMAP_PATH:=pipeline/drvmap.json}
-: ${BUILDKITE_TOKEN_PATH:=~/buildkite-token}
+: "${DRVMAP_PATH:=pipeline/drvmap.json}"
+: "${BUILDKITE_TOKEN_PATH:=~/buildkite-token}"
 
 # Runs a fairly complex Buildkite GraphQL query that attempts to fetch all
 # pipeline-gen steps from the default branch, as long as one appears within the
@@ -38,17 +36,18 @@ function latest_drvmap_url {
     set -u
     curl 'https://graphql.buildkite.com/v1' \
          --silent \
-         -H "Authorization: Bearer $(cat ${BUILDKITE_TOKEN_PATH})" \
+         -H "Authorization: Bearer $(cat "${BUILDKITE_TOKEN_PATH}")" \
          -H "Content-Type: application/json" \
          -d "{\"query\": \"{ pipeline(slug: \\\"$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG\\\") { builds(first: 50, branch: [\\\"%default\\\"], state: [RUNNING, PASSED]) { edges { node { jobs(passed: true, first: 1, type: [COMMAND], step: {key: [\\\"pipeline-gen\\\"]}) { edges { node { ... on JobTypeCommand { url artifacts { edges { node { downloadURL path }}}}}}}}}}}}\"}" | tee out.json | \
         jq -r '[.data.pipeline.builds.edges[] | select((.node.jobs.edges | length) > 0) | .node.jobs.edges[] | .node.artifacts[][] | select(.node.path == "pipeline/drvmap.json")][0].node.downloadURL'
 }
 
-readonly DOWNLOAD_URL=$(latest_drvmap_url)
+readonly DOWNLOAD_URL
+DOWNLOAD_URL="$(latest_drvmap_url)"
 
 if [[ ${DOWNLOAD_URL} != "null" ]]; then
     mkdir -p tmp
-    curl -o tmp/parent-target-map.json ${DOWNLOAD_URL} && echo "downloaded parent derivation map" \
+    curl -o tmp/parent-target-map.json "${DOWNLOAD_URL}" && echo "downloaded parent derivation map" \
             || echo "failed to download derivation map!"
 else
     echo "no derivation map found!"

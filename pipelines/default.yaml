@@ -1,0 +1,52 @@
+# This file defines the static Buildkite pipeline which attempts to
+# create the dynamic pipeline of all depot targets.
+#
+# If something fails during the creation of the pipeline, the fallback
+# is executed instead which will simply report an error to Gerrit.
+---
+steps:
+  - label: ":tools:"
+  key: "build-tools"
+  priority: 1
+  # build the tools initially, we gotta unless we want to have these outside of
+  # inline scripts
+  command: "nix-build -A pipelines.tasks.tools"
+
+
+  # Generate & upload dynamic build steps
+  - label: ":thinking:"
+    env:
+      BUILDKITE_TOKEN_PATH: /run/agenix/buildkite-graphql-token
+    depends_on:
+      - "build-tools"
+    key: "pipeline-gen"
+    priority: 1
+    command: |
+      "$(nix-build -A pipelines.tasks.pre-build)/bin/pre-build-pipeline-step"
+
+  # Wait for all previous steps to complete.
+  - wait: null
+    continue_on_failure: true
+
+  # Exit with success or failure depending on whether any other steps
+  # failed (but not retried).
+  #
+  # This information is checked by querying the Buildkite GraphQL API
+  # and fetching all failed steps, then filtering out the ones that were
+  # retried (retried jobs create new jobs, which would also show up in the
+  # query).
+  - label: ":point_up:"
+    key: ":point_up:"
+    env:
+      BUILDKITE_TOKEN_PATH: /run/agenix/buildkite-graphql-token
+    command: |
+      "$(nix-build -A pipelines.tasks.fetch-parent-targets)/bin/fetch-parent-targets"
+
+  # After duck, on success, upload and run any release steps that were
+  # output by the dynamic pipeline.
+  - label: ":arrow_heading_down:"
+    depends_on:
+      - step: ":point_up:"
+        allow_failure: false
+    command: |
+      "$(nix-build -A pipelines.tasks.post-build)/bin/post-build-pipeline-step"

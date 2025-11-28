@@ -44,16 +44,35 @@ readTree.fix
       filter = self.third_party.nixpkgs.lib.cleanSourceFilter;
     };
 
-    ci = rec {
-      excluded = [
-        # e.g.: self.path.to.package
-      ];
-      targets = readTree.gather
-        (target: ((eligibleForCi target) &&
-          (!builtins.elem target excluded))
-        )
-        self;
-    };
+    ci =
+      let
+        excluded = [
+          # e.g.: self.path.to.package
+        ];
+        targets' = readTree.gather
+          (target: ((eligibleForCi target) &&
+            (!builtins.elem target excluded))
+          )
+          self;
+
+        # Ensure the tool that needs to evaluate `ci.targets`
+        # does not get included in `ci.targets`
+        targets =
+          let
+            inherit (self.third_party.nixpkgs.lib.lists) hasPrefix;
+            notInPipelines = e: !(hasPrefix [ "pipelines" ] e.__readTree);
+          in
+          builtins.filter notInPipelines targets';
+
+        # Derivation that gcroots all built targets.
+        gcroot = with self.third_party.nixpkgs; writeText "monorepo-gcroot"
+          (builtins.concatStringsSep "\n"
+            (lib.flatten
+              (map (p: map (o: p.${o}) p.outputs or [ ]) # list all outputs of each drv
+                targets)));
+
+      in
+      { inherit excluded targets gcroot; };
 
     ownership =
       let targetList = builtins.map (t: { path = t.__readTree; deriv = t; }) ci.targets;
