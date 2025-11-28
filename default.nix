@@ -28,6 +28,7 @@ in
 
 readTree.fix
   (self: (readRepo {
+    inherit localSystem;
     dev = self;
 
     pkgs = self.third_party.nixpkgs;
@@ -36,7 +37,6 @@ readTree.fix
     # Convenience/nice to have this at a top level
     members = import ./members.nix;
   }) // rec {
-    inherit localSystem;
 
     path = self.third_party.nixpkgs.lib.cleanSourceWith {
       name = "dev";
