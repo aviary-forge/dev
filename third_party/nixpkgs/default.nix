@@ -53,9 +53,12 @@ let
       stable = dev.third_party.nix.nixpkgs.rev;
     };
   };
+
 in
 import nixpkgsSrc (commonNixpkgsArgs // {
   overlays = [
     commitsOverlay
-  ] ++ (if devOverlays then [ ] else [ ] ++ additionalOverlays);
+  ] ++ (if devOverlays then [
+    (import "${dev.third_party.nix.fenix}/overlay.nix")
+  ] else [ ] ++ additionalOverlays);
 })

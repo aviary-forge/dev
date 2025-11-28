@@ -1,4 +1,28 @@
 {
+    "fenix": {
+        "branch": "main",
+        "description": "Rust toolchains and rust-analyzer nightly for Nix [maintainers=@figsoda, @winterqt, @eureka-cpu]",
+        "homepage": "",
+        "owner": "nix-community",
+        "repo": "fenix",
+        "rev": "2d8176c02f7be6d13578d24d5fd5049f1b46a4c5",
+        "sha256": "0szbjf0nhi7rqn2d9rxdjr962l4fqlzn4sk5cvkvk36d0lbh4d8p",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/fenix/archive/2d8176c02f7be6d13578d24d5fd5049f1b46a4c5.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "naersk": {
+        "branch": "master",
+        "description": "Build Rust projects in Nix - no configuration, no code generation, no IFD, sandbox friendly.",
+        "homepage": "",
+        "owner": "nix-community",
+        "repo": "naersk",
+        "rev": "d4155d6ebb70fbe2314959842f744aa7cabbbf6a",
+        "sha256": "1pmj1d3xp3fjz8m3msvmh8jnylwmgk76iah9qnfs8ddgwlij1v5g",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/naersk/archive/d4155d6ebb70fbe2314959842f744aa7cabbbf6a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "nixos-25.05",
         "description": "Nix Packages collection & NixOS",
