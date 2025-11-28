@@ -86,7 +86,7 @@ the tree as empty nodes (`{}`).
 
 The package headers in this repository follow the form `{ pkgs, ... }:` where
 `pkgs` is a fixed-point of the entire package tree (see the `default.nix` at the
-root of the depot).
+root of the repo).
 
 In theory `readTree` can pass arguments of different shapes, but I have found
 this to be a good solution for the most part.

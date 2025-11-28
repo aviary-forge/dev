@@ -87,7 +87,7 @@ let
       pathType = builtins.typeOf importedFile;
     in
     if pathType != "lambda"
-    then throw "readTree: trying to import ${toString path}, but it’s a ${pathType}, you need to make it a function like { depot, pkgs, ... }"
+    then throw "readTree: trying to import ${toString path}, but it’s a ${pathType}, you need to make it a function like { dev, pkgs, ... }"
     else importedFile (filter parts (argsWithPath args parts));
 
   nixFileName = file:
@@ -287,7 +287,7 @@ in
     if (elemAt parts 0) == folder || elem parts exceptions
     then args
     else args // {
-      depot = args.depot // {
+      dev = args.dev // {
         "${folder}" = throw ''
           Access to targets under //${folder} is not permitted from
           other repository paths. Specific exceptions are configured
