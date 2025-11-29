@@ -1,10 +1,11 @@
-# This outer-most function is unused, but exists so we can be invoked by
-# readTree, and return a function that accepts pkgs and config as injected by
-# the module system
-{ ... }:
-{ pkgs, config, ... }:
+{ dev, pkgs, ... }:
+{ config, ... }:
 
 {
+  imports = [
+    (dev.third_party.agenix.src + "/modules/age.nix")
+  ];
+
   config = {
     networking = {
       hostName = "aviary";
@@ -30,6 +31,25 @@
       curl
       zsh
     ];
+
+    age = {
+      identityPaths = [ "/var/agenix/keys/id_ed25519" ];
+      secrets =
+        let
+          inherit (builtins) listToAttrs map;
+          includedSecrets = [
+            "buildkite-agent-token"
+            "buildkite-graphql-token"
+            "buildkite-ssh-private-key"
+          ];
+          secret = name: {
+            inherit name;
+            value = { file = dev.secrets."${name}.age"; };
+          };
+        in
+        listToAttrs (map secret includedSecrets);
+    };
+
 
     services.openssh = {
       enable = true;
