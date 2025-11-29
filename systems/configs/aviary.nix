@@ -1,9 +1,14 @@
 { dev, pkgs, ... }:
 { config, ... }:
 
+let
+  ciGroupName = "ci-agents";
+in
+
 {
   imports = [
     (dev.third_party.agenix.src + "/modules/age.nix")
+    ../modules/nixos/ci
   ];
 
   config = {
@@ -20,6 +25,18 @@
     };
 
     users.groups.denbeigh = { };
+    users.groups."${ciGroupName}" = { };
+
+    services.dev.ci =
+      let
+        inherit (config.age) secrets;
+      in
+      {
+        enable = true;
+        tokenPath = secrets.buildkite-agent-token.path;
+        privateSshKeyPath = secrets.buildkite-ssh-private-key.path;
+        groupName = ciGroupName;
+      };
 
     environment.systemPackages = with pkgs; [
       vim
@@ -37,15 +54,21 @@
       secrets =
         let
           inherit (builtins) listToAttrs map;
+
+          secret = name: {
+            inherit name;
+            value = {
+              file = dev.secrets."${name}.age";
+              group = ciGroupName;
+              mode = "640";
+            };
+          };
+
           includedSecrets = [
             "buildkite-agent-token"
             "buildkite-graphql-token"
             "buildkite-ssh-private-key"
           ];
-          secret = name: {
-            inherit name;
-            value = { file = dev.secrets."${name}.age"; };
-          };
         in
         listToAttrs (map secret includedSecrets);
     };
