@@ -11,7 +11,8 @@ if [[ -f tmp/parent-target-map.json ]]; then
   PIPELINE_ARGS=("--arg" "parentTargetMap" "tmp/parent-target-map.json")
 fi
 
-nix-build --option restrict-eval true --include "depot=$${PWD}" \
+nix-build --option restrict-eval true\
+  --include "dev=$${PWD}" \
   --include "store=/nix/store" \
   --allowed-uris 'https://' \
   -A pipelines.tasks.build \

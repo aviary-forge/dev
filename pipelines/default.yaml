@@ -1,5 +1,5 @@
 # This file defines the static Buildkite pipeline which attempts to
-# create the dynamic pipeline of all depot targets.
+# create the dynamic pipeline of all targets.
 #
 # If something fails during the creation of the pipeline, the fallback
 # is executed instead which will simply report an error to Gerrit.
