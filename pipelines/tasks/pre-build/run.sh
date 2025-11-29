@@ -12,7 +12,7 @@ if [[ -f tmp/parent-target-map.json ]]; then
 fi
 
 nix-build --option restrict-eval true\
-  --include "dev=$${PWD}" \
+  --include "dev=${PWD}" \
   --include "store=/nix/store" \
   --allowed-uris 'https://' \
   -A pipelines.tasks.build \

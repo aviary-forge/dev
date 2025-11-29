@@ -42,8 +42,8 @@ function latest_drvmap_url {
         jq -r '[.data.pipeline.builds.edges[] | select((.node.jobs.edges | length) > 0) | .node.jobs.edges[] | .node.artifacts[][] | select(.node.path == "pipeline/drvmap.json")][0].node.downloadURL'
 }
 
-readonly DOWNLOAD_URL
 DOWNLOAD_URL="$(latest_drvmap_url)"
+readonly DOWNLOAD_URL
 
 if [[ ${DOWNLOAD_URL} != "null" ]]; then
     mkdir -p tmp

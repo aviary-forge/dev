@@ -5,12 +5,12 @@
 # is executed instead which will simply report an error to Gerrit.
 ---
 steps:
-  - label: ":tools:"
-  key: "build-tools"
-  priority: 1
-  # build the tools initially, we gotta unless we want to have these outside of
-  # inline scripts
-  command: "nix-build -A pipelines.tasks.tools"
+  - label: ":hammer_and_wrench:"
+    key: "build-tools"
+    priority: 1
+    # build the tools initially, we gotta unless we want to have these outside of
+    # inline scripts
+    command: "nix-build -A pipelines.tasks.tools"
 
 
   # Generate & upload dynamic build steps
