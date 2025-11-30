@@ -46,5 +46,17 @@
         "type": "tarball",
         "url": "https://github.com/nixos/nixpkgs/archive/1c8ba8d3f7634acac4a2094eef7c32ad9106532c.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixvim": {
+        "branch": "nixos-25.05",
+        "description": "Configure Neovim with Nix! [maintainers=@GaetanLepage, @traxys, @mattsturgeon, @khaneliman]",
+        "homepage": "https://nix-community.github.io/nixvim",
+        "owner": "nix-community",
+        "repo": "nixvim",
+        "rev": "ed3c771ab21b082f61955e43db8cc6e63386d8fc",
+        "sha256": "0sd9wblqn4mhnhfb14y8nlxxkq1isfzx9am2mqm4sy7jk3rvdv4k",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/nixvim/archive/ed3c771ab21b082f61955e43db8cc6e63386d8fc.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

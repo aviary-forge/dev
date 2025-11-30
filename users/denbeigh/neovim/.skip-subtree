@@ -1,0 +1,2 @@
+# Everything other than `default.nix` is expected to be read by the nixvim
+# module system, and isn't compatible with readTree

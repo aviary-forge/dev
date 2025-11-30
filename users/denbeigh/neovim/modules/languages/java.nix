@@ -1,0 +1,15 @@
+{ lib, ... }:
+
+let
+  inherit (lib) mkDefault;
+in
+{
+  config = {
+    plugins = {
+      lsp.servers.java_language_server.enable = mkDefault true;
+
+      rooter.patterns = [ "pom.xml" ];
+      treesitter.settings.ensure_installed = [ "java" ];
+    };
+  };
+}
