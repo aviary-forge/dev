@@ -14,7 +14,7 @@ steps:
 
 
   # Generate & upload dynamic build steps
-  - label: ":thinking:"
+  - label: ":thinking_face:"
     env:
       BUILDKITE_TOKEN_PATH: /run/agenix/buildkite-graphql-token
     depends_on:
