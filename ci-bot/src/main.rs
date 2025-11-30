@@ -1,11 +1,15 @@
 use axum::extract::Json;
+use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::Router;
 
 use axum::http::StatusCode;
 use buildkite::BuildkiteWebhookEvent;
 
+use crate::buildkite::RawWebhook;
+
 mod buildkite;
+mod discord;
 
 async fn handle_health() -> &'static str {
     "OK"
@@ -19,9 +23,7 @@ async fn handle_github() -> &'static str {
     unimplemented!()
 }
 
-async fn handle_buildkite(
-    Json(payload): Json<crate::buildkite::RawWebhook>,
-) -> impl axum::response::IntoResponse {
+async fn handle_buildkite(Json(payload): Json<RawWebhook>) -> impl IntoResponse {
     match payload.into_webhook() {
         Ok(Some(webhook)) => {
             match webhook {
