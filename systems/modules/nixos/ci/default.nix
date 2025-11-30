@@ -1,4 +1,7 @@
-{ config, pkgs, lib, ... }:
+# NOTE: we add the default for `config` in here because this still ends up
+# getting evaluated by readTree during cases of pipeline evaluation and such.
+# TODO maybe we take some more reasoned stance with skipTree in future?
+{ config ? { }, pkgs, lib, ... }:
 
 let
   inherit (builtins) toString;
@@ -9,6 +12,18 @@ let
     value = {
       inherit (cfg) enable package tokenPath privateSshKeyPath;
       extraGroups = [ cfg.groupName ];
+
+      runtimePackages = [
+        # included by default
+        pkgs.bash
+        pkgs.gnutar
+        pkgs.gzip
+        pkgs.git
+        pkgs.nix
+
+        # added by us (so we can run the initial pipeline generation step)
+        pkgs.buildkite-agent
+      ];
     };
   };
 in

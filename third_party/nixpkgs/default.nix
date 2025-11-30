@@ -1,5 +1,5 @@
 # NOTE: this file is primarily the work of the TVL authors and carries the
-# associated license thereof (this was missing a header)
+# associated license thereof (MIT)
 
 # This file imports the pinned nixpkgs sets and applies relevant
 # modifications, such as our overlays.

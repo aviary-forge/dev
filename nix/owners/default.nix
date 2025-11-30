@@ -52,8 +52,7 @@ let
   buildReport = targets:
     let
       data = evaluate targets;
-      jsonData' = builtins.listToAttrs (map createReportEntry data);
-      jsonData = builtins.trace jsonData' jsonData';
+      jsonData = builtins.listToAttrs (map createReportEntry data);
       jsonEncoder = pkgs.formats.json { };
     in
     (jsonEncoder.generate "ownership-report.json" jsonData);
@@ -62,4 +61,3 @@ in
 {
   inherit buildReport;
 }
-
