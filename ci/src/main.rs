@@ -1,3 +1,4 @@
+use axum::extract::Json;
 use axum::routing::get;
 use axum::Router;
 
@@ -15,7 +16,7 @@ async fn handle_github() -> &'static str {
     unimplemented!()
 }
 
-async fn handle_buildkite() -> &'static str {
+async fn handle_buildkite(Json(payload): Json<crate::buildkite::RawWebhook>) -> &'static str {
     unimplemented!()
 }
 
