@@ -1,20 +1,22 @@
 use axum::routing::get;
 use axum::Router;
 
+mod buildkite;
+
 async fn handle_health() -> &'static str {
     "OK"
 }
 
 async fn handle_discord() -> &'static str {
-
+    unimplemented!()
 }
 
 async fn handle_github() -> &'static str {
-
+    unimplemented!()
 }
 
-async fn handle_buildkite() -> &static str {
-
+async fn handle_buildkite() -> &'static str {
+    unimplemented!()
 }
 
 static BIND: &str = "127.0.0.1:1234";
