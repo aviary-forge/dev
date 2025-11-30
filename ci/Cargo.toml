@@ -1,0 +1,13 @@
+[package]
+name = "ci"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.100"
+axum = "0.8.7"
+clap = { version = "4.5.53", features = ["derive"] }
+octocrab = "0.48.0"
+serenity = { version = "0.12.4", default-features = false, features = ["builder", "http", "rustls_backend"] }
+thiserror = "2.0.17"
+tokio = { version = "1", features = ["full"] }
