@@ -18,9 +18,12 @@ nix-build --option restrict-eval true\
   -A pipelines.tasks.build \
   -o pipeline --show-trace "${PIPELINE_ARGS[@]}"
 
+ls -l pipeline >&2
+
 # Steps need to be uploaded in reverse order because pipeline
 # upload prepends instead of appending.
 find pipeline -name "build-chunk-*.json" | sort -r | while read -r chunk; do
+  echo "uploading build pipeline chunk: $chunk" >&2
   buildkite-agent pipeline upload "$chunk"
 done
 
