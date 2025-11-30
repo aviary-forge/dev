@@ -47,6 +47,18 @@
         "url": "https://github.com/denbeigh2000/fonts/archive/77f5f3ec1b81b289073339079b131fc3a2fee6ed.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "home-manager": {
+        "branch": "release-25.05",
+        "description": "Manage a user environment using Nix  [maintainer=@khaneliman, @rycee] ",
+        "homepage": "https://nix-community.github.io/home-manager/",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "780be8ef503a28939cf9dc7996b48ffb1a3e04c6",
+        "sha256": "0k15q1vw517mqagq9nfzabbb5sv5l44d4ai2a7vv478sja1b61cf",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/home-manager/archive/780be8ef503a28939cf9dc7996b48ffb1a3e04c6.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "naersk": {
         "branch": "master",
         "description": "Build Rust projects in Nix - no configuration, no code generation, no IFD, sandbox friendly.",
@@ -57,6 +69,18 @@
         "sha256": "1pmj1d3xp3fjz8m3msvmh8jnylwmgk76iah9qnfs8ddgwlij1v5g",
         "type": "tarball",
         "url": "https://github.com/nix-community/naersk/archive/d4155d6ebb70fbe2314959842f744aa7cabbbf6a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nix-darwin": {
+        "branch": "nix-darwin-25.05",
+        "description": "Manage your macOS using Nix",
+        "homepage": "https://nix-darwin.org",
+        "owner": "nix-darwin",
+        "repo": "nix-darwin",
+        "rev": "d76299b2cd01837c4c271a7b5186e3d5d8ebd126",
+        "sha256": "1lx05bd1ba9qmn110qs4qcpfqrah3lrszg1xgh96wxy6nq9l26p2",
+        "type": "tarball",
+        "url": "https://github.com/nix-darwin/nix-darwin/archive/d76299b2cd01837c4c271a7b5186e3d5d8ebd126.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixgl": {

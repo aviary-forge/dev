@@ -50,7 +50,7 @@
       inherit (pkgs) python313 go nodejs nodePackages rustc cargo;
       inherit (pkgs.lib) optionals;
 
-      rust-pkgs = optionals cfg.rust.enable [ rustc cargo ];
+      rust-pkgs = optionals cfg.rust.enable [ pkgs.fenix.stable.toolchain ];
       go-pkgs = optionals cfg.go.enable [ go ];
       node-pkgs = optionals cfg.node.enable [ nodejs nodePackages.yarn nodePackages.pnpm ];
       python-pkgs = optionals cfg.python.enable [ python313 ];
@@ -58,10 +58,9 @@
     {
       nixpkgs.overlays = [
         (dev.third_party.agenix.src + "/modules/age.nix")
-        self.inputs.denbeigh-neovim.overlays.default
       ];
 
-      home.packages = with pkgs; [ agenix neovim ctags direnv ]
+      home.packages = with pkgs; [ agenix dev.users.denbeigh.neovim ctags direnv ]
         ++ rust-pkgs
         ++ go-pkgs
         ++ node-pkgs

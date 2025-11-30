@@ -54,6 +54,8 @@ let
     };
   };
 
+  # TODO: this might need to move to home-manager config?
+  # home-manager should get the nixpkgs source, but not the overlays...
   nixglOverlay = final: _:
     let isIntelX86Platform = final.system == "x86_64-linux";
     in {
