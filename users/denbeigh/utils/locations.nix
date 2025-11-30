@@ -1,0 +1,93 @@
+{ lib, ... }:
+
+rec {
+  locations = rec {
+    sf = {
+      coordinates = {
+        latitude = 37.773972;
+        longitude = -122.431297;
+      };
+      timezone = "America/Los_Angeles";
+    };
+    sydney = {
+      coordinates = {
+        latitude = -33.865143;
+        longitude = 151.209900;
+      };
+      timezone = "Australia/Sydney";
+    };
+    utc = {
+      coordinates = {
+        latitude = 0.0;
+        longitude = 0.0;
+      };
+      timezone = "UTC";
+    };
+
+    default = utc;
+  };
+
+  options =
+    let
+      inherit (lib) mkOption;
+      inherit (lib.types) float str;
+
+      mkCoord = title: mkOption {
+        type = float;
+        description = ''
+          ${title} of the machine.
+        '';
+      };
+    in
+    {
+      location = mkOption {
+        type = types.location;
+        default = locations.default;
+        description = ''
+          Coordinates and timezone of the machine.
+          Used for redshift (on graphical machines) and setting timezone.
+        '';
+      };
+
+      coordinates = mkOption {
+        type = types.coordinates;
+        default = locations.default.coordinates;
+        description = ''
+          Coordinates of the machine.
+          Currently only used for redshift.
+        '';
+      };
+
+      timezone = mkOption {
+        type = str;
+        default = locations.default.timezone;
+        description = ''
+          Time zone of the machine.
+          Used for setting system time.
+        '';
+      };
+
+      latitude = mkCoord "Latitude";
+      longitude = mkCoord "Longitude";
+    };
+
+  types =
+    let
+      inherit (lib.types) submodule float str;
+    in
+    {
+
+      location = submodule {
+        options = {
+          inherit (options) coordinates timezone;
+        };
+      };
+
+      coordinates = submodule {
+        options = {
+          inherit (options) latitude longitude;
+        };
+      };
+    };
+
+}

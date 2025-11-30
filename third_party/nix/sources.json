@@ -35,6 +35,18 @@
         "url": "https://github.com/nix-community/fenix/archive/6399553b7a300c77e7f07342904eb696a5b6bf9d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "fonts": {
+        "branch": "master",
+        "description": "Building a few fonts that aren't on Nixpkgs",
+        "homepage": null,
+        "owner": "denbeigh2000",
+        "repo": "fonts",
+        "rev": "77f5f3ec1b81b289073339079b131fc3a2fee6ed",
+        "sha256": "0wlzwa1s4smrv78nx0kqr4nlvgnbj78pmlyslvs2qld2illwvair",
+        "type": "tarball",
+        "url": "https://github.com/denbeigh2000/fonts/archive/77f5f3ec1b81b289073339079b131fc3a2fee6ed.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "naersk": {
         "branch": "master",
         "description": "Build Rust projects in Nix - no configuration, no code generation, no IFD, sandbox friendly.",
@@ -45,6 +57,18 @@
         "sha256": "1pmj1d3xp3fjz8m3msvmh8jnylwmgk76iah9qnfs8ddgwlij1v5g",
         "type": "tarball",
         "url": "https://github.com/nix-community/naersk/archive/d4155d6ebb70fbe2314959842f744aa7cabbbf6a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixgl": {
+        "branch": "main",
+        "description": "A wrapper tool for nix OpenGL application [maintainer=@guibou]",
+        "homepage": "",
+        "owner": "nix-community",
+        "repo": "nixgl",
+        "rev": "b6105297e6f0cd041670c3e8628394d4ee247ed5",
+        "sha256": "1zv3bshk0l4hfh1s7s3jzwjxl0nqqcvc4a3kydd3d4lgh7651d3x",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/nixgl/archive/b6105297e6f0cd041670c3e8628394d4ee247ed5.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {

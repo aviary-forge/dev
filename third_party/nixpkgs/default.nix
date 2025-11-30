@@ -54,10 +54,21 @@ let
     };
   };
 
+  nixglOverlay = final: _:
+    let isIntelX86Platform = final.system == "x86_64-linux";
+    in {
+      nixgl = import dev.third_party.nix.nixgl {
+        pkgs = final;
+        enable32bits = isIntelX86Platform;
+        enableIntelX86Extensions = isIntelX86Platform;
+      };
+    };
+
 in
 import nixpkgsSrc (commonNixpkgsArgs // {
   overlays = [
     commitsOverlay
+    nixglOverlay
   ] ++ (if devOverlays then [
     (import "${dev.third_party.nix.fenix}/overlay.nix")
   ] else [ ] ++ additionalOverlays);
