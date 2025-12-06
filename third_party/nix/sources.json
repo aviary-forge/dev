@@ -17,10 +17,10 @@
         "homepage": "",
         "owner": "nix-community",
         "repo": "fenix",
-        "rev": "2d8176c02f7be6d13578d24d5fd5049f1b46a4c5",
-        "sha256": "0szbjf0nhi7rqn2d9rxdjr962l4fqlzn4sk5cvkvk36d0lbh4d8p",
+        "rev": "a83a78fd3587d9f3388f0b459ad9c2bbd6d1b6d8",
+        "sha256": "06igjz4fhv5v0xvr7vaj59d5q6znnbkybvglpsli1c9p9rqywx3q",
         "type": "tarball",
-        "url": "https://github.com/nix-community/fenix/archive/2d8176c02f7be6d13578d24d5fd5049f1b46a4c5.tar.gz",
+        "url": "https://github.com/nix-community/fenix/archive/a83a78fd3587d9f3388f0b459ad9c2bbd6d1b6d8.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "naersk": {
@@ -36,27 +36,27 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixos-25.05",
+        "branch": "nixos-25.11",
         "description": "Nix Packages collection & NixOS",
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "1c8ba8d3f7634acac4a2094eef7c32ad9106532c",
-        "sha256": "0kal9wdvh0f9kcgh0ya1dpiir9331ykmkvsdh6a37lq77ln6m3vm",
+        "rev": "c97c47f2bac4fa59e2cbdeba289686ae615f8ed4",
+        "sha256": "044kfcmdfj8511xl3gpfpk3hdhzm2jsdd5jmbgh4hfvg03kwbp1s",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/1c8ba8d3f7634acac4a2094eef7c32ad9106532c.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/c97c47f2bac4fa59e2cbdeba289686ae615f8ed4.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixvim": {
-        "branch": "nixos-25.05",
+        "branch": "nixos-25.11",
         "description": "Configure Neovim with Nix! [maintainers=@GaetanLepage, @traxys, @mattsturgeon, @khaneliman]",
         "homepage": "https://nix-community.github.io/nixvim",
         "owner": "nix-community",
         "repo": "nixvim",
-        "rev": "ed3c771ab21b082f61955e43db8cc6e63386d8fc",
-        "sha256": "0sd9wblqn4mhnhfb14y8nlxxkq1isfzx9am2mqm4sy7jk3rvdv4k",
+        "rev": "cb9357fe1068cbcec1e6ddc525ab5226f7781d09",
+        "sha256": "1k5v6709pg0yj6ws7mw73cvrjp3khvb3fqpbixxb0arkd5fn7qn9",
         "type": "tarball",
-        "url": "https://github.com/nix-community/nixvim/archive/ed3c771ab21b082f61955e43db8cc6e63386d8fc.tar.gz",
+        "url": "https://github.com/nix-community/nixvim/archive/cb9357fe1068cbcec1e6ddc525ab5226f7781d09.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
