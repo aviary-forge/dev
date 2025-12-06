@@ -48,15 +48,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "home-manager": {
-        "branch": "release-25.05",
+        "branch": "release-25.11",
         "description": "Manage a user environment using Nix  [maintainer=@khaneliman, @rycee] ",
         "homepage": "https://nix-community.github.io/home-manager/",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "780be8ef503a28939cf9dc7996b48ffb1a3e04c6",
-        "sha256": "0k15q1vw517mqagq9nfzabbb5sv5l44d4ai2a7vv478sja1b61cf",
+        "rev": "f63d0fe9d81d36e5fc95497217a72e02b8b7bcab",
+        "sha256": "1qr63a2izlp840ax3v31avji99yprw3rap2m8f1snfkxfnsh8syh",
         "type": "tarball",
-        "url": "https://github.com/nix-community/home-manager/archive/780be8ef503a28939cf9dc7996b48ffb1a3e04c6.tar.gz",
+        "url": "https://github.com/nix-community/home-manager/archive/f63d0fe9d81d36e5fc95497217a72e02b8b7bcab.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "naersk": {
@@ -72,15 +72,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nix-darwin": {
-        "branch": "nix-darwin-25.05",
+        "branch": "nix-darwin-25.11",
         "description": "Manage your macOS using Nix",
         "homepage": "https://nix-darwin.org",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "d76299b2cd01837c4c271a7b5186e3d5d8ebd126",
-        "sha256": "1lx05bd1ba9qmn110qs4qcpfqrah3lrszg1xgh96wxy6nq9l26p2",
+        "rev": "e95de00a471d07435e0527ff4db092c84998698e",
+        "sha256": "04chfpr63cpvbl6nl5d8x1nxrj5ds9h1ir48kr4mix503jq3ipqw",
         "type": "tarball",
-        "url": "https://github.com/nix-darwin/nix-darwin/archive/d76299b2cd01837c4c271a7b5186e3d5d8ebd126.tar.gz",
+        "url": "https://github.com/nix-darwin/nix-darwin/archive/e95de00a471d07435e0527ff4db092c84998698e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixgl": {
