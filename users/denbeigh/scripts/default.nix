@@ -1,12 +1,7 @@
-{ writeShellApplication
-, curl
-, gnused
-, ripgrep
-, scowl
-, coreutils
-}:
+{ pkgs, ... }:
 
 let
+  inherit (pkgs) writeShellApplication curl gnused ripgrep scowl coreutils;
   inherit (builtins) readFile;
 in
 {
