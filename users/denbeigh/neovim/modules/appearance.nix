@@ -13,8 +13,7 @@
         italics = true;
         italicize_comments = true;
         italicize_strings = false;
-        contrast_dark = "soft";
-        contrast_light = "soft";
+        contrast = "soft";
       };
     };
 
