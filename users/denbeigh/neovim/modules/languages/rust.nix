@@ -11,16 +11,13 @@ in
       lsp.servers.rust_analyzer = {
         enable = mkDefault true;
         settings = {
+          procMacro.enable = true;
           cargo = {
+            allTargets = true;
             features = "all";
-            buildScripts.overrideCommand = [
-              "cargo"
-              "check"
-              "--offline"
-              "--locked"
-              "--all-features"
-              "--all-targets"
-            ];
+            # ensure we do this from the CLI, instead of potentially hanging
+            # the editor
+            noDeps = true;
           };
           check = {
             command = "clippy";
