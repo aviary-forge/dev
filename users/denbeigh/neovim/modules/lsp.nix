@@ -7,6 +7,11 @@ in
   config = {
     opts.signcolumn = "yes";
 
+    diagnostic = {
+      settings = {
+        virtual_lines = true;
+      };
+    };
     plugins = {
       lsp-format.enable = mkDefault true;
       lsp = {
