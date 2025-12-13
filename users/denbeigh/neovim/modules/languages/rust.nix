@@ -11,7 +11,17 @@ in
       lsp.servers.rust_analyzer = {
         enable = mkDefault true;
         settings = {
-          cargo.features = "all";
+          cargo = {
+            features = "all";
+            buildScripts.overrideCommand = [
+              "cargo"
+              "check"
+              "--offline"
+              "--locked"
+              "--all-features"
+              "--all-targets"
+            ];
+          };
           check = {
             command = "clippy";
             features = "all";
@@ -22,7 +32,10 @@ in
         installRustc = false;
       };
 
-      rooter.patterns = [ "Cargo.toml" "Cargo.lock" ];
+      rooter.patterns = [
+        "Cargo.toml"
+        "Cargo.lock"
+      ];
       treesitter.settings.ensure_installed = [ "rust" ];
     };
   };
