@@ -2,10 +2,11 @@
 
 {
   nixos =
-    { configuration
-    , specialArgs ? { }
-    , system ? localSystem
-    , ...
+    {
+      configuration,
+      specialArgs ? { },
+      system ? localSystem,
+      ...
     }:
     let
       eval = import (pkgs.path + "/nixos/lib/eval-config.nix") {
@@ -28,6 +29,6 @@
     {
       inherit (eval) pkgs config options;
       system = eval.config.system.build.toplevel;
-      vm = vmConfig.system.build.vm;
+      vm = vmConfig.config.system.build.vm;
     };
 }
