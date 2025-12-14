@@ -15,7 +15,8 @@ let
         sedCmd = "s/^\\(.*\\)/sudo \\1/g";
       in
       "fc -e \"${sedBin} -i '${sedCmd}'\"";
-  } // (if hostPlatform.isLinux then linuxAliases else { });
+  }
+  // (if hostPlatform.isLinux then linuxAliases else { });
 
 in
 {
@@ -41,7 +42,7 @@ in
         EDITOR = "nvim";
       };
 
-      initExtra = (builtins.readFile ./zshrc);
+      initContent = (builtins.readFile ./zshrc);
     };
   };
 }
