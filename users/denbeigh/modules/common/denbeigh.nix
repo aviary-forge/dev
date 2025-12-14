@@ -1,11 +1,11 @@
-{ self, config, lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
-  inherit (lib) mkEnableOption mkIf mkOption types;
-  cfg = config.denbeigh;
+  inherit (lib) mkIf mkOption types;
+  cfg = config.dev.denbeigh;
 in
 {
-  options.denbeigh = {
+  options.dev.denbeigh = {
     user = {
       enable = mkOption {
         type = types.bool;
@@ -51,21 +51,14 @@ in
   };
 
   config = {
-    nixpkgs.overlays = [
-      self.inputs.agenix.overlays.default
-      self.inputs.nixgl.overlays.default
-      self.inputs.denbeigh-neovim.overlays.default
-      self.inputs.fonts.overlays.default
-    ];
-
     home-manager = mkIf cfg.user.enable {
       useGlobalPkgs = true;
       useUserPackages = true;
 
       users.${cfg.user.username} = {
-        imports = [ self.homeManagerModules.standard ];
+        imports = [ ../home-manager/standard.nix ];
 
-        denbeigh = {
+        dev.denbeigh = {
           inherit (cfg.machine) graphical hostname work isNixOS;
           inherit (cfg.user) username keys;
         };

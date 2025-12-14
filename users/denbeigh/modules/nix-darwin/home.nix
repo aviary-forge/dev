@@ -1,8 +1,8 @@
-{ dev, config, lib, pkgs, ... }:
+{ dev, ... }:
 
 {
   imports = [
-    "${dev.third_party.home_manager.src}/nix-darwin"
+    "${dev.third_party.home-manager.src}/nix-darwin"
     ../common/denbeigh.nix
   ];
   config = {

@@ -1,4 +1,10 @@
-{ dev, config, lib, pkgs, ... }:
+{
+  dev,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   options =
@@ -8,7 +14,7 @@
       cfg = config.dev.denbeigh.dev;
     in
     {
-      denbeigh.dev = {
+      dev.denbeigh.dev = {
         enable = mkOption {
           description = "Whether to manage the default set of build tools";
           type = types.bool;
@@ -46,21 +52,32 @@
     let
       cfg = config.dev.denbeigh.dev.languages;
 
-      # inherit (pkgs.devPackages) python rust go node;
-      inherit (pkgs) python313 go nodejs nodePackages rustc cargo;
+      inherit (pkgs)
+        python313
+        go
+        nodejs
+        nodePackages
+        ;
       inherit (pkgs.lib) optionals;
 
       rust-pkgs = optionals cfg.rust.enable [ pkgs.fenix.stable.toolchain ];
       go-pkgs = optionals cfg.go.enable [ go ];
-      node-pkgs = optionals cfg.node.enable [ nodejs nodePackages.yarn nodePackages.pnpm ];
+      node-pkgs = optionals cfg.node.enable [
+        nodejs
+        nodePackages.yarn
+        nodePackages.pnpm
+      ];
       python-pkgs = optionals cfg.python.enable [ python313 ];
     in
     {
-      nixpkgs.overlays = [
-        (dev.third_party.agenix.src + "/modules/age.nix")
-      ];
-
-      home.packages = with pkgs; [ agenix dev.users.denbeigh.neovim ctags direnv ]
+      home.packages =
+        with pkgs;
+        [
+          dev.third_party.agenix.cli
+          dev.users.denbeigh.neovim
+          ctags
+          direnv
+        ]
         ++ rust-pkgs
         ++ go-pkgs
         ++ node-pkgs

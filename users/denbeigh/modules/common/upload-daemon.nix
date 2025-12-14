@@ -1,12 +1,12 @@
 { self, config, lib, ... }:
 
 let
-  inherit (config.denbeigh) machine;
-  cfg = config.denbeigh.nix-upload-daemon;
+  inherit (config.dev.denbeigh) machine;
+  cfg = config.dev.denbeigh.nix-upload-daemon;
 in
 {
   options = {
-    denbeigh.nix-upload-daemon =
+    dev.denbeigh.nix-upload-daemon =
       let
         inherit (lib) mkOption types;
       in
@@ -70,6 +70,6 @@ in
         };
       };
 
-      nix.settings.trusted-users = [ config.denbeigh.user.username ];
+      nix.settings.trusted-users = [ config.dev.denbeigh.user.username ];
     });
 }

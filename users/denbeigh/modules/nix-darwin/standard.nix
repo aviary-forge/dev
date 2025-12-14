@@ -11,7 +11,7 @@ in
     # ./use-nix-cache.nix
     ./home.nix
     ./system-options.nix
-    ./upload-daemon.nix
+    # ./upload-daemon.nix
     ../common/standard.nix
     ../common/variables.nix
     ../common/tailscale.nix
@@ -19,8 +19,6 @@ in
 
   config = {
     dev.denbeigh.tailscale.enable = mkDefault true;
-
-    services.nix-daemon.enable = true;
 
     networking.hostName = cfg.machine.hostname;
 

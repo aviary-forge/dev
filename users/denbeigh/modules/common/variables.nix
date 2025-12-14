@@ -1,11 +1,10 @@
-{ pkgs, lib, ... }:
+{ lib, ... }:
 
 let
   inherit (lib) mkOption types;
-  inherit (pkgs.stdenvNoCC.hostPlatform) isDarwin;
 in
 {
-  options.denbeigh.machine = {
+  options.dev.denbeigh.machine = {
     hostname = mkOption {
       type = types.str;
       description = ''

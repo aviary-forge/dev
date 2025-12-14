@@ -3,11 +3,11 @@
 let
   inherit (lib) mkIf mkOption types;
 
-  cfg = config.denbeigh.nix-cache;
+  cfg = config.dev.denbeigh.nix-cache;
 in
 {
   # NOTE: Subtly different from denbeigh.services.nix-cache
-  options.denbeigh.nix-cache = {
+  options.dev.denbeigh.nix-cache = {
     enable = mkOption {
       type = types.bool;
       # This is overridden in OS-specific modules that import this module.

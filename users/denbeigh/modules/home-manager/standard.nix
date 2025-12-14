@@ -64,7 +64,7 @@ in
       '';
     };
 
-    inherit (dev.uesrs.denbeigh.utils.locations.options) location;
+    inherit (dev.users.denbeigh.utils.locations.options) location;
 
     # TODO: Make naming consistent
     isNixOS = mkOption {

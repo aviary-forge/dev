@@ -3,10 +3,10 @@
 let
   inherit (lib) mkEnableOption mkIf;
 
-  cfg = config.denbeigh.tailscale;
+  cfg = config.dev.denbeigh.tailscale;
 in
 {
-  options.denbeigh.tailscale = {
+  options.dev.denbeigh.tailscale = {
     enable = mkEnableOption "tailscale daemon";
   };
 

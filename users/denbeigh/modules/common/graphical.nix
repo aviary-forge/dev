@@ -1,10 +1,10 @@
 { config, pkgs, lib, ... }:
 let
   inherit (lib) mkIf mkOption types;
-  cfg = config.denbeigh.machine;
+  cfg = config.dev.denbeigh.machine;
 in
 {
-  options.denbeigh.machine.graphical = mkOption {
+  options.dev.denbeigh.machine.graphical = mkOption {
     type = types.bool;
     default = false;
     description = ''
@@ -18,7 +18,6 @@ in
     environment.systemPackages = with pkgs; [
       alacritty
       discord-canary
-      spotify
       mpv
       yubikey-manager
       # Maybe some other time
