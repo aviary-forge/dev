@@ -1,6 +1,6 @@
 { dev, pkgs, localSystem, ... }:
 { configuration
-, specialArgs ? { }
+, specialArgs ? { inherit dev; }
 , system ? localSystem
 , ...
 }:
