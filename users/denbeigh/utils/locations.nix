@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ pkgs, lib, ... }:
 
 rec {
   locations = rec {
@@ -21,7 +21,7 @@ rec {
         latitude = 0.0;
         longitude = 0.0;
       };
-      timezone = "UTC";
+      timezone = if pkgs.stdenvNoCC.targetPlatform.isDarwin then "GMT" else "UTC";
     };
 
     default = utc;
@@ -32,12 +32,14 @@ rec {
       inherit (lib) mkOption;
       inherit (lib.types) float str;
 
-      mkCoord = title: mkOption {
-        type = float;
-        description = ''
-          ${title} of the machine.
-        '';
-      };
+      mkCoord =
+        title:
+        mkOption {
+          type = float;
+          description = ''
+            ${title} of the machine.
+          '';
+        };
     in
     {
       location = mkOption {
@@ -73,7 +75,7 @@ rec {
 
   types =
     let
-      inherit (lib.types) submodule float str;
+      inherit (lib.types) submodule;
     in
     {
 
