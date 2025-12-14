@@ -76,7 +76,7 @@ in
       users.groups."${cfg.groupName}" = { };
 
       systemd.tmpfiles.rules = [
-        "d /nix/var/nix/gcroots/dev 0755 root ${cfg.groupName}"
+        "d /nix/var/nix/gcroots/dev 0775 root ${cfg.groupName}"
       ];
 
       services.buildkite-agents = mkIf cfg.enable
