@@ -26,6 +26,7 @@ let
     target:
     # filter so we only build things that actually _build things_
     (target ? outPath)
+    && target.system == localSystem
     # filter so we do not build broken things
     && !(target.meta.broken or false);
 in
