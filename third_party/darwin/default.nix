@@ -1,0 +1,27 @@
+{ dev, pkgs, ... }:
+let
+
+  darwin-tools = pkgs.callPackage (dev.third_party.nix.darwin + "/pkgs/nix-tools") { };
+  eval =
+    { configuration, specialArgs ? { } }:
+    let
+      eval = import (dev.third_party.nix.darwin + "/eval-config.nix") {
+        inherit (pkgs) lib;
+        inherit specialArgs;
+
+        modules = [
+          configuration
+        ];
+      };
+
+    in
+    {
+      inherit (eval) system;
+    };
+
+in
+
+{
+  inherit eval;
+  inherit (darwin-tools) darwin-option darwin-rebuild darwin-version;
+}

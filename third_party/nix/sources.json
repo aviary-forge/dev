@@ -35,6 +35,18 @@
         "url": "https://github.com/nix-community/naersk/archive/d4155d6ebb70fbe2314959842f744aa7cabbbf6a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "darwin": {
+        "branch": "nix-darwin-25.11",
+        "description": "Manage your macOS using Nix",
+        "homepage": "https://nix-darwin.org",
+        "owner": "nix-darwin",
+        "repo": "nix-darwin",
+        "rev": "688427b1aab9afb478ca07989dc754fa543e03d5",
+        "sha256": "0pljn7d38crcdcpnsycbmvqczrpaml1illzrqxrm4i0zk3gr916i",
+        "type": "tarball",
+        "url": "https://github.com/nix-darwin/nix-darwin/archive/688427b1aab9afb478ca07989dc754fa543e03d5.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "nixos-25.11",
         "description": "Nix Packages collection & NixOS",
