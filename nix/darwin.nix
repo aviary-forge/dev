@@ -40,6 +40,4 @@ rec {
       inherit (config) system;
       activate = (activateSystem config.system);
     };
-
-  activate = activateSystem;
 }

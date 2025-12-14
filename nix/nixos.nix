@@ -1,48 +1,52 @@
 { dev, pkgs, ... }:
 
-rec {
+let
+  # NOTE: this currently requires us to copy the monorepo to the store, but the
+  # cost is still low enough that i'm not too fussed about that.
+  activateSystem = system:
+    pkgs.writeShellApplication {
+      name = "activate-system";
+
+      text = ''
+        if [[ "$EUID" -ne "0" ]]
+        then
+          echo "system must be activated as root" >&2
+          exit 1
+        fi
+
+        nix-env -p /nix/var/nix/profiles/system --set ${system}
+        ${system}/bin/switch-to-configuration switch
+      '';
+    };
+
   baseModule = { ... }: {
     nixpkgs.pkgs = dev.third_party.nixpkgs;
   };
 
-  nixosFor = configuration:
-    (dev.third_party.nixos
+in
+
+{
+  inherit baseModule;
+  eval =
+    (configuration:
+      let
+        system = (dev.third_party.nixos
+          {
+            configuration = { ... }: {
+              imports = [
+                baseModule
+                configuration
+              ];
+            };
+
+            specialArgs = {
+              inherit dev;
+            };
+          });
+
+      in
       {
-        configuration = { ... }: {
-          imports = [
-            baseModule
-            configuration
-          ];
-        };
-
-        specialArgs = {
-          inherit dev;
-        };
+        inherit (system) system vm;
+        activate = activateSystem system.system;
       });
-
-  findSystem = hostname:
-    (pkgs.lib.findFirst
-      (system: system.config.networking.hostName == hostname)
-      (throw "i do not know about ${hostname}")
-      (map nixosFor dev.systems.configs.all));
-
-  rebuild-system = rebuildSystemWith (
-    # faster than making a full copy of the monorepo to the story (NOTE: wouldn't
-    # function with flakes)
-    builtins.toString dev.path.origSrc);
-
-  rebuildSystemWith = repoPath: pkgs.writeShellScriptBin "rebuild-system" ''
-    set -eu
-
-    if [[ $EUID -ne 0 ]]; then
-      echo "root is required to rebuild system" >&2
-      exit 1
-    fi
-
-    echo "Rebuilding system $HOSTNAME" >&2
-    system="$(${pkgs.nix}/bin/nix-build -E "((import ${repoPath} {}).nix.nixos.findSystem \"$HOSTNAME\").system" --no-out-link --show-trace)"
-
-    ${pkgs.nix}/bin/nix-env -p /nix/var/nix/profiles/system --set "$system"
-    "$system/bin/switch-to-configuration" switch
-  '';
 }
