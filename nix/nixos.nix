@@ -3,7 +3,8 @@
 let
   # NOTE: this currently requires us to copy the monorepo to the store, but the
   # cost is still low enough that i'm not too fussed about that.
-  activateSystem = system:
+  activateSystem =
+    system:
     pkgs.writeShellApplication {
       name = "activate-system";
 
@@ -19,34 +20,41 @@ let
       '';
     };
 
-  baseModule = { ... }: {
-    nixpkgs.pkgs = dev.third_party.nixpkgs;
-  };
+  baseModule =
+    { ... }:
+    {
+      nixpkgs.pkgs = dev.third_party.nixpkgs;
+    };
 
 in
 
 {
   inherit baseModule;
-  eval =
-    (configuration:
-      let
-        system = (dev.third_party.nixos
-          {
-            configuration = { ... }: {
+  eval = (
+    configuration:
+    let
+      system = (
+        dev.third_party.nixos {
+          configuration =
+            { ... }:
+            {
               imports = [
                 baseModule
                 configuration
               ];
             };
 
-            specialArgs = {
-              inherit dev;
-            };
-          });
+          specialArgs = {
+            inherit dev;
+          };
+        }
+      );
 
-      in
-      {
-        inherit (system) system vm;
-        activate = activateSystem system.system;
-      });
+    in
+    system.system
+    // {
+      inherit (system) vm;
+      activate = activateSystem system.system;
+    }
+  );
 }
