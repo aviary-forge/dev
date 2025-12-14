@@ -1,4 +1,4 @@
-{ self, config, lib, ... }:
+{ config, lib, ... }:
 
 let
   inherit (config.dev.denbeigh) machine;
@@ -40,14 +40,13 @@ in
     let
       inherit (lib) mkIf;
     in
-    mkIf cfg.enable ({
+    mkIf cfg.enable {
       assertions = [
         {
           assertion = !machine.work;
           message = "Do **NOT** upload work packages to personal nix store";
         }
       ];
-      nixpkgs.overlays = [ self.inputs.nix-upload-daemon.overlays.default ];
 
       age.secrets.remoteBuildSignKey = {
         file = ../../secrets/remoteBuildSignKey.age;
@@ -62,7 +61,13 @@ in
       };
 
       services.nix-upload-daemon = {
-        inherit (cfg) enable username workers target binding;
+        inherit (cfg)
+          enable
+          username
+          workers
+          target
+          binding
+          ;
 
         post-build-hook = {
           enable = true;
@@ -71,5 +76,5 @@ in
       };
 
       nix.settings.trusted-users = [ config.dev.denbeigh.user.username ];
-    });
+    };
 }

@@ -7,7 +7,6 @@ let
   inherit (fonts) sf-mono sf-pro;
 in
 {
-  nixpkgs.overlays = [ "${src}/overlay.nix" ];
   home.packages = [
     sf-mono
     sf-pro
