@@ -1,28 +1,9 @@
 { dev, pkgs, ... }:
 
-rec {
-  baseModule = { ... }: {
-    nixpkgs.pkgs = dev.third_party.nixpkgs;
-  };
-
-  eval = configuration:
-    (dev.third_party.nixos
-      {
-        configuration = { ... }: {
-          imports = [
-            baseModule
-            configuration
-          ];
-        };
-
-        specialArgs = {
-          inherit dev;
-        };
-      });
-
+let
   # NOTE: this currently requires us to copy the monorepo to the store, but the
   # cost is still low enough that i'm not too fussed about that.
-  activate = configuration:
+  activateSystem = configuration:
     pkgs.writeShellApplication {
       name = "activate-system";
 
@@ -37,4 +18,35 @@ rec {
         ${configuration}/bin/switch-to-configuration switch
       '';
     };
+
+  baseModule = { ... }: {
+    nixpkgs.pkgs = dev.third_party.nixpkgs;
+  };
+
+in
+
+{
+  inherit baseModule;
+  eval =
+    (configuration:
+      let
+        system = (dev.third_party.nixos
+          {
+            configuration = { ... }: {
+              imports = [
+                baseModule
+                configuration
+              ];
+            };
+
+            specialArgs = {
+              inherit dev;
+            };
+          });
+
+      in
+      {
+        inherit system;
+        activate = activateSystem system;
+      });
 }
