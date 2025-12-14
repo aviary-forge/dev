@@ -3,7 +3,7 @@
 let
   # NOTE: this currently requires us to copy the monorepo to the store, but the
   # cost is still low enough that i'm not too fussed about that.
-  activateSystem = configuration:
+  activateSystem = system:
     pkgs.writeShellApplication {
       name = "activate-system";
 
@@ -14,8 +14,8 @@ let
           exit 1
         fi
 
-        nix-env -p /nix/var/nix/profiles/system --set ${configuration}
-        ${configuration}/bin/switch-to-configuration switch
+        nix-env -p /nix/var/nix/profiles/system --set ${system}
+        ${system}/bin/switch-to-configuration switch
       '';
     };
 
@@ -46,7 +46,7 @@ in
 
       in
       {
-        inherit system;
-        activate = activateSystem system;
+        inherit (system) system vm;
+        activate = activateSystem system.system;
       });
 }
