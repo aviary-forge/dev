@@ -56,6 +56,9 @@
       wvous-br-corner = 1;
       wvous-tl-corner = 1;
       wvous-tr-corner = 1;
+
+      persistent-apps = [ ];
+      persistent-others = [ ];
     };
 
     finder = {
@@ -71,6 +74,9 @@
       ShowStatusBar = true;
     };
 
+    WindowManager.EnableStandardClickToShowDesktop = false;
+
+    universalaccess.reduceTransparency = true;
     loginwindow.GuestEnabled = false;
 
     screencapture = {
