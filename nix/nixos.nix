@@ -27,6 +27,13 @@ rec {
       name = "activate-system";
 
       text = ''
+        if [[ "$EUID" -ne "0" ]]
+        then
+          echo "system must be activated as root" >&2
+          exit 1
+        fi
+
+        nix-env -p /nix/var/nix/profiles/system --set ${configuration}
         ${configuration}/bin/switch-to-configuration switch
       '';
     };
