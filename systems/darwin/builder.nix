@@ -24,7 +24,7 @@ dev.nix.darwin.eval (
       universalaccess.reduceTransparency = true;
     };
 
-    time.timeZone = "UTC";
+    time.timeZone = "GMT";
     users.users.denbeigh = {
       packages = [ dev.users.denbeigh.neovim ];
       openssh.authorizedKeys.keys = [
