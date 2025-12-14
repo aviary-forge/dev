@@ -1,5 +1,6 @@
-{ localSystem ? builtins.currentSystem
-, ...
+{
+  localSystem ? builtins.currentSystem,
+  ...
 }:
 
 # Adapted from work by the TVL authors. Copyright remains until this file is
@@ -8,26 +9,30 @@
 let
   readTree = import ./nix/readTree { };
 
-  readRepo = args: readTree {
-    inherit args;
-    path = ./.;
-    scopedArgs = {
-      __findFile = _: _: throw "Do not import from NIX_PATH (<nixpkgs>) here!";
-      builtins = builtins // {
-        currentSystem = throw "use injected localSystem from readTree, not currentSystem";
+  readRepo =
+    args:
+    readTree {
+      inherit args;
+      path = ./.;
+      scopedArgs = {
+        __findFile = _: _: throw "Do not import from NIX_PATH (<nixpkgs>) here!";
+        builtins = builtins // {
+          currentSystem = throw "use injected localSystem from readTree, not currentSystem";
+        };
       };
     };
-  };
 
-  eligibleForCi = target:
+  eligibleForCi =
+    target:
     # filter so we only build things that actually _build things_
     (target ? outPath)
     # filter so we do not build broken things
     && !(target.meta.broken or false);
 in
 
-readTree.fix
-  (self: (readRepo {
+readTree.fix (
+  self:
+  (readRepo {
     inherit localSystem;
     dev = self;
 
@@ -36,7 +41,8 @@ readTree.fix
 
     # Convenience/nice to have this at a top level
     members = import ./members.nix;
-  }) // rec {
+  })
+  // rec {
 
     path = self.third_party.nixpkgs.lib.cleanSourceWith {
       name = "dev";
@@ -49,11 +55,9 @@ readTree.fix
         excluded = [
           # e.g.: self.path.to.package
         ];
-        targets' = readTree.gather
-          (target: ((eligibleForCi target) &&
-            (!builtins.elem target excluded))
-          )
-          self;
+        targets' = readTree.gather (
+          target: ((eligibleForCi target) && (!builtins.elem target excluded))
+        ) self;
 
         # Ensure the tool that needs to evaluate `ci.targets`
         # does not get included in `ci.targets`
@@ -65,16 +69,29 @@ readTree.fix
           builtins.filter notInPipelines targets';
 
         # Derivation that gcroots all built targets.
-        gcroot = with self.third_party.nixpkgs; writeText "monorepo-gcroot"
-          (builtins.concatStringsSep "\n"
-            (lib.flatten
-              (map (p: map (o: p.${o}) p.outputs or [ ]) # list all outputs of each drv
-                targets)));
+        gcroot =
+          with self.third_party.nixpkgs;
+          writeText "monorepo-gcroot" (
+            builtins.concatStringsSep "\n" (
+              lib.flatten (
+                map (p: map (o: p.${o}) p.outputs or [ ]) # list all outputs of each drv
+                  targets
+              )
+            )
+          );
 
       in
-      { inherit excluded targets gcroot; };
+      {
+        inherit excluded targets gcroot;
+      };
 
     ownership =
-      let targetList = builtins.map (t: { path = t.__readTree; deriv = t; }) ci.targets;
-      in self.nix.owners.buildReport targetList;
-  })
+      let
+        targetList = builtins.map (t: {
+          path = t.__readTree;
+          deriv = t;
+        }) ci.targets;
+      in
+      self.nix.owners.buildReport targetList;
+  }
+)
