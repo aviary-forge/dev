@@ -5,7 +5,7 @@ rec {
     nixpkgs.pkgs = dev.third_party.nixpkgs;
   };
 
-  nixosFor = configuration:
+  eval = configuration:
     (dev.third_party.nixos
       {
         configuration = { ... }: {
@@ -20,29 +20,14 @@ rec {
         };
       });
 
-  findSystem = hostname:
-    (pkgs.lib.findFirst
-      (system: system.config.networking.hostName == hostname)
-      (throw "i do not know about ${hostname}")
-      (map nixosFor dev.systems.configs.all));
+  # NOTE: this currently requires us to copy the monorepo to the store, but the
+  # cost is still low enough that i'm not too fussed about that.
+  activate = configuration:
+    pkgs.writeShellApplication {
+      name = "activate-system";
 
-  rebuild-system = rebuildSystemWith (
-    # faster than making a full copy of the monorepo to the story (NOTE: wouldn't
-    # function with flakes)
-    builtins.toString dev.path.origSrc);
-
-  rebuildSystemWith = repoPath: pkgs.writeShellScriptBin "rebuild-system" ''
-    set -eu
-
-    if [[ $EUID -ne 0 ]]; then
-      echo "root is required to rebuild system" >&2
-      exit 1
-    fi
-
-    echo "Rebuilding system $HOSTNAME" >&2
-    system="$(${pkgs.nix}/bin/nix-build -E "((import ${repoPath} {}).nix.nixos.findSystem \"$HOSTNAME\").system" --no-out-link --show-trace)"
-
-    ${pkgs.nix}/bin/nix-env -p /nix/var/nix/profiles/system --set "$system"
-    "$system/bin/switch-to-configuration" switch
-  '';
+      text = ''
+        ${configuration}/bin/switch-to-configuration switch
+      '';
+    };
 }
