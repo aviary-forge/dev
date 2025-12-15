@@ -37,7 +37,7 @@ let
           $(nix-build -A pipelines.tasks.anchor)/bin/anchor-pipeline-step
         '';
         env = {
-          GCROOT_GCROOT_DIR = "/nix/var/nix/gcroots/dev/trunk";
+          GCROOT_GCROOT_DIR = "/nix/var/nix/gcroots/dev";
           GCROOT_COMMITS_TO_KEEP = builtins.toString gcrootCommitCount;
         };
       }
