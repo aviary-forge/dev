@@ -1,6 +1,12 @@
 # This file configures the primary build pipeline used for the
 # top-level list of targets.
-{ dev, pkgs ? dev.third_party.nixpkgs, externalArgs ? { }, ... }:
+{
+  dev,
+  pkgs ? dev.third_party.nixpkgs,
+  externalArgs ? { },
+  gcrootCommitCount ? 5,
+  ...
+}:
 
 let
   pipeline = dev.nix.buildkite.mkPipeline {
@@ -8,12 +14,14 @@ let
     drvTargets = dev.ci.targets;
 
     parentTargetMap =
-      if (externalArgs ? parentTargetMap)
-      then builtins.fromJSON (builtins.readFile externalArgs.parentTargetMap)
-      else { };
+      if (externalArgs ? parentTargetMap) then
+        builtins.fromJSON (builtins.readFile externalArgs.parentTargetMap)
+      else
+        { };
 
     postBuildSteps = [
-      # After successful builds, create a gcroot for builds on canon.
+      # After successful builds, create a gcroot for the derivations at the
+      # HEAD of trunk, and trim all but the last ${gcrootCommitCount}.
       #
       # This anchors *most* of the repo, in practice it's unimportant
       # if there is a build race and we get +-1 of the targets.
@@ -26,8 +34,12 @@ let
         label = ":construction_worker:";
         branches = "trunk";
         command = ''
-          nix-build -A ci.gcroot --out-link /nix/var/nix/gcroots/dev/trunk
+          $(nix-build -A pipelines.tasks.anchor)/bin/anchor-pipeline-step
         '';
+        env = {
+          GCROOT_GCROOT_DIR = "/nix/var/nix/gcroots/dev/trunk";
+          GCROOT_COMMITS_TO_KEEP = builtins.toString gcrootCommitCount;
+        };
       }
     ];
   };
