@@ -15,9 +15,6 @@ in
           cargo = {
             allTargets = true;
             features = "all";
-            # ensure we do this from the CLI, instead of potentially hanging
-            # the editor
-            noDeps = true;
           };
           check = {
             command = "clippy";
