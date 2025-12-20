@@ -38,24 +38,7 @@ let
     buildRustCrateForPkgs = mkCrateOverrides;
   };
 
-  # We don't really want to parse the subtree of all the crates in Nix,
-  # so after building we just tack on fake __readTree attrs for each
-  # crate to make them look behave consistently with real targets.
-  addReadTree =
-    attrs:
-    let
-      mkEnt = name: {
-        __readTree = [
-          "rust"
-          name
-        ];
-        __readTreeChildren = [ ];
-      };
-
-      patchValue = name: value: value // (mkEnt name);
-    in
-    mapAttrs' (n: v: nameValuePair n (patchValue n v)) attrs;
-  pluckBuild = name: value: (nameValuePair name value.build);
+  crates = builtins.mapAttrs (name: value: value.build) cargo.workspaceMembers;
 
   regenerate = pkgs.writeShellApplication {
     name = "generate-cargo-nix";
@@ -76,4 +59,12 @@ let
     '';
   };
 in
-addReadTree ((mapAttrs' pluckBuild cargo.workspaceMembers) // { inherit regenerate; })
+crates
+// {
+  inherit regenerate;
+  # We don't really want to parse the subtree of all the crates in Nix,
+  # but we do want to be able to gather these for use in CI etc
+  __readTreeChildrenOverride = crates // {
+    inherit regenerate;
+  };
+}

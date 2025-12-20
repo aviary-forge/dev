@@ -6,6 +6,6 @@ pkgs.writeShellApplication {
 
   runtimeInputs = [
     pkgs.nix
-    dev.gcroot-manager
+    dev.rust.gcroot-manager
   ];
 }
