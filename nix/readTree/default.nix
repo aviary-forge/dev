@@ -197,6 +197,37 @@ let
       nodeValue = if dir ? "default.nix" then self else { };
 
       allChildren = listToAttrs (if dir ? "default.nix" then children else nixChildren ++ children);
+      # Recursively set readTree attrs on children if provided, so we can
+      # effectively inject subtrees into readTree when integrating third-party
+      # systems
+      processAttrChildren =
+        parts: attrChildren:
+        let
+          addMarkers =
+            name: value:
+            let
+              childParts = parts ++ [ name ];
+            in
+            if isAttrs value && !(value ? type && value.type == "derivation") then
+              # Recurse into nested non-derivation attrsets
+              merge value (
+                processAttrChildren childParts value // (marker childParts (processAttrChildren childParts value))
+              )
+            else if isAttrs value then
+              # Derivation/already marked
+              merge value (marker childParts { })
+            # Not an attrset
+            else
+              value;
+
+        in
+        builtins.mapAttrs addMarkers attrChildren;
+
+      finalChildren =
+        if (dir ? "default.nix") && isAttrs self && self ? __readTreeChildrenOverride then
+          processAttrChildren parts self.__readTreeChildrenOverride
+        else
+          allChildren;
 
     in
     if skipTree then
@@ -205,7 +236,7 @@ let
       {
         ok =
           if isAttrs nodeValue then
-            merge nodeValue (allChildren // (marker parts allChildren))
+            merge nodeValue (finalChildren // (marker parts finalChildren))
           else
             nodeValue;
       };
