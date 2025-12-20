@@ -11,6 +11,18 @@
         "url": "https://github.com/ryantm/agenix/archive/fcdea223397448d35d9b31f798479227e80183f6.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "crate2nix": {
+        "branch": "master",
+        "description": "rebuild only changed crates in CI with crate2nix and nix",
+        "homepage": "https://nix-community.github.io/crate2nix/",
+        "owner": "nix-community",
+        "repo": "crate2nix",
+        "rev": "be31feae9a82c225c0fd1bdf978565dc452a483a",
+        "sha256": "14d0ymlrwk7dynv35qcw4xn0dylfpwjmf6f8znflbk2l6fk23l12",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/crate2nix/archive/be31feae9a82c225c0fd1bdf978565dc452a483a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "darwin": {
         "branch": "nix-darwin-25.11",
         "description": "Manage your macOS using Nix",
@@ -57,18 +69,6 @@
         "sha256": "1qr63a2izlp840ax3v31avji99yprw3rap2m8f1snfkxfnsh8syh",
         "type": "tarball",
         "url": "https://github.com/nix-community/home-manager/archive/f63d0fe9d81d36e5fc95497217a72e02b8b7bcab.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "naersk": {
-        "branch": "master",
-        "description": "Build Rust projects in Nix - no configuration, no code generation, no IFD, sandbox friendly.",
-        "homepage": "",
-        "owner": "nix-community",
-        "repo": "naersk",
-        "rev": "d4155d6ebb70fbe2314959842f744aa7cabbbf6a",
-        "sha256": "1pmj1d3xp3fjz8m3msvmh8jnylwmgk76iah9qnfs8ddgwlij1v5g",
-        "type": "tarball",
-        "url": "https://github.com/nix-community/naersk/archive/d4155d6ebb70fbe2314959842f744aa7cabbbf6a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nix-darwin": {

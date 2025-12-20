@@ -1,13 +1,11 @@
-{ dev, pkgs, ... }:
+{ pkgs, members, ... }:
 
 let
   inherit (pkgs.stdenvNoCC.targetPlatform) isLinux;
   inherit (pkgs.lib) optional;
 in
 
-dev.third_party.naersk.buildPackage {
-  src = ./.;
-
+attrs: {
   buildInputs = optional isLinux pkgs.makeWrapper;
   postInstall =
     let
@@ -18,4 +16,6 @@ dev.third_party.naersk.buildPackage {
       wrapProgram $out/bin/gcroot-manager --prefix LD_LIBRARY_PATH : ${libPath}
     '';
   runtimeInputs = [ pkgs.openssl.dev ];
+
+  meta.owners = with members; [ denbeigh ];
 }
