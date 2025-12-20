@@ -10,6 +10,8 @@ let
     mkLabel: target:
     let
       treePath = unsafeDiscardStringContext (mkLabel target);
+      getOwners = target: if target.meta ? owners then target.meta.owners else "<unowned>";
+
     in
     {
       name = treePath;
@@ -18,6 +20,7 @@ let
         system = unsafeDiscardStringContext target.system;
         drvPath = unsafeDiscardStringContext target.drvPath;
         outputPath = unsafeDiscardStringContext target.outPath;
+        owner = getOwners target;
       };
     };
 
