@@ -28,6 +28,7 @@ pkgs.mkShell {
     rustPkgs
     ++ [
       dev.users.denbeigh.neovim
+      pkgs.crate2nix
     ]
     ++ macosPkgs;
 }

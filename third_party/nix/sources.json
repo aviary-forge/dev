@@ -11,6 +11,18 @@
         "url": "https://github.com/ryantm/agenix/archive/fcdea223397448d35d9b31f798479227e80183f6.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "crate2nix": {
+        "branch": "master",
+        "description": "rebuild only changed crates in CI with crate2nix and nix",
+        "homepage": "https://nix-community.github.io/crate2nix/",
+        "owner": "nix-community",
+        "repo": "crate2nix",
+        "rev": "be31feae9a82c225c0fd1bdf978565dc452a483a",
+        "sha256": "14d0ymlrwk7dynv35qcw4xn0dylfpwjmf6f8znflbk2l6fk23l12",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/crate2nix/archive/be31feae9a82c225c0fd1bdf978565dc452a483a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "darwin": {
         "branch": "nix-darwin-25.11",
         "description": "Manage your macOS using Nix",
