@@ -1,5 +1,5 @@
 {
-  dev ? import ../. { },
+  dev ? import ../.. { },
 }:
 
 let
