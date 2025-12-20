@@ -7,6 +7,7 @@ use crate::monitor::Monitor;
 
 mod args;
 mod build_state;
+mod evaluate;
 mod monitor;
 mod nix_line;
 mod parser;
