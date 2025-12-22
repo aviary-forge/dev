@@ -16,6 +16,8 @@ in
       lsp-format.enable = mkDefault true;
       lsp = {
         enable = mkDefault true;
+        # TODO: switch to new default neovim bindings (usually gr_) see :help
+        # lsp-defaults
         keymaps = {
           diagnostic = {
             "<leader>k" = "goto_prev";
@@ -23,18 +25,31 @@ in
           };
 
           lspBuf = {
-            K = "signature_help";
+            # ctrl-s
+            # K = "signature_help";
+            # (K is now hover!)
+
+            # grr
             "<leader>R" = "references";
+            # grn
             "<leader>r" = "rename";
             "<leader>f" = "format";
+            # grt
             "<leader><leader>" = "definition";
+            # gra
             "<leader>z" = "code_action";
+
+            # also... gri -> implementation
           };
         };
       };
 
       cmp-nvim-lsp.enable = mkDefault true;
-      cmp.settings.sources = [{ name = "nvim_lsp"; }];
+      cmp.settings.sources = [
+        {
+          name = "nvim_lsp";
+        }
+      ];
     };
   };
 }
