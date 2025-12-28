@@ -22,9 +22,14 @@ in
 
     networking.hostName = cfg.machine.hostname;
 
-    users.users.${cfg.user.username} = {
-      name = cfg.user.username;
-      home = "/Users/${cfg.user.username}";
+    users = {
+      knownUsers = [ cfg.user.username ];
+      users.${cfg.user.username} = {
+        name = cfg.user.username;
+        home = "/Users/${cfg.user.username}";
+
+        uid = 501;
+      };
     };
   };
 }

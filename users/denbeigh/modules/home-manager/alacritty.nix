@@ -1,22 +1,28 @@
-{ config
-, pkgs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  lib,
+  ...
 }:
 
 let
-  inherit (lib) mkIf mkOption types;
-  inherit (pkgs.stdenv.hostPlatform) isLinux;
+  inherit (lib)
+    mkIf
+    mkOption
+    types
+    ;
+  inherit (pkgs.stdenv.hostPlatform) isLinux isDarwin;
   inherit (config.dev.denbeigh) isNixOS;
 
   # We only need to explicitly wrap if we're on linux and we are _not_ on NixOS
-  inherit (config.dev.denbeigh.alacritty) enable shouldGlWrap fontSize fontFamily;
+  inherit (config.dev.denbeigh.alacritty)
+    enable
+    shouldGlWrap
+    fontSize
+    fontFamily
+    ;
   tools = pkgs.callPackage ./lib { };
-  package = (
-    if shouldGlWrap
-    then (tools.glWrap pkgs.alacritty "alacritty")
-    else pkgs.alacritty
-  );
+  package = (if shouldGlWrap then (tools.glWrap pkgs.alacritty "alacritty") else pkgs.alacritty);
 in
 {
   options.dev.denbeigh.alacritty = {
@@ -58,6 +64,8 @@ in
       enable = true;
       inherit package;
       settings = {
+        # HACK: https://github.com/nix-darwin/nix-darwin/issues/1493#issuecomment-3484507455
+        terminal.shell.program = mkIf isDarwin "/run/current-system/sw/bin/zsh";
         # Colors (Gruvbox dark)
         colors = {
           primary = {
