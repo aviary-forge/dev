@@ -8,6 +8,7 @@ in
       lsp.servers.ocamllsp = {
         enable = mkDefault true;
         package = mkDefault pkgs.ocamlPackages.ocaml-lsp;
+        packageFallback = true;
       };
 
       rooter.patterns = [ "dune-project" ];
