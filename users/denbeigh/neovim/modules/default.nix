@@ -9,6 +9,7 @@
 
     ./languages/bazel.nix
     ./languages/c.nix
+    ./languages/erlang.nix
     ./languages/go.nix
     ./languages/hcl.nix
     ./languages/java.nix
