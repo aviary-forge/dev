@@ -10,20 +10,24 @@ dev.nix.nixos.eval (
   }:
   {
     imports = [
-      ../../modules/nixos/standard.nix
+      # ../../modules/nixos/standard.nix
     ];
 
     config = {
-      dev.denbeigh = {
-        machine = {
-          hostname = "esmerelda";
-          location = dev.users.denbeigh.utils.locations.locations.sf;
-        };
-        user = {
-          username = "denbeigh";
-          keys = [ "id_ed25519" ];
-        };
+      networking = {
+        hostName = "esmerelda";
+        domain = "sfo.denbeigh.cloud";
       };
+      # dev.denbeigh = {
+      #   machine = {
+      #     hostname = "esmerelda";
+      #     location = dev.users.denbeigh.utils.locations.locations.sf;
+      #   };
+      #   user = {
+      #     username = "denbeigh";
+      #     keys = [ "id_ed25519" ];
+      #   };
+      # };
 
       environment.systemPackages = with pkgs; [
         vim
@@ -44,13 +48,9 @@ dev.nix.nixos.eval (
           PermitRootLogin = "no";
         };
       };
+      programs.zsh.enable = true;
 
-      system.primaryUser = "denbeigh";
       system.stateVersion = "25.11"; # Did you read the comment?
-
-      imports = [
-        (modulesPath + "/installer/scan/not-detected.nix")
-      ];
 
       # Use the systemd-boot EFI boot loader.
       boot.loader.systemd-boot.enable = true;
