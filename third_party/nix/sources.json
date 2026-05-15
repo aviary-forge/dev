@@ -53,10 +53,10 @@
         "homepage": null,
         "owner": "denbeigh2000",
         "repo": "fonts",
-        "rev": "77f5f3ec1b81b289073339079b131fc3a2fee6ed",
-        "sha256": "0wlzwa1s4smrv78nx0kqr4nlvgnbj78pmlyslvs2qld2illwvair",
+        "rev": "b049ab81b116ffc96b118094c4ee3d06bb3ec00d",
+        "sha256": "1q9yy4csskaaavgd1bam7hm1vz235dhxs249pxyck608qcs6yb0q",
         "type": "tarball",
-        "url": "https://github.com/denbeigh2000/fonts/archive/77f5f3ec1b81b289073339079b131fc3a2fee6ed.tar.gz",
+        "url": "https://github.com/denbeigh2000/fonts/archive/b049ab81b116ffc96b118094c4ee3d06bb3ec00d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "home-manager": {
@@ -96,16 +96,17 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixos-25.11",
+        "branch": "e9183409c2be80e2cd9d633582fdab543bb8d084",
         "description": "Nix Packages collection & NixOS",
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "8fd9daa3db09ced9700431c5b7ad0e8ba199b575",
-        "sha256": "1i4bkzy1siavmxaskp49lgi9s02gam6crb0d0abbbjmsyl39jbsf",
+        "rev": "e9183409c2be80e2cd9d633582fdab543bb8d084",
+        "sha256": "0kdd9wfqplngncdw7rr4p4haj82ljp991rhfb2n1blmgfsd2jbyp",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/8fd9daa3db09ced9700431c5b7ad0e8ba199b575.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+        "url": "https://github.com/nixos/nixpkgs/archive/e9183409c2be80e2cd9d633582fdab543bb8d084.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
+        "version": "e9183409c2be80e2cd9d633582fdab543bb8d084"
     },
     "nixvim": {
         "branch": "nixos-25.11",
