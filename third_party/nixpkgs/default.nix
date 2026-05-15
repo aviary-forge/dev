@@ -50,6 +50,7 @@ let
   commitsOverlay = _: _: {
     nixpkgsCommits = {
       stable = dev.third_party.nix.nixpkgs.rev;
+      unstable = dev.third_party.nix.nixpkgs-unstable.dev;
     };
   };
 
@@ -89,13 +90,40 @@ let
       inherit crate2nix;
     };
 
+  nixpkgsUnstable = import dev.third_party.nix.nixpkgs-unstable commonNixpkgsArgs;
+  unstableOverlay = final: prev: {
+    inherit (nixpkgsUnstable) llama-cpp;
+  };
+
+  overridesOverlay =
+    final: prev:
+    let
+      mkLlama = import ../overrides/llama-cpp.nix;
+    in
+    {
+      llama-cpp-server = mkLlama {
+        inherit (prev) llama-cpp fetchFromGitHub;
+        cudaSupport = true;
+        blasSupport = true;
+        metalSupport = false;
+      };
+
+      llama-cpp-client = mkLlama {
+        inherit (prev) llama-cpp fetchFromGitHub;
+        cudaSupport = false;
+        metalSupport = prev.stdenvNoCC.targetPlatform.isDarwin;
+      };
+    };
+
 in
 import nixpkgsSrc (
   commonNixpkgsArgs
   // {
     overlays = [
       commitsOverlay
+      unstableOverlay
       nixglOverlay
+      overridesOverlay
     ]
     ++ (
       if devOverlays then

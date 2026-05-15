@@ -22,6 +22,7 @@ dev.nix.darwin.eval (
       system.stateVersion = 5;
 
       environment.systemPackages = with pkgs; [
+        llama-cpp-client
         ollama
         opencode
       ];
