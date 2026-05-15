@@ -1,50 +1,43 @@
 { dev, ... }:
 
 dev.nix.nixos.eval (
-  { pkgs
-  , config
-  , lib
-  , modulesPath
-  , ...
+  {
+    pkgs,
+    config,
+    lib,
+    ...
   }:
   let
     # TODO: move this to overlay?
-    llama-cpp-patched = pkgs.callPackage ./llama-cpp.nix { };
+    # llama-cpp-patched = pkgs.callPackage ./llama-cpp.nix { };
   in
   {
     imports = [
-      # ../../modules/nixos/standard.nix
+      ../../../modules/nixos/standard.nix
     ];
 
     config = {
-      networking = {
-        hostName = "esmerelda";
-        domain = "sfo.denbeigh.cloud";
+      nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+      dev.denbeigh = {
+        nix-cache.enable = false;
+        ssh.enable = true;
+        machine = {
+          hostname = "esmerelda";
+          location = dev.users.denbeigh.utils.locations.locations.sf;
+        };
       };
-      # dev.denbeigh = {
-      #   machine = {
-      #     hostname = "esmerelda";
-      #     location = dev.users.denbeigh.utils.locations.locations.sf;
-      #   };
-      #   user = {
-      #     username = "denbeigh";
-      #     keys = [ "id_ed25519" ];
-      #   };
-      # };
 
-      environment.systemPackages =
-        with pkgs;
-        [
-          vim
-          nano
-          nix
-          git
-          htop
-          wget
-          curl
-          zsh
-          llama-cpp-patched
-        ];
+      environment.systemPackages = with pkgs; [
+        vim
+        nano
+        nix
+        git
+        htop
+        wget
+        curl
+        zsh
+        llama-cpp-server
+      ];
 
       services.openssh = {
         enable = true;
@@ -63,14 +56,7 @@ dev.nix.nixos.eval (
         acceleration = "cuda";
       };
 
-      # services.llama-cpp = {
-      #   enable = true;
-      #   openFirewall = true;
-      #   package = llama-cpp-patched;
-      #   host = "0.0.0.0";
-      #   port = 12274;
-      # };
-
+      # Experimenting with llama-cpp before committing
       networking.firewall.allowedTCPPorts = [ 8001 ];
 
       # Enable OpenGL
@@ -86,10 +72,9 @@ dev.nix.nixos.eval (
         # Modesetting is required.
         modesetting.enable = true;
 
-
         # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
         # Enable this if you have graphical corruption issues or application crashes after waking
-        # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead 
+        # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead
         # of just the bare essentials.
         powerManagement.enable = false;
 
@@ -97,12 +82,11 @@ dev.nix.nixos.eval (
         # Experimental and only works on modern Nvidia GPUs (Turing or newer).
         powerManagement.finegrained = false;
 
-
         # Use the NVidia open source kernel module (not to be confused with the
         # independent third-party "nouveau" open source driver).
-        # Support is limited to the Turing and later architectures. Full list of 
-        # supported GPUs is at: 
-        # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus 
+        # Support is limited to the Turing and later architectures. Full list of
+        # supported GPUs is at:
+        # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
         # Only available from driver 515.43.04+
         open = false;
 
@@ -120,13 +104,13 @@ dev.nix.nixos.eval (
       boot.loader.systemd-boot.enable = true;
       boot.loader.efi.canTouchEfiVariables = true;
 
-      users.users.denbeigh = {
-        isNormalUser = true;
-        description = "Alice";
-        extraGroups = [ "wheel" ]; # Sudo access
-        shell = pkgs.zsh;
-        home = "/home/denbeigh";
-      };
+      # users.users.denbeigh = {
+      #   isNormalUser = true;
+      #   description = "Alice";
+      #   extraGroups = [ "wheel" ]; # Sudo access
+      #   # shell = pkgs.zsh;
+      #   home = "/home/denbeigh";
+      # };
 
       users.groups.denbeigh = { };
 
@@ -158,7 +142,6 @@ dev.nix.nixos.eval (
 
       swapDevices = [ ];
 
-      nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
       hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
     };
   }

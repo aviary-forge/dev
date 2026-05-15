@@ -9,7 +9,7 @@
 let
   inherit (lib) mkIf;
 
-  cfg = config.denbeigh;
+  cfg = config.dev.denbeigh;
 in
 {
   imports = [

@@ -1,10 +1,10 @@
-{ pkgs, ... }:
+{ pkgs, dev, ... }:
 
 {
   imports = [ ./docker.nix ];
 
   environment.systemPackages = with pkgs; [
-    agenix
+    dev.third_party.agenix.cli
     jq
     git
     htop
