@@ -2,7 +2,6 @@
 
 {
   imports = [
-    # self.inputs.agenix.nixosModules.default
     (dev.third_party.nix.fonts + "/update/module.nix")
     (dev.third_party.agenix.src + "/modules/age.nix")
   ];

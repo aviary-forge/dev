@@ -1,5 +1,5 @@
 {
-  self,
+  dev,
   config,
   lib,
   ...
@@ -12,7 +12,7 @@ in
 
 {
   imports = [
-    self.inputs.agenix.nixosModules.default
+    (dev.third_party.agenix.src + "/modules/age.nix")
 
     ../common/standard.nix
     ../common/variables.nix
