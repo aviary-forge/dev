@@ -116,6 +116,7 @@ readTree.fix (
       {
         nixos = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "nixos-system");
         darwin = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "darwin-system");
+        "home-manager" = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "home-manager-system");
       };
 
     ownership =
