@@ -1,0 +1,4 @@
+(executable
+ (public_name zoo)
+ (name main)
+ (libraries zoo logs))

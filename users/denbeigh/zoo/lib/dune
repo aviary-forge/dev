@@ -1,0 +1,5 @@
+(library
+  (name zoo)
+  (libraries core core_unix.command_unix base logs)
+  (preprocess
+   (pps ppx_jane)))
