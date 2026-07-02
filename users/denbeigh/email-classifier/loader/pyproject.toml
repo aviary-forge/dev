@@ -4,10 +4,10 @@ version = "0.1.0"
 description = "Email loading and preprocessing"
 readme = "README.md"
 authors = [
-    { name = "Denbeigh Stevens", email = "denbeigh@denbeighstevens.com" }
+  { name = "Denbeigh Stevens", email = "denbeigh@denbeighstevens.com" },
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = ["pyyaml>=6.0"]
 
 [project.scripts]
 email-loader = "email_loader:main"

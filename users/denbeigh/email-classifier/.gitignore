@@ -176,4 +176,7 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+# email-loader credentials (contains IMAP app password)
+config.yaml
+
 # End of https://www.gitignore.io/api/python,direnv

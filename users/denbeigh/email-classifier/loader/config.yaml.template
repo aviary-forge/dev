@@ -1,0 +1,32 @@
+# email-loader configuration
+#
+# Copy this file to config.yaml and fill in your IMAP credentials.
+#
+# For Outlook / Exchange Online:
+#   1. Enable MFA on your Microsoft account (required for app passwords)
+#   2. Generate an app password at:
+#      https://account.microsoft.com/security -> Advanced security -> App passwords
+#   3. Use your full email address as username, and the app password below
+
+imap:
+  host: outlook.office365.com
+  port: 993
+  username: ""             # e.g. denbeigh@company.com
+  app_password: ""         # generated from Microsoft account security settings
+
+# Where to store emails and the SQLite index
+storage:
+  dir: ~/.local/share/email-classifier   # expanded to $HOME/.local/share/...
+
+# Folders to skip during sync
+skip_folders:
+  - Deleted Items
+  - Junk Email
+  - Drafts
+  - Junk
+  - Trash
+  - "[Gmail]/Trash"
+  - "[Gmail]/Spam"
+
+# Optional: skip emails older than this date
+# skip_before: 2010-01-01

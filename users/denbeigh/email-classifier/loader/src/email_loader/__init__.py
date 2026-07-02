@@ -1,2 +1,3 @@
-def main() -> None:
-    print("Hello from email-loader!")
+from email_loader.cli import main
+
+__all__ = ["main"]
