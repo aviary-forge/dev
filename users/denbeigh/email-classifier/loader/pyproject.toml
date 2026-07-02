@@ -1,0 +1,17 @@
+[project]
+name = "email-loader"
+version = "0.1.0"
+description = "Email loading and preprocessing"
+readme = "README.md"
+authors = [
+    { name = "Denbeigh Stevens", email = "denbeigh@denbeighstevens.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+email-loader = "email_loader:main"
+
+[build-system]
+requires = ["uv_build>=0.9.30,<0.10.0"]
+build-backend = "uv_build"

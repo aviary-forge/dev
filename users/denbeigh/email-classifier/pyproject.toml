@@ -1,0 +1,10 @@
+[project]
+name = "email-classifier"
+version = "0.1.0"
+description = "Email classifier workspace"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["loader", "trainer", "classifier"]
