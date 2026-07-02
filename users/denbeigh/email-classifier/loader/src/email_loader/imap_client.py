@@ -195,7 +195,8 @@ class IMAPClient:
     def list_folders(self) -> list[tuple[str, str, str]]:
         """Return list of (flags, delimiter, utf8_name) for all folders.
 
-        Filters out things like \\Noselect and skip_folders.
+        Filters out \\Noselect folders (container-only entries that can't
+        hold messages) and any listed in skip_folders.
         """
         assert self._conn is not None
         raw_list = self._conn.list()
@@ -207,23 +208,24 @@ class IMAPClient:
         for item in raw_items:
             decoded = item.decode("utf-8", errors="replace")
             # Parse the raw LIST response to extract delimiter and name
-            # Format: (\\Flags) "/" "Name"   or (\\Flags) "/" {length}\r\nname
+            # Format: (\\Flags) "/" "Name"   or (\\Flags) "/" Name   or (\\Flags) "/" {length}\r\nname
             m = re.match(
-                r'\((?P<flags>[^)]*)\)\s+"(?P<delim>[^"]*)"\s+"(?P<name>[^"]*)"',
+                r'\((?P<flags>[^)]*)\)\s+"(?P<delim>[^"]*)"\s+'  # flags + delimiter
+                r'(?:"(?P<qname>[^"]*)"|\{(?P<litlen>\d+)\}|(?P<uname>[^\s")]+))',
                 decoded,
             )
             if not m:
-                # LITERAL+ response variant: (\\Flags) "/" {5}\r\nINBOX
-                m2 = re.match(
-                    r'\((?P<flags>[^)]*)\)\s+"(?P<delim>[^"]*)"\s+\{(\d+)\}',
-                    decoded,
-                )
-                if m2:
-                    continue  # skip literal form, handled differently per server
                 continue
             flags_str = m.group("flags")
             delim = m.group("delim")
-            name_utf7 = m.group("name")
+
+            if m.group("litlen") is not None:
+                # LITERAL+ response: name is on the next line(s) — skip for now
+                continue
+
+            name_utf7 = m.group("qname") if m.group("qname") is not None else m.group("uname")
+            if name_utf7 is None:
+                continue
             name = _decode_utf7(name_utf7)
 
             if "\\Noselect" in flags_str:
@@ -263,7 +265,10 @@ class IMAPClient:
         folder_slug = _slugify(folder_name)
 
         # ── SELECT folder ──
-        status, resp = self._conn.select(folder_name, readonly=True)
+        # Python 3.14's imaplib._command() does NOT quote string arguments,
+        # so we must quote folder names containing spaces or other atom-specials.
+        quoted = self._conn._quote(folder_name)
+        status, resp = self._conn.select(quoted, readonly=True)
         if status != "OK":
             err_raw = resp[0] if resp else b"unknown"
             err = (
@@ -272,17 +277,21 @@ class IMAPClient:
                 else str(err_raw)
             )
             raise RuntimeError(f"SELECT {folder_name!r} failed: {err}")
-        data = resp
 
-        # Parse UIDVALIDITY from SELECT response
-        new_uid_validity: int | None = None
-        for item in data:
-            if isinstance(item, bytes) and b"UIDVALIDITY" in item:
-                m = re.search(rb"UIDVALIDITY\s+(\d+)", item)
-                if m:
-                    new_uid_validity = int(m.group(1))
-                    break
-        assert new_uid_validity is not None, f"Could not determine UIDVALIDITY for {folder_name!r}"
+        # Parse UIDVALIDITY from the untagged responses.
+        # imaplib.select() returns only the EXISTS count — UIDVALIDITY is
+        # stored separately via the bracketed-response-code parser.
+        uidval_raw = self._conn.untagged_responses.get("UIDVALIDITY", [None])[0]
+        if uidval_raw is None:
+            raise RuntimeError(f"Could not determine UIDVALIDITY for {folder_name!r}")
+        # untagged_responses values are bytes or (bytes, bytes) tuples;
+        # UIDVALIDITY is always a simple bytes value like b"12345678".
+        if isinstance(uidval_raw, bytes):
+            uidval_text = uidval_raw.decode("ascii")
+        else:
+            # Unlikely path — literal-format response
+            uidval_text = str(uidval_raw[0])
+        new_uid_validity = int(uidval_text)
 
         # ── Determine UIDs to fetch ──
         uid_validity_changed = new_uid_validity != uid_validity

@@ -266,7 +266,9 @@ def _do_dry_run(config: Config, args: argparse.Namespace) -> None:
             print(f"  {name}", file=sys.stderr)
             # Try to get count
             try:
-                status, data = client._conn.select(name, readonly=True)  # type: ignore[union-attr]
+                # Python 3.14's imaplib._command() does not quote string args.
+                quoted = client._conn._quote(name)  # type: ignore[union-attr]
+                status, data = client._conn.select(quoted, readonly=True)  # type: ignore[union-attr]
                 if status == "OK":
                     count = data[0]
                     if isinstance(count, bytes):
