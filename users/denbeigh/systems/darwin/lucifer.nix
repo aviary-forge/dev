@@ -22,9 +22,11 @@ dev.nix.darwin.eval (
       system.stateVersion = 5;
 
       environment.systemPackages = with pkgs; [
-        llama-cpp-client
-        ollama
+        # llama-cpp-client
         opencode
+        pi-coding-agent
+        wireguard-tools
+        wireguard-go
       ];
 
       ids.gids.nixbld = 30000;
