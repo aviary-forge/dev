@@ -8,3 +8,32 @@ dependencies = []
 
 [tool.uv.workspace]
 members = ["loader", "trainer", "classifier"]
+
+# ── Ruff: linter + formatter ────────────────────────────────
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+src = ["loader/src", "trainer/src", "classifier/src"]
+
+[tool.ruff.lint]
+# Default ruff rules (E4, E7, E9, F, W) plus extras we find useful.
+extend-select = [
+  "I",   # isort
+  "N",   # PEP 8 naming conventions
+  "UP",  # pyupgrade idioms
+  "B",   # flake8-bugbear
+  "SIM", # flake8-simplify
+  "ARG", # unused function arguments
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"] # unused imports OK in re-export files
+
+[tool.ruff.format]
+quote-style = "double"
+
+# ── Ty: type checker ────────────────────────────────────────
+
+[tool.ty]
+environment = { python-version = "3.14" }
