@@ -13,7 +13,7 @@ from collections.abc import Callable
 from email.message import Message
 from pathlib import Path
 
-from email_loader.config import Config
+from email_loader.config import Config, OAuth2Config
 
 # ── modified UTF-7 decoder (RFC 3501 §5.1.3) ────────────────
 
@@ -111,7 +111,78 @@ class IMAPClient:
     def connect(self) -> None:
         cfg = self.config.imap
         self._conn = imaplib.IMAP4_SSL(cfg.host, cfg.port, timeout=30)
-        self._conn.login(cfg.username, cfg.app_password)
+
+        if cfg.oauth2.client_id:
+            self._oauth2_authenticate(cfg.username, cfg.oauth2)
+        else:
+            self._conn.login(cfg.username, cfg.password)
+
+    # ── OAuth2 helpers ─────────────────────────────────────
+
+    def _oauth2_authenticate(
+        self,
+        username: str,
+        oauth2: OAuth2Config,
+    ) -> None:
+        """Authenticate via SASL XOAUTH2 using MSAL client-credentials flow.
+
+        Retries once after purging the token cache on failure — this handles
+        the case where app permissions have changed and the cached token
+        carries stale roles.
+        """
+        assert self._conn is not None
+
+        token = self._acquire_token(oauth2)
+        sasl = f"user={username}\x01auth=Bearer {token}\x01\x01".encode("ascii")
+
+        try:
+            self._conn.authenticate("XOAUTH2", lambda _c: sasl)
+        except imaplib.IMAP4.error:
+            # Auth failed — likely stale cached token. Purge cache and retry.
+            cache_path = self.config.storage.expanded_dir / "msal_token_cache.bin"
+            cache_path.unlink(missing_ok=True)
+
+            token = self._acquire_token(oauth2)
+            sasl = f"user={username}\x01auth=Bearer {token}\x01\x01".encode("ascii")
+            self._conn.authenticate("XOAUTH2", lambda _c: sasl)
+
+    def _acquire_token(self, oauth2: OAuth2Config) -> str:
+        """Get an OAuth2 access token via MSAL client-credentials flow.
+
+        Uses the MSAL token cache so subsequent runs reuse cached tokens
+        (MSAL handles automatic refresh on expiry).
+        """
+        from msal import ConfidentialClientApplication, SerializableTokenCache
+
+        cache_path = self.config.storage.expanded_dir / "msal_token_cache.bin"
+
+        cache = SerializableTokenCache()
+        if cache_path.exists():
+            cache.deserialize(cache_path.read_text())
+
+        app = ConfidentialClientApplication(
+            oauth2.client_id,
+            client_credential=oauth2.client_secret,
+            authority=oauth2.authority,
+            token_cache=cache,
+        )
+
+        # App-only flow — no user involved, no MFA problem
+        result: dict[str, str] = app.acquire_token_for_client(scopes=oauth2.imap_scopes)  # type: ignore[assignment]
+
+        if "access_token" not in result:
+            error = result.get(
+                "error_description",
+                result.get("error", str(result)),
+            )
+            raise RuntimeError(f"OAuth2 token acquisition failed: {error}")
+
+        # Persist cache so subsequent runs don't need to re-authenticate
+        if cache.has_state_changed:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_text(cache.serialize())
+
+        return result["access_token"]
 
     def disconnect(self) -> None:
         if self._conn:

@@ -9,11 +9,32 @@ import yaml
 
 
 @dataclasses.dataclass(frozen=True)
+class OAuth2Config:
+    """OAuth2 configuration for Microsoft Identity Platform (Entra ID)."""
+
+    client_id: str = ""
+    client_secret: str = ""
+    tenant_id: str = ""
+
+    @property
+    def authority(self) -> str:
+        return f"https://login.microsoftonline.com/{self.tenant_id or 'common'}"
+
+    @property
+    def imap_scopes(self) -> list[str]:
+        # IMAP app-only (client credentials) requests a token for Exchange
+        # Online; /.default resolves to whatever app permissions are granted
+        # on the app reg for this resource (e.g. IMAP.AccessAsApp).
+        return ["https://outlook.office365.com/.default"]
+
+
+@dataclasses.dataclass(frozen=True)
 class IMAPConfig:
     host: str = "outlook.office365.com"
     port: int = 993
     username: str = ""
-    app_password: str = ""
+    password: str = ""  # fallback for non-OAuth2 IMAP login
+    oauth2: OAuth2Config = dataclasses.field(default_factory=OAuth2Config)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -57,12 +78,19 @@ class Config:
         if skip_before is not None:
             skip_before = str(skip_before)
 
+        oauth2_data = imap_data.get("oauth2", {})
+
         return cls(
             imap=IMAPConfig(
                 host=imap_data.get("host", "outlook.office365.com"),
                 port=imap_data.get("port", 993),
                 username=imap_data.get("username", ""),
-                app_password=imap_data.get("app_password", ""),
+                password=imap_data.get("password", ""),
+                oauth2=OAuth2Config(
+                    client_id=oauth2_data.get("client_id", ""),
+                    client_secret=oauth2_data.get("client_secret", ""),
+                    tenant_id=oauth2_data.get("tenant_id", ""),
+                ),
             ),
             storage=StorageConfig(
                 dir=storage_data.get("dir", "~/.local/share/email-classifier"),

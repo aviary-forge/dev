@@ -33,6 +33,15 @@ extend-select = [
 [tool.ruff.format]
 quote-style = "double"
 
+# ── Pyright: LSP type checker ──────────────────────────────
+
+[tool.pyright]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+include = ["loader/src", "trainer/src", "classifier/src"]
+
 # ── Ty: type checker ────────────────────────────────────────
 
 [tool.ty]

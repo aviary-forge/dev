@@ -1,22 +1,27 @@
 # email-loader configuration
 #
-# Copy this file to config.yaml and fill in your IMAP credentials.
+# Copy this file to config.yaml and fill in your IMAP + OAuth2 credentials.
 #
-# For Outlook / Exchange Online:
-#   1. Enable MFA on your Microsoft account (required for app passwords)
-#   2. Generate an app password at:
-#      https://account.microsoft.com/security -> Advanced security -> App passwords
-#   3. Use your full email address as username, and the app password below
+# OAuth2 setup (Outlook / Exchange Online):
+#   1. Register an application in Azure AD (Entra ID):
+#      https://portal.azure.com -> App registrations -> New registration
+#   2. Under "Certificates & secrets", create a client secret
+#   3. Under "API permissions", add Mail.Read (application permission)
+#   4. Grant admin consent for the permission
+#   5. Fill in the oauth2 section below
 
 imap:
   host: outlook.office365.com
   port: 993
-  username: ""             # e.g. denbeigh@company.com
-  app_password: ""         # generated from Microsoft account security settings
+  username: ""                           # Your email address
+  oauth2:
+    client_id: ""                        # Application (client) ID from Azure AD
+    client_secret: ""                    # Client secret
+    tenant_id: ""                        # Directory (tenant) ID
 
 # Where to store emails and the SQLite index
 storage:
-  dir: ~/.local/share/email-classifier   # expanded to $HOME/.local/share/...
+  dir: ~/.local/share/email-classifier
 
 # Folders to skip during sync
 skip_folders:
@@ -27,6 +32,3 @@ skip_folders:
   - Trash
   - "[Gmail]/Trash"
   - "[Gmail]/Spam"
-
-# Optional: skip emails older than this date
-# skip_before: 2010-01-01
