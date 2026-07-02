@@ -5,10 +5,10 @@
         "homepage": "https://matrix.to/#/#agenix:nixos.org",
         "owner": "ryantm",
         "repo": "agenix",
-        "rev": "fcdea223397448d35d9b31f798479227e80183f6",
-        "sha256": "1d4m7hsq727q7ndjqmgyl8vkbkqjwps962ygmv2mcc5dbqzgn963",
+        "rev": "b027ee29d959fda4b60b57566d64c98a202e0feb",
+        "sha256": "1wlpvpj45qfixdzhmk2cgiwlkyaf8a5mjy2jp5lsx2wsxblclngm",
         "type": "tarball",
-        "url": "https://github.com/ryantm/agenix/archive/fcdea223397448d35d9b31f798479227e80183f6.tar.gz",
+        "url": "https://github.com/ryantm/agenix/archive/b027ee29d959fda4b60b57566d64c98a202e0feb.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "crate2nix": {
@@ -17,10 +17,10 @@
         "homepage": "https://nix-community.github.io/crate2nix/",
         "owner": "nix-community",
         "repo": "crate2nix",
-        "rev": "be31feae9a82c225c0fd1bdf978565dc452a483a",
-        "sha256": "14d0ymlrwk7dynv35qcw4xn0dylfpwjmf6f8znflbk2l6fk23l12",
+        "rev": "5e1ecfd2d15b34ec90c2e51fdffbe8116595a767",
+        "sha256": "1kgzi3r7714v957w2qnisc9axlrymrqaz5qqclzay1d83jzzp7nv",
         "type": "tarball",
-        "url": "https://github.com/nix-community/crate2nix/archive/be31feae9a82c225c0fd1bdf978565dc452a483a.tar.gz",
+        "url": "https://github.com/nix-community/crate2nix/archive/5e1ecfd2d15b34ec90c2e51fdffbe8116595a767.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "darwin": {
@@ -29,10 +29,10 @@
         "homepage": "https://nix-darwin.org",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "688427b1aab9afb478ca07989dc754fa543e03d5",
-        "sha256": "0pljn7d38crcdcpnsycbmvqczrpaml1illzrqxrm4i0zk3gr916i",
+        "rev": "ebec37af18215214173c98cf6356d0aca24a2585",
+        "sha256": "1s554xv08msaqbmkab8xzaj43kixffw6k8zw4hagnk0jvz6k9naj",
         "type": "tarball",
-        "url": "https://github.com/nix-darwin/nix-darwin/archive/688427b1aab9afb478ca07989dc754fa543e03d5.tar.gz",
+        "url": "https://github.com/nix-darwin/nix-darwin/archive/ebec37af18215214173c98cf6356d0aca24a2585.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "fenix": {
@@ -41,10 +41,10 @@
         "homepage": "",
         "owner": "nix-community",
         "repo": "fenix",
-        "rev": "6399553b7a300c77e7f07342904eb696a5b6bf9d",
-        "sha256": "09vcl0sf80b4nv8704igjmmfvarrnya66h8dcdnabisbmpn57aqb",
+        "rev": "df161b9bd5f8ff444b2c213cd45410b7da6da602",
+        "sha256": "0p0y00z3468klnhgbm7zhn10irqw1avc6kqw4a598k4jhpmg73pr",
         "type": "tarball",
-        "url": "https://github.com/nix-community/fenix/archive/6399553b7a300c77e7f07342904eb696a5b6bf9d.tar.gz",
+        "url": "https://github.com/nix-community/fenix/archive/df161b9bd5f8ff444b2c213cd45410b7da6da602.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "fonts": {
@@ -53,10 +53,10 @@
         "homepage": null,
         "owner": "denbeigh2000",
         "repo": "fonts",
-        "rev": "b049ab81b116ffc96b118094c4ee3d06bb3ec00d",
-        "sha256": "1q9yy4csskaaavgd1bam7hm1vz235dhxs249pxyck608qcs6yb0q",
+        "rev": "5b44894a13d3bfa9e7ea6367d6e3988a25a34d11",
+        "sha256": "06y0x4bq5v32qq7bh36ppqbzvrxjfqm9vrcwacwhlnk6r1ir5wz3",
         "type": "tarball",
-        "url": "https://github.com/denbeigh2000/fonts/archive/b049ab81b116ffc96b118094c4ee3d06bb3ec00d.tar.gz",
+        "url": "https://github.com/denbeigh2000/fonts/archive/5b44894a13d3bfa9e7ea6367d6e3988a25a34d11.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "home-manager": {
@@ -65,10 +65,10 @@
         "homepage": "https://nix-community.github.io/home-manager/",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "f63d0fe9d81d36e5fc95497217a72e02b8b7bcab",
-        "sha256": "1qr63a2izlp840ax3v31avji99yprw3rap2m8f1snfkxfnsh8syh",
+        "rev": "3ee51fbdac8c8bdfe1e7e1fcaba6520a563f394f",
+        "sha256": "13fmry1jd0na71fxhzms9qf3ybj6shgvnphq4p1akxxmv44gzq20",
         "type": "tarball",
-        "url": "https://github.com/nix-community/home-manager/archive/f63d0fe9d81d36e5fc95497217a72e02b8b7bcab.tar.gz",
+        "url": "https://github.com/nix-community/home-manager/archive/3ee51fbdac8c8bdfe1e7e1fcaba6520a563f394f.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nix-darwin": {
@@ -77,10 +77,10 @@
         "homepage": "https://nix-darwin.org",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "e95de00a471d07435e0527ff4db092c84998698e",
-        "sha256": "04chfpr63cpvbl6nl5d8x1nxrj5ds9h1ir48kr4mix503jq3ipqw",
+        "rev": "ebec37af18215214173c98cf6356d0aca24a2585",
+        "sha256": "1s554xv08msaqbmkab8xzaj43kixffw6k8zw4hagnk0jvz6k9naj",
         "type": "tarball",
-        "url": "https://github.com/nix-darwin/nix-darwin/archive/e95de00a471d07435e0527ff4db092c84998698e.tar.gz",
+        "url": "https://github.com/nix-darwin/nix-darwin/archive/ebec37af18215214173c98cf6356d0aca24a2585.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixgl": {
@@ -108,16 +108,29 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "e9183409c2be80e2cd9d633582fdab543bb8d084"
     },
+    "nixpkgs-terraform-providers-bin": {
+        "branch": "master",
+        "description": "auto-updating terraform providers for nix [maintainer=@zimbatm]",
+        "homepage": "",
+        "owner": "nix-community",
+        "repo": "nixpkgs-terraform-providers-bin",
+        "rev": "90bb3c602da9e5a897d72c697c443433e0c81bfd",
+        "sha256": "1f6nqc1i3qyf34bn6q8bnjskqdy39z8rzp649dr5xv1mwfgjc4kn",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/nixpkgs-terraform-providers-bin/archive/90bb3c602da9e5a897d72c697c443433e0c81bfd.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
+        "version": "3d9d667c5f669d4b93a86a42650aa78d06df16d5"
+    },
     "nixpkgs-unstable": {
         "branch": "nixos-unstable",
         "description": "Nix Packages collection & NixOS",
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "da5ad661ba4e5ef59ba743f0d112cbc30e474f32",
-        "sha256": "0w4fy3vk4qz46j8sla5d65xjs99q2vzgy0z16rfl3zlcr9zgybnf",
+        "rev": "b5aa0fbd538984f6e3d201be0005b4463d8b09f8",
+        "sha256": "1r0ixj83k41mmkl6xzdcgxgq2l0vkdw10ld234f8jlljyi9w5xd0",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/da5ad661ba4e5ef59ba743f0d112cbc30e474f32.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/b5aa0fbd538984f6e3d201be0005b4463d8b09f8.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixvim": {
@@ -126,10 +139,22 @@
         "homepage": "https://nix-community.github.io/nixvim",
         "owner": "nix-community",
         "repo": "nixvim",
-        "rev": "685d0be1fce70865c71108ef4105749dbd0957f3",
-        "sha256": "1jz4lk2p0j944ivhqsl70f0jakqd0x25bq5hmw1ps17383qykl22",
+        "rev": "68e314303bc60b8a58cdd2f361013809620b2473",
+        "sha256": "182k9q408svagsl0pagmssx7gqcym47g75d3x9m8y8rnj7x0pk2h",
         "type": "tarball",
-        "url": "https://github.com/nix-community/nixvim/archive/685d0be1fce70865c71108ef4105749dbd0957f3.tar.gz",
+        "url": "https://github.com/nix-community/nixvim/archive/68e314303bc60b8a58cdd2f361013809620b2473.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "opam2nix": {
+        "branch": "v1",
+        "description": "Generate nix expressions from opam packages",
+        "homepage": null,
+        "owner": "timbertson",
+        "repo": "opam2nix",
+        "rev": "d6823b9428515654157d2cbe59a808caaba08726",
+        "sha256": "15ns8ikjb28dsd3f98k28gfpbc80v0z6d9dfkbbb6id273xlnl4x",
+        "type": "tarball",
+        "url": "https://github.com/timbertson/opam2nix/archive/d6823b9428515654157d2cbe59a808caaba08726.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

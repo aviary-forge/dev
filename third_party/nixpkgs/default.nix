@@ -92,7 +92,7 @@ let
 
   nixpkgsUnstable = import dev.third_party.nix.nixpkgs-unstable commonNixpkgsArgs;
   unstableOverlay = final: prev: {
-    inherit (nixpkgsUnstable) llama-cpp;
+    inherit (nixpkgsUnstable) llama-cpp pi-coding-agent;
   };
 
   overridesOverlay =

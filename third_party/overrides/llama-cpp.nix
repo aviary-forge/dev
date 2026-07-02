@@ -1,9 +1,9 @@
 {
   llama-cpp,
   fetchFromGitHub,
-  version ? "9159",
-  hash ? "sha256-y69ZmVFxo7bQvLTT6/GWwkb5j4Ll8eXSVXFpfXVkvyg=",
-  npmDepsHash ? "sha256-WaEePrEZ7O/7deP2KJhe0AwiSKYA8HOqETmMHUkmBe0=",
+  version ? "9850",
+  hash ? "sha256-3+eHH0Ql6blNU8hqufdnUBF5BBI5qtlHwzZisvIDRow=",
+  npmDepsHash ? "sha256-X1DZgmhS/zHTqDT5zq0kywwntthcJ9vRXeqyO3zz6UU=",
 
   blasSupport ? true,
   cudaSupport ? true,
