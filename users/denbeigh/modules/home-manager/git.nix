@@ -1,7 +1,7 @@
 { config, ... }:
 
 let
-  inherit (config.dev.denbeigh) work;
+  inherit (config.dev.denbeigh.machine) work;
   workEmail = "denbeigh.stevens@discordapp.com";
   personalEmail = "denbeigh@denbeighstevens.com";
 

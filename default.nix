@@ -87,15 +87,18 @@ readTree.fix (
 
     systems =
       let
-        mkSystemDiscovery = isSystemPredicate:
+        mkSystemDiscovery =
+          isSystemPredicate:
           let
-            targets' = readTree.gather isSystemPredicate self;
+            inherit (builtins) concatStringsSep filter listToAttrs;
 
+            targets = readTree.gather isSystemPredicate self;
             byPath =
               let
-                paths = map (t:
+                paths = map (
+                  t:
                   let
-                    p = builtins.concatStringsSep "." t.__readTree;
+                    p = concatStringsSep "." t.__readTree;
                   in
                   if p != "" then
                     {
@@ -104,19 +107,24 @@ readTree.fix (
                     }
                   else
                     null
-                ) targets';
+                ) targets;
               in
-              builtins.listToAttrs (builtins.filter (x: x != null) paths);
+              listToAttrs (filter (x: x != null) paths);
           in
           {
-            targets = targets';
-            byPath = byPath;
+            inherit targets byPath;
           };
       in
       {
-        nixos = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "nixos-system");
-        darwin = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "darwin-system");
-        "home-manager" = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "home-manager-system");
+        nixos = mkSystemDiscovery (
+          target: target ? __devAttrType && target.__devAttrType == "nixos-system"
+        );
+        darwin = mkSystemDiscovery (
+          target: target ? __devAttrType && target.__devAttrType == "darwin-system"
+        );
+        "home-manager" = mkSystemDiscovery (
+          target: target ? __devAttrType && target.__devAttrType == "home-manager-system"
+        );
       };
 
     ownership =

@@ -1,7 +1,17 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  inherit (lib) mkEnableOption mkIf mkOption types;
+  inherit (lib)
+    mkEnableOption
+    mkIf
+    mkOption
+    types
+    ;
 
   cfg = config.dev.denbeigh.nix-cache;
 in
@@ -11,7 +21,7 @@ in
     enable = mkOption {
       type = types.bool;
       # This is configured at the system level on NixOS machines.
-      default = !config.dev.denbeigh.isNixOS;
+      default = !config.dev.denbeigh.machine.isNixOS;
       description = ''
         Whether to enable personal nix cache.
       '';

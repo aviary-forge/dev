@@ -37,6 +37,7 @@ dev.nix.nixos.eval (
         curl
         zsh
         llama-cpp-server
+        opencode
       ];
 
       services.openssh = {
@@ -104,13 +105,13 @@ dev.nix.nixos.eval (
       boot.loader.systemd-boot.enable = true;
       boot.loader.efi.canTouchEfiVariables = true;
 
-      # users.users.denbeigh = {
-      #   isNormalUser = true;
-      #   description = "Alice";
-      #   extraGroups = [ "wheel" ]; # Sudo access
-      #   # shell = pkgs.zsh;
-      #   home = "/home/denbeigh";
-      # };
+      users.users.denbeigh = {
+        isNormalUser = true;
+        description = "Alice";
+        extraGroups = [ "wheel" ]; # Sudo access
+        # shell = pkgs.zsh;
+        home = "/home/denbeigh";
+      };
 
       users.groups.denbeigh = { };
 

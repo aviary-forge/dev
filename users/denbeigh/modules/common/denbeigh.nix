@@ -5,6 +5,7 @@ let
   cfg = config.dev.denbeigh;
 in
 {
+  imports = [./variables.nix];
   options.dev.denbeigh = {
     user = {
       enable = mkOption {
@@ -58,9 +59,13 @@ in
       users.${cfg.user.username} = {
         imports = [ ../home-manager/standard.nix ];
 
-        dev.denbeigh = {
-          inherit (cfg.machine) graphical hostname work isNixOS;
-          inherit (cfg.user) username keys;
+          dev.denbeigh = {
+            machine = {
+              # work = false;
+              inherit (cfg.machine) work isNixOS graphical hostname;
+              inherit (cfg.user) username;
+            };
+          inherit (cfg.user) keys;
         };
       };
     };
