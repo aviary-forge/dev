@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
 
 from email_trainer.config import Config
 
@@ -97,11 +98,14 @@ def run_embed(args: argparse.Namespace) -> None:
 
     count_in_current_run = 0
 
-    def _encode_batch() -> None:
-        """Encode ``batch_texts`` and append results, then clear the batch."""
+    def _encode_batch() -> int:
+        """Encode ``batch_texts`` and append results, then clear the batch.
+
+        Returns the number of items that were encoded.
+        """
         nonlocal batch_ids, batch_texts
         if not batch_ids:
-            return
+            return 0
         embs = model.encode(
             batch_texts,
             batch_size=batch_size,
@@ -110,11 +114,36 @@ def run_embed(args: argparse.Namespace) -> None:
         )
         # embs shape: (len(batch), 1024)
         all_embeddings.append(embs)
+        n = len(batch_ids)
         all_ids.extend(batch_ids)
         batch_ids = []
         batch_texts = []
+        return n
 
-    print(f"Encoding emails…  (batch_size={batch_size})", file=sys.stderr)
+    # ── Count total lines for progress estimation ──
+    with open(texts_path) as _line_count_f:
+        total_lines = sum(1 for _ in _line_count_f)
+    total_to_process = total_lines - len(already_embedded)
+    if limit is not None:
+        total_to_process = min(total_to_process, limit)
+
+    if total_to_process <= 0:
+        print("No new emails to embed.  Nothing to do.", file=sys.stderr)
+        return
+
+    pbar = tqdm(
+        total=total_to_process,
+        unit="email",
+        desc="Embedding",
+        bar_format=(
+            "{desc}: {percentage:3.0f}%|"
+            "{bar}|"
+            " {n_fmt}/{total_fmt} [{elapsed}<{remaining}, "
+            "{rate_fmt} "
+            "]"
+        ),
+        file=sys.stderr,
+    )
 
     with open(texts_path) as f:
         for line in f:
@@ -138,19 +167,15 @@ def run_embed(args: argparse.Namespace) -> None:
 
             # Flush the batch when it reaches the target size
             if len(batch_ids) >= batch_size:
-                _encode_batch()
-                if count_in_current_run % 200 == 0:
-                    print(
-                        f"  {count_in_current_run} processed…",
-                        file=sys.stderr,
-                    )
+                n = _encode_batch()
+                pbar.update(n)
+                pbar.set_description(f"Embedding  (batch={batch_size})")
 
         # Flush any remaining texts
-        _encode_batch()
+        n = _encode_batch()
+        pbar.update(n)
 
-    if count_in_current_run == 0:
-        print("No new emails to embed.  Nothing to do.", file=sys.stderr)
-        return
+    pbar.close()
 
     # ── Concatenate into single arrays ──
     embeddings_array = np.vstack(all_embeddings).astype(np.float32)
