@@ -11,6 +11,12 @@ and writes::
     └── review_dump.txt       # human-readable dump for Phase 3 validation
 """
 
+# pyright: reportAttributeAccessIssue = false
+# numpy 2.x stubs don't resolve boolean-indexed ndarray types properly.
+# All .mean()/np.mean() calls on masked sub-arrays are valid at runtime.
+
+
+
 import argparse
 import json
 import re
@@ -240,6 +246,66 @@ def _silhouette_stats(
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Inter-cluster similarity
+# ---------------------------------------------------------------------------
+
+
+def _find_similar_clusters(
+    labels: np.ndarray,
+    embeddings: np.ndarray,
+    similarity_threshold: float = 0.65,
+    max_pairs: int = 30,
+) -> list[dict]:
+    """Find pairs of clusters whose centroid cosine similarity exceeds a threshold.
+
+    Returns a list of dicts sorted by similarity descending::
+
+        [{
+            "cluster_a": int,
+            "cluster_b": int,
+            "similarity": float,    # cosine similarity (0-1)
+            "size_a": int,
+            "size_b": int,
+        }, ...]
+
+    Emissions are L2-normalized (bge-m3 pipeline), so Euclidean and cosine
+    produce the same ordering — centroid dot product *is* cosine similarity.
+    """
+    unique_labels = sorted(set(labels) - {-1})
+    if len(unique_labels) < 2:
+        return []
+
+    # Compute centroids
+    centroids: dict[int, np.ndarray] = {}
+    for cl in unique_labels:
+        mask = labels == cl
+        centroids[cl] = embeddings[mask].mean(axis=0)
+        # Re-normalize (mean of unit vectors isn't unit-length)
+        norm = np.linalg.norm(centroids[cl])
+        if norm > 0:
+            centroids[cl] = centroids[cl] / norm
+
+    pairs: list[dict] = []
+    for i in range(len(unique_labels)):
+        for j in range(i + 1, len(unique_labels)):
+            ci, cj = unique_labels[i], unique_labels[j]
+            sim = float(np.dot(centroids[ci], centroids[cj]))
+            if sim >= similarity_threshold:
+                pairs.append(
+                    {
+                        "cluster_a": ci,
+                        "cluster_b": cj,
+                        "similarity": round(sim, 4),
+                        "size_a": int((labels == ci).sum()),
+                        "size_b": int((labels == cj).sum()),
+                    }
+                )
+
+    pairs.sort(key=lambda x: -x["similarity"])
+    return pairs[:max_pairs]
+
+
 def _build_cluster_summaries(
     labels: np.ndarray,
     embeddings: np.ndarray,
@@ -374,19 +440,128 @@ def _write_review_dump(summary: dict, path: Path) -> None:
             lines.append(f"      {snippet}…")
         lines.append("")
 
+    # ── Similar cluster pairs ──────────────────────────────
+    similar_pairs = meta.get("similar_clusters", [])
+    if similar_pairs:
+        lines.append("=" * 72)
+        lines.append("SIMILAR CLUSTER PAIRS (centroid cosine similarity >= threshold)")
+        lines.append("=" * 72)
+        lines.append("")
+        lines.append(
+            "  These pairs look alike — consider whether they should be merged."
+        )
+        lines.append("  Merge in summary.json by assigning both clusters the same label.")
+        lines.append("")
+        for pair in similar_pairs:
+            a, b = pair["cluster_a"], pair["cluster_b"]
+            sim = pair["similarity"]
+            sa, sb = pair["size_a"], pair["size_b"]
+            lines.append(
+                f"  Cluster {a} ({sa})  ↔  Cluster {b} ({sb})  "
+                f"sim={sim:.3f}"
+            )
+        lines.append("")
+
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
+
+def _clustering_pipeline(
+    args: argparse.Namespace,
+    labels: np.ndarray,
+    embeddings: np.ndarray,
+    email_ids: np.ndarray,
+    email_map: dict[int, dict],
+    n_total: int,
+    output_dir: Path,
+    algorithm_metadata: dict,
+) -> None:
+    """Shared post-clustering work: silhouette, similarity, summaries, write.
+
+    *algorithm_metadata* is a dict of algorithm-specific fields to merge
+    into the output metadata (e.g. HDBSCAN params or KMeans n_clusters).
+    """
+    n_clusters = len(set(labels) - {-1})
+    n_noise = int((labels == -1).sum())
+    print(
+        f"  Found {n_clusters} cluster{'s' if n_clusters != 1 else ''}, "
+        f"{n_noise} noise points "
+        f"({n_noise / n_total * 100:.1f}%)",
+        file=sys.stderr,
+    )
+
+    # --- Silhouette (non-noise only) ---
+    sil_mean, sil_min, sil_max = _silhouette_stats(embeddings, labels)
+    if sil_mean is not None:
+        print(
+            f"  Silhouette: mean={sil_mean:.3f}  min={sil_min:.3f}  max={sil_max:.3f}",
+            file=sys.stderr,
+        )
+    else:
+        print("  Silhouette: N/A (< 2 clusters or all noise)", file=sys.stderr)
+
+    # --- Inter-cluster similarity ---
+    print("Finding similar cluster pairs\u2026", file=sys.stderr)
+    similar_pairs = _find_similar_clusters(
+        labels,
+        embeddings,
+        similarity_threshold=0.65,
+        max_pairs=30,
+    )
+    if similar_pairs:
+        print(
+            f"  Found {len(similar_pairs)} similar cluster pair"
+            f"{'s' if len(similar_pairs) != 1 else ''} "
+            f"(cosine sim >= 0.65)",
+            file=sys.stderr,
+        )
+    else:
+        print("  No similar cluster pairs found at 0.65 threshold", file=sys.stderr)
+
+    # --- Build cluster summaries ---
+    print("Building cluster summaries\u2026", file=sys.stderr)
+    summary = _build_cluster_summaries(
+        labels,
+        embeddings,
+        email_ids,
+        email_map,
+        n_samples=args.n_samples,
+    )
+
+    summary["metadata"] = {
+        **algorithm_metadata,
+        "n_clusters": n_clusters,
+        "n_noise": n_noise,
+        "n_total": n_total,
+        "silhouette_mean": sil_mean,
+        "silhouette_min": sil_min,
+        "silhouette_max": sil_max,
+        "similar_clusters": similar_pairs,
+    }
+
+    # --- Write outputs ---
+    output_dir.mkdir(parents=True, exist_ok=True)
+    labels_path = output_dir / "cluster_labels.npy"
+    summary_path = output_dir / "summary.json"
+    review_path = output_dir / "review_dump.txt"
+
+    np.save(labels_path, labels)
+    print(f"  Labels:     {labels_path}  shape={labels.shape}", file=sys.stderr)
+
+    with open(summary_path, "w") as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
+    print(f"  Summary:    {summary_path}", file=sys.stderr)
+
+    _write_review_dump(summary, review_path)
+    print(f"  Review:     {review_path}", file=sys.stderr)
+
+    print("\nDone.", file=sys.stderr)
 
 
-def run_cluster(args: argparse.Namespace) -> None:
-    """Execute the ``cluster`` subcommand — Phase 3 of the pipeline.
+def _load_inputs(args: argparse.Namespace) -> tuple:
+    """Validate and load embeddings + email map.
 
-    Reads the embeddings produced by Phase 2, clusters them via HDBSCAN
-    (or k-means), and writes three output files.
+    Returns ``(config, email_ids, embeddings, email_map, n_total)``.
     """
     kwargs = {}
     if args.storage_dir:
@@ -394,12 +569,10 @@ def run_cluster(args: argparse.Namespace) -> None:
     config = Config(**kwargs)
 
     embeddings_dir = config.embeddings_dir_resolved
-    clusters_dir = config.clusters_dir_resolved
     texts_path = config.extracted_dir_resolved / "texts.jsonl"
     ids_path = embeddings_dir / "email_ids.npy"
     embs_path = embeddings_dir / "embeddings.npy"
 
-    # ── Validate inputs ─────────────────────────────────────
     for p, label in (
         (ids_path, "email_ids.npy"),
         (embs_path, "embeddings.npy"),
@@ -407,12 +580,12 @@ def run_cluster(args: argparse.Namespace) -> None:
     ):
         if not p.exists():
             print(
-                f"Error: {label} not found at {p} — run `email-trainer embed` first.",
+                f"Error: {label} not found at {p} -- run `email-trainer embed` first.",
                 file=sys.stderr,
             )
             sys.exit(1)
 
-    # ── Load embeddings ─────────────────────────────────────
+    # --- Load embeddings ---
     print("Loading embeddings\u2026", file=sys.stderr)
     email_ids = np.load(ids_path)
     embeddings = np.load(embs_path)
@@ -429,100 +602,92 @@ def run_cluster(args: argparse.Namespace) -> None:
         embeddings = embeddings[:limit]
         n_total = limit
 
-    # ── Load email texts for sample enrichment ──────────────
+    # --- Load email texts for sample enrichment ---
     print("Loading email texts\u2026", file=sys.stderr)
     email_map = _load_email_map(texts_path)
     print(f"  Loaded {len(email_map)} email records", file=sys.stderr)
 
-    # ── Run clustering ──────────────────────────────────────
-    algorithm = args.algorithm
+    return config, email_ids, embeddings, email_map, n_total
+
+
+def _output_dir(config: Config, run_name: str | None) -> Path:
+    """Return the output directory, with optional run-name subdirectory."""
+    base = config.clusters_dir_resolved
+    if run_name:
+        return base / run_name
+    return base
+
+
+def run_hdbscan(args: argparse.Namespace) -> None:
+    """Cluster embeddings with HDBSCAN and write outputs."""
+    config, email_ids, embeddings, email_map, n_total = _load_inputs(args)
+    out_dir = _output_dir(config, args.run_name)
+
     print(
-        f"Clustering with {algorithm} (min_cluster_size={args.min_cluster_size})\u2026",
+        f"Clustering with HDBSCAN "
+        f"(min_cluster_size={args.min_cluster_size}, "
+        f"min_samples={args.min_samples}, "
+        f"epsilon={args.cluster_selection_epsilon})\u2026",
         file=sys.stderr,
     )
 
-    if algorithm == "hdbscan":
-        clusterer = HDBSCAN(
-            min_cluster_size=args.min_cluster_size,
-            min_samples=args.min_samples,
-            cluster_selection_epsilon=args.cluster_selection_epsilon,
-            cluster_selection_method=args.cluster_selection_method,
-            metric="euclidean",
-        )
-    else:
-        # k-means
-        if args.n_clusters is None:
-            print(
-                "Error: --n-clusters is required when --algorithm=kmeans.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        clusterer = KMeans(
-            n_clusters=args.n_clusters,
-            init="k-means++",
-            n_init="auto",
-            random_state=42,
-        )
-
+    clusterer = HDBSCAN(
+        min_cluster_size=args.min_cluster_size,
+        min_samples=args.min_samples,
+        cluster_selection_epsilon=args.cluster_selection_epsilon,
+        cluster_selection_method=args.cluster_selection_method,
+        metric="euclidean",
+        copy=True,
+    )
     labels = clusterer.fit_predict(embeddings)
 
-    n_clusters = len(set(labels) - {-1})
-    n_noise = int((labels == -1).sum())
-    print(
-        f"  Found {n_clusters} cluster{'s' if n_clusters != 1 else ''}, "
-        f"{n_noise} noise points "
-        f"({n_noise / n_total * 100:.1f}%)",
-        file=sys.stderr,
-    )
-
-    # ── Silhouette (non-noise only) ─────────────────────────
-    sil_mean, sil_min, sil_max = _silhouette_stats(embeddings, labels)
-    if sil_mean is not None:
-        print(
-            f"  Silhouette: mean={sil_mean:.3f}  min={sil_min:.3f}  max={sil_max:.3f}",
-            file=sys.stderr,
-        )
-    else:
-        print("  Silhouette: N/A (< 2 clusters or all noise)", file=sys.stderr)
-
-    # ── Build cluster summaries ─────────────────────────────
-    print("Building cluster summaries\u2026", file=sys.stderr)
-    summary = _build_cluster_summaries(
+    _clustering_pipeline(
+        args,
         labels,
         embeddings,
         email_ids,
         email_map,
-        n_samples=args.n_samples,
+        n_total,
+        out_dir,
+        algorithm_metadata={
+            "algorithm": "hdbscan",
+            "min_cluster_size": args.min_cluster_size,
+            "min_samples": args.min_samples,
+            "cluster_selection_epsilon": args.cluster_selection_epsilon,
+            "cluster_selection_method": args.cluster_selection_method,
+        },
     )
 
-    summary["metadata"] = {
-        "algorithm": algorithm,
-        "min_cluster_size": args.min_cluster_size,
-        "min_samples": args.min_samples,
-        "cluster_selection_epsilon": args.cluster_selection_epsilon,
-        "cluster_selection_method": args.cluster_selection_method,
-        "n_clusters": n_clusters,
-        "n_noise": n_noise,
-        "n_total": n_total,
-        "silhouette_mean": sil_mean,
-        "silhouette_min": sil_min,
-        "silhouette_max": sil_max,
-    }
 
-    # ── Write outputs ───────────────────────────────────────
-    clusters_dir.mkdir(parents=True, exist_ok=True)
-    labels_path = clusters_dir / "cluster_labels.npy"
-    summary_path = clusters_dir / "summary.json"
-    review_path = clusters_dir / "review_dump.txt"
+def run_kmeans(args: argparse.Namespace) -> None:
+    """Cluster embeddings with K-means and write outputs."""
+    config, email_ids, embeddings, email_map, n_total = _load_inputs(args)
+    out_dir = _output_dir(config, args.run_name)
 
-    np.save(labels_path, labels)
-    print(f"  Labels:     {labels_path}  shape={labels.shape}", file=sys.stderr)
+    print(
+        f"Clustering with K-means (n_clusters={args.n_clusters})\u2026",
+        file=sys.stderr,
+    )
 
-    with open(summary_path, "w") as f:
-        json.dump(summary, f, indent=2, ensure_ascii=False)
-    print(f"  Summary:    {summary_path}", file=sys.stderr)
+    clusterer = KMeans(
+        n_clusters=args.n_clusters,
+        init="k-means++",
+        n_init="auto",
+        random_state=42,
+    )
+    labels = clusterer.fit_predict(embeddings)
 
-    _write_review_dump(summary, review_path)
-    print(f"  Review:     {review_path}", file=sys.stderr)
+    _clustering_pipeline(
+        args,
+        labels,
+        embeddings,
+        email_ids,
+        email_map,
+        n_total,
+        out_dir,
+        algorithm_metadata={
+            "algorithm": "kmeans",
+            "n_clusters": args.n_clusters,
+        },
+    )
 
-    print("\nDone.", file=sys.stderr)

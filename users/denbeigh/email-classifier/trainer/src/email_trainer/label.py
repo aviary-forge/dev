@@ -162,8 +162,13 @@ def run_label(args: argparse.Namespace) -> None:
         kwargs["storage_dir"] = args.storage_dir
     config = Config(**kwargs)
 
-    summary_path = config.clusters_dir_resolved / "summary.json"
-    labels_path = config.clusters_dir_resolved / "labels.json"
+    cluster_dir = config.clusters_dir_resolved
+    if args.run_name:
+        cluster_dir = cluster_dir / args.run_name
+        print(f"Using cluster run: {cluster_dir}", file=sys.stderr)
+
+    summary_path = cluster_dir / "summary.json"
+    labels_path = cluster_dir / "labels.json"
 
     # ── Validate inputs ────────────────────────────────────
     if not summary_path.exists():

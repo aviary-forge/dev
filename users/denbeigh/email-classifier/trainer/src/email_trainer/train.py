@@ -43,8 +43,11 @@ def _load_training_data(
     config: Config,
     noise_label: str = "other",
     limit_labels: int | None = None,
+    cluster_dir: Path | None = None,
 ) -> tuple[list[str], list[str], dict[str, int], dict[str, int]]:
     """Merge cluster pipeline artifacts into a training-ready dataset.
+
+    *cluster_dir* overrides the clusters directory (for ``--cluster-run``).
 
     Returns:
         A 4-tuple ``(texts, label_names, label_map, label_counts)`` where:
@@ -53,11 +56,12 @@ def _load_training_data(
         - *label_map* — ``{label_name: int_id}`` (sorted alphabetically)
         - *label_counts* — ``{label_name: count}`` for the training subset
     """
+    cd = cluster_dir or config.clusters_dir_resolved
     paths = (
         config.extracted_dir_resolved / "texts.jsonl",
         config.embeddings_dir_resolved / "email_ids.npy",
-        config.clusters_dir_resolved / "cluster_labels.npy",
-        config.clusters_dir_resolved / "labels.json",
+        cd / "cluster_labels.npy",
+        cd / "labels.json",
     )
 
     texts_path, ids_path, clabels_path, labels_json_path = paths
@@ -394,12 +398,19 @@ def run_train(args: argparse.Namespace) -> None:
         )
         sys.exit(1)
 
+    # ── Resolve cluster run directory ──
+    cluster_dir: Path | None = None
+    if args.cluster_run:
+        cluster_dir = config.clusters_dir_resolved / args.cluster_run
+        print(f"Using cluster run: {cluster_dir}", file=sys.stderr)
+
     # ── Load and prepare data ──
     print("Loading training data…", file=sys.stderr)
     texts, label_names, label_map, label_counts = _load_training_data(
         config,
         noise_label=args.noise_label,
         limit_labels=args.limit_labels,
+        cluster_dir=cluster_dir,
     )
     y = [label_map[lbl] for lbl in label_names]
 

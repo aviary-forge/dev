@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from email_trainer.clean_text import clean_email_text
-from email_trainer.cluster import run_cluster
+from email_trainer.cluster import run_hdbscan, run_kmeans
 from email_trainer.config import Config
 from email_trainer.db import Database
 from email_trainer.embed import run_embed
@@ -59,6 +59,11 @@ def _add_label_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Print each label as it's generated",
     )
     p.add_argument(
+        "--run-name",
+        default=None,
+        help=("Cluster run subdirectory to read from (e.g. experiment-1). Default: clusters/"),
+    )
+    p.add_argument(
         "--storage-dir",
         default="",
         help="Override storage root directory",
@@ -66,66 +71,118 @@ def _add_label_parser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
-    """Register the ``cluster`` subcommand."""
+    """Register the ``cluster`` parent subcommand with nested algorithm parsers."""
     p = subparsers.add_parser(
         "cluster",
-        help="Cluster embeddings using HDBSCAN or k-means (Phase 3)",
+        help="Cluster embeddings using HDBSCAN or K-means (Phase 3)",
         description=(
-            "Load embeddings from Phase 2, cluster them via HDBSCAN "
-            "(or k-means as a configurable fallback), and write "
-            "cluster labels, a structured summary for Phase 4, and "
-            "a human-readable review dump."
+            "Load embeddings from Phase 2 and cluster them. "
+            "Run ``cluster hdbscan`` or ``cluster kmeans`` for algorithm-specific flags."
         ),
     )
-    p.add_argument(
-        "--algorithm",
-        choices=("hdbscan", "kmeans"),
-        default="hdbscan",
-        help="Clustering algorithm (default: hdbscan)",
+    cluster_subparsers = p.add_subparsers(
+        dest="cluster_subcommand",
+        title="Algorithms",
+        description="Select the clustering algorithm to use.",
+        required=True,
     )
-    p.add_argument(
+
+    # ── hdbscan ──
+    h = cluster_subparsers.add_parser(
+        "hdbscan",
+        help="Density-based clustering (HDBSCAN)",
+        description=(
+            "Cluster embeddings using HDBSCAN. Finds natural density-based "
+            "clusters without requiring a fixed K. Points that don't fit any "
+            "cluster are labelled as noise (-1)."
+        ),
+    )
+    h.add_argument(
         "--min-cluster-size",
         type=int,
-        default=15,
-        help="HDBSCAN minimum cluster size (default: 15)",
+        default=100,
+        help="Minimum cluster size (default: 100)",
     )
-    p.add_argument(
+    h.add_argument(
         "--min-samples",
         type=int,
-        default=None,
-        help=("HDBSCAN min_samples (default: same as --min-cluster-size)"),
+        default=25,
+        help=("min_samples (default: 25; lower than --min-cluster-size to encourage merging)"),
     )
-    p.add_argument(
+    h.add_argument(
         "--cluster-selection-epsilon",
         type=float,
         default=0.0,
-        help="HDBSCAN cluster selection epsilon (default: 0.0)",
+        help=(
+            "Cluster selection epsilon (default: 0.0). Values >0 merge "
+            "close clusters — start at 0.3 and increment carefully. "
+            "WARNING: sklearn 1.9.0 has a known crash in epsilon_search "
+            "with certain data distributions at epsilon > 0."
+        ),
     )
-    p.add_argument(
+    h.add_argument(
         "--cluster-selection-method",
         choices=("eom", "leaf"),
         default="eom",
-        help="HDBSCAN cluster selection method (default: eom)",
+        help="Cluster selection method (default: eom)",
     )
-    p.add_argument(
-        "--n-clusters",
-        type=int,
-        default=None,
-        help=("Number of clusters for k-means (required if --algorithm=kmeans)"),
-    )
-    p.add_argument(
+    h.add_argument(
         "--n-samples",
         type=int,
         default=20,
-        help="Samples per cluster for human review / LLM labeling (default: 20)",
+        help="Samples per cluster for review / labeling (default: 20)",
     )
-    p.add_argument(
+    h.add_argument(
         "--limit",
         type=int,
         default=None,
         help="Max emails to process (for testing)",
     )
-    p.add_argument(
+    h.add_argument(
+        "--run-name",
+        default=None,
+        help="Subdirectory for output (e.g. clusters/experiment-1). Default: clusters/",
+    )
+    h.add_argument(
+        "--storage-dir",
+        default="",
+        help="Override storage root directory",
+    )
+
+    # ── kmeans ──
+    k = cluster_subparsers.add_parser(
+        "kmeans",
+        help="Fixed-K clustering (K-means)",
+        description=(
+            "Cluster embeddings using K-means with k-means++ initialization. "
+            "Requires --n-clusters. All points are assigned to a cluster "
+            "(no noise label). Best for enforcing even category spread."
+        ),
+    )
+    k.add_argument(
+        "--n-clusters",
+        type=int,
+        required=True,
+        help="Number of clusters (required)",
+    )
+    k.add_argument(
+        "--n-samples",
+        type=int,
+        default=20,
+        help="Samples per cluster for review / labeling (default: 20)",
+    )
+    k.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max emails to process (for testing)",
+    )
+    k.add_argument(
+        "--run-name",
+        default=None,
+        help="Subdirectory for output (e.g. clusters/experiment-1). Default: clusters/",
+    )
+    k.add_argument(
         "--storage-dir",
         default="",
         help="Override storage root directory",
@@ -241,6 +298,13 @@ def _add_train_parser(subparsers: argparse._SubParsersAction) -> None:
         "--run-name",
         default=None,
         help="Name for this training run (default: auto-generated timestamp)",
+    )
+    p.add_argument(
+        "--cluster-run",
+        default=None,
+        help=(
+            "Cluster run subdirectory to read labels from (e.g. experiment-1). Default: clusters/"
+        ),
     )
     p.add_argument(
         "--test-split",
@@ -488,7 +552,16 @@ def main(argv: list[str] | None = None) -> None:
     elif args.subcommand == "embed":
         run_embed(args)
     elif args.subcommand == "cluster":
-        run_cluster(args)
+        if args.cluster_subcommand == "hdbscan":
+            run_hdbscan(args)
+        elif args.cluster_subcommand == "kmeans":
+            run_kmeans(args)
+        else:
+            print(
+                f"Unknown cluster algorithm: {args.cluster_subcommand}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
     elif args.subcommand == "label":
         run_label(args)
     elif args.subcommand == "train":
