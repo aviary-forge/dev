@@ -139,6 +139,11 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Max emails to process (for testing)",
     )
     h.add_argument(
+        "--embed-run",
+        default=None,
+        help=("Embed run-name to read from (e.g. gte-small). Default: embeddings/"),
+    )
+    h.add_argument(
         "--run-name",
         default=None,
         help="Subdirectory for output (e.g. clusters/experiment-1). Default: clusters/",
@@ -176,6 +181,11 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
         type=int,
         default=None,
         help="Max emails to process (for testing)",
+    )
+    k.add_argument(
+        "--embed-run",
+        default=None,
+        help=("Embed run-name to read from (e.g. gte-small). Default: embeddings/"),
     )
     k.add_argument(
         "--run-name",
@@ -265,6 +275,11 @@ def _add_embed_parser(subparsers: argparse._SubParsersAction) -> None:
         type=int,
         default=None,
         help="Max emails to process (for testing)",
+    )
+    p.add_argument(
+        "--run-name",
+        default=None,
+        help=("Subdirectory for output (e.g. embeddings/gte-small). Default: embeddings/"),
     )
     p.add_argument(
         "--storage-dir",

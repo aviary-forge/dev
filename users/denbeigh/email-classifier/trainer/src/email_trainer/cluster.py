@@ -15,8 +15,6 @@ and writes::
 # numpy 2.x stubs don't resolve boolean-indexed ndarray types properly.
 # All .mean()/np.mean() calls on masked sub-arrays are valid at runtime.
 
-
-
 import argparse
 import json
 import re
@@ -447,23 +445,17 @@ def _write_review_dump(summary: dict, path: Path) -> None:
         lines.append("SIMILAR CLUSTER PAIRS (centroid cosine similarity >= threshold)")
         lines.append("=" * 72)
         lines.append("")
-        lines.append(
-            "  These pairs look alike — consider whether they should be merged."
-        )
+        lines.append("  These pairs look alike — consider whether they should be merged.")
         lines.append("  Merge in summary.json by assigning both clusters the same label.")
         lines.append("")
         for pair in similar_pairs:
             a, b = pair["cluster_a"], pair["cluster_b"]
             sim = pair["similarity"]
             sa, sb = pair["size_a"], pair["size_b"]
-            lines.append(
-                f"  Cluster {a} ({sa})  ↔  Cluster {b} ({sb})  "
-                f"sim={sim:.3f}"
-            )
+            lines.append(f"  Cluster {a} ({sa})  ↔  Cluster {b} ({sb})  sim={sim:.3f}")
         lines.append("")
 
     path.write_text("\n".join(lines), encoding="utf-8")
-
 
 
 def _clustering_pipeline(
@@ -569,6 +561,9 @@ def _load_inputs(args: argparse.Namespace) -> tuple:
     config = Config(**kwargs)
 
     embeddings_dir = config.embeddings_dir_resolved
+    if getattr(args, "embed_run", None):
+        embeddings_dir = embeddings_dir / args.embed_run
+        print(f"Using embed run: {embeddings_dir}", file=sys.stderr)
     texts_path = config.extracted_dir_resolved / "texts.jsonl"
     ids_path = embeddings_dir / "email_ids.npy"
     embs_path = embeddings_dir / "embeddings.npy"
@@ -637,7 +632,7 @@ def run_hdbscan(args: argparse.Namespace) -> None:
         cluster_selection_epsilon=args.cluster_selection_epsilon,
         cluster_selection_method=args.cluster_selection_method,
         metric="euclidean",
-        copy=True,
+        copy=True,  # type: ignore[arg-type]  # sklearn stubs type copy as str ('warn' special value)
     )
     labels = clusterer.fit_predict(embeddings)
 
@@ -690,4 +685,3 @@ def run_kmeans(args: argparse.Namespace) -> None:
             "n_clusters": args.n_clusters,
         },
     )
-

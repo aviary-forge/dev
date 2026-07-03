@@ -35,6 +35,8 @@ def run_embed(args: argparse.Namespace) -> None:
 
     model_path = Path(args.model_path).expanduser().resolve()
     embeddings_dir = config.embeddings_dir_resolved
+    if args.run_name:
+        embeddings_dir = embeddings_dir / args.run_name
     texts_path = config.extracted_dir_resolved / "texts.jsonl"
     ids_path = embeddings_dir / "email_ids.npy"
     embs_path = embeddings_dir / "embeddings.npy"
