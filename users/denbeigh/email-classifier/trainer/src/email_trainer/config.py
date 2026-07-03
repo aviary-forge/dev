@@ -25,6 +25,7 @@ class Config:
     embeddings_dir: str = ""
     extracted_dir: str = ""
     clusters_dir: str = ""
+    models_dir: str = ""
 
     def __post_init__(self) -> None:
         # Resolve storage_dir first so we can derive the rest.
@@ -37,6 +38,7 @@ class Config:
             ("embeddings_dir", "embeddings"),
             ("extracted_dir", "extracted"),
             ("clusters_dir", "clusters"),
+            ("models_dir", "models"),
         ]:
             val = getattr(self, attr)
             if not val:
@@ -62,3 +64,7 @@ class Config:
     @property
     def clusters_dir_resolved(self) -> Path:
         return Path(os.path.expanduser(self.clusters_dir)).resolve()
+
+    @property
+    def models_dir_resolved(self) -> Path:
+        return Path(os.path.expanduser(self.models_dir)).resolve()

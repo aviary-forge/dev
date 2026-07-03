@@ -14,6 +14,7 @@ from email_trainer.config import Config
 from email_trainer.db import Database
 from email_trainer.embed import run_embed
 from email_trainer.label import run_label
+from email_trainer.train import run_train
 
 
 def _add_label_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -215,6 +216,97 @@ def _add_embed_parser(subparsers: argparse._SubParsersAction) -> None:
     )
 
 
+def _add_train_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Register the ``train`` subcommand."""
+    p = subparsers.add_parser(
+        "train",
+        help="Train a SetFit classifier on cluster-labeled data (Phase 5)",
+        description=(
+            "Read the cluster pipeline output (texts.jsonl, cluster_labels.npy, "
+            "labels.json), merge them into a labeled dataset, train a SetFit "
+            "classifier on top of a sentence-transformer model (default: "
+            "nomic-embed-text-v1.5), evaluate on a held-out test set, and save "
+            "both the full model and an ONNX export."
+        ),
+    )
+    p.add_argument(
+        "--model-path",
+        default="~/small-models/nomic-embed-text-v1.5/",
+        help=(
+            "Path to local sentence-transformer model directory "
+            "(default: ~/small-models/nomic-embed-text-v1.5/)"
+        ),
+    )
+    p.add_argument(
+        "--run-name",
+        default=None,
+        help="Name for this training run (default: auto-generated timestamp)",
+    )
+    p.add_argument(
+        "--test-split",
+        type=float,
+        default=0.2,
+        help="Fraction of data for test set (default: 0.2)",
+    )
+    p.add_argument(
+        "--num-epochs",
+        type=int,
+        default=1,
+        help="Number of contrastive training epochs (default: 1)",
+    )
+    p.add_argument(
+        "--batch-size",
+        type=int,
+        default=16,
+        help="Batch size for training (default: 16)",
+    )
+    p.add_argument(
+        "--num-iterations",
+        type=int,
+        default=20,
+        help="Number of contrastive pairs per example (default: 20)",
+    )
+    p.add_argument(
+        "--learning-rate",
+        type=float,
+        default=2e-5,
+        help="Learning rate (default: 2e-5)",
+    )
+    p.add_argument(
+        "--max-seq-length",
+        type=int,
+        default=2048,
+        help="Max tokens to truncate to (default: 2048)",
+    )
+    p.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed (default: 42)",
+    )
+    p.add_argument(
+        "--noise-label",
+        default="other",
+        help="Label for noise / unlabeled emails (default: other)",
+    )
+    p.add_argument(
+        "--limit-labels",
+        type=int,
+        default=None,
+        help="Only use the N most frequent labels (for testing)",
+    )
+    p.add_argument(
+        "--skip-onnx",
+        action="store_true",
+        help="Skip ONNX export (only save SetFit format)",
+    )
+    p.add_argument(
+        "--storage-dir",
+        default="",
+        help="Override storage root directory",
+    )
+
+
 def _load_processed_ids(output_path: Path) -> set[int]:
     """Return the set of ``email_id`` values already in the JSONL output.
 
@@ -383,6 +475,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     _add_label_parser(subparsers)
 
+    _add_train_parser(subparsers)
+
     return parser.parse_args(argv)
 
 
@@ -397,6 +491,8 @@ def main(argv: list[str] | None = None) -> None:
         run_cluster(args)
     elif args.subcommand == "label":
         run_label(args)
+    elif args.subcommand == "train":
+        run_train(args)
     else:
         print(
             f"Unknown subcommand: {args.subcommand}",

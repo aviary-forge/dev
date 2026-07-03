@@ -101,11 +101,7 @@ def _parse_response(text: str) -> tuple[str, str | None]:
         if not label:
             label = "unlabeled"
 
-    if notes:
-        # Trim to a reasonable length
-        notes = notes[:500]
-    else:
-        notes = None
+    notes = notes[:500] if notes else None
 
     return label, notes
 
