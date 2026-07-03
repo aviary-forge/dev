@@ -121,9 +121,20 @@ class Database:
         return row
 
     def update_last_synced_uid(self, folder_id: int, uid: int) -> None:
+        """Update the ``last_synced_uid`` column for *folder_id*."""
         self.conn.execute(
             "UPDATE folders SET last_synced_uid = ? WHERE id = ?",
             (uid, folder_id),
+        )
+        self.conn.commit()
+
+    def update_folder_sync_state(
+        self, folder_id: int, uid_validity: int, last_synced_uid: int
+    ) -> None:
+        """Update both ``uid_validity`` and ``last_synced_uid`` after a sync."""
+        self.conn.execute(
+            "UPDATE folders SET uid_validity = ?, last_synced_uid = ? WHERE id = ?",
+            (uid_validity, last_synced_uid, folder_id),
         )
         self.conn.commit()
 

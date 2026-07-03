@@ -6,6 +6,7 @@ UID-based fetch using BODY.PEEK[] to avoid marking messages as read.
 
 import base64
 import contextlib
+import datetime
 import imaplib
 import re
 import time
@@ -88,6 +89,18 @@ def _preview_from_message(msg: Message, max_chars: int = 1000) -> str:
     # Collapse whitespace
     text = re.sub(r"\s+", " ", text).strip()
     return text[:max_chars]
+
+
+def _to_imap_date(iso_str: str) -> str:
+    """Convert an ISO-8601 date string to IMAP date format (DD-Mon-YYYY).
+
+    Handles both bare dates ("2020-01-01") and datetime strings
+    ("2020-01-01T00:00:00+00:00").  Bare dates are treated as UTC.
+    """
+    dt = datetime.datetime.fromisoformat(iso_str)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.UTC)
+    return dt.strftime("%d-%b-%Y")
 
 
 # ── progress callback type ───────────────────────────────────
@@ -190,6 +203,43 @@ class IMAPClient:
                 self._conn.logout()
             self._conn = None
 
+    def reconnect(self) -> None:
+        """Close the existing connection and open a new one.
+
+        Re-authenticates with a fresh OAuth2 token.  Safe to call when
+        the connection has been dropped or the access token has expired.
+        Retries up to 3 times with exponential backoff on transient
+        connection failures.
+        """
+        self.disconnect()
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                self.connect()
+                return
+            except (imaplib.IMAP4.abort, OSError) as exc:
+                last_exc = exc
+                if attempt < 2:
+                    time.sleep(1.0 * (2**attempt))
+                    self.disconnect()
+                    continue
+                raise
+        raise RuntimeError("Reconnect failed after 3 attempts") from last_exc
+
+    def _ensure_connected(self) -> None:
+        """Verify the IMAP connection is alive; reconnect if not.
+
+        Uses ``NOOP`` — a lightweight round-trip that doesn't affect
+        server state.  Safe to call between folder syncs.
+        """
+        if self._conn is None:
+            self.connect()
+            return
+        try:
+            self._conn.noop()
+        except (imaplib.IMAP4.abort, OSError):
+            self.reconnect()
+
     # ── folder listing ──────────────────────────────────────
 
     def list_folders(self) -> list[tuple[str, str, str]]:
@@ -240,33 +290,13 @@ class IMAPClient:
 
     # ── folder sync ─────────────────────────────────────────
 
-    def sync_folder(
-        self,
-        folder_name: str,
-        *,
-        uid_validity: int,
-        last_synced_uid: int,
-        eml_dir: Path,
-        on_message: Callable[[bytes, int, str, str], None],
-        on_progress: ProgressFn | None = None,
-        limit: int | None = None,
-        skip_before: str | None = None,  # noqa: ARG002
-        batch_size: int = 100,
-    ) -> tuple[int, int, int]:
-        """Fetch new/changed messages from one folder.
+    def _select_folder(self, folder_name: str) -> None:
+        """SELECT *folder_name* and raise on failure.
 
-        Returns (fetched_count, skipped_count, new_uid_validity).
-
-        Calls *on_message* for each new message with:
-          (raw_bytes, uid, folder_slug, eml_filename)
-        The caller is responsible for writing the .eml file and DB insert.
+        Extracted so both ``sync_folder`` and the retry path can
+        re-select after a reconnect.
         """
         assert self._conn is not None
-        folder_slug = _slugify(folder_name)
-
-        # ── SELECT folder ──
-        # Python 3.14's imaplib._command() does NOT quote string arguments,
-        # so we must quote folder names containing spaces or other atom-specials.
         quoted = self._conn._quote(folder_name)
         status, resp = self._conn.select(quoted, readonly=True)
         if status != "OK":
@@ -278,96 +308,192 @@ class IMAPClient:
             )
             raise RuntimeError(f"SELECT {folder_name!r} failed: {err}")
 
-        # Parse UIDVALIDITY from the untagged responses.
-        # imaplib.select() returns only the EXISTS count — UIDVALIDITY is
-        # stored separately via the bracketed-response-code parser.
-        uidval_raw = self._conn.untagged_responses.get("UIDVALIDITY", [None])[0]
-        if uidval_raw is None:
-            raise RuntimeError(f"Could not determine UIDVALIDITY for {folder_name!r}")
-        # untagged_responses values are bytes or (bytes, bytes) tuples;
-        # UIDVALIDITY is always a simple bytes value like b"12345678".
-        if isinstance(uidval_raw, bytes):
-            uidval_text = uidval_raw.decode("ascii")
-        else:
-            # Unlikely path — literal-format response
-            uidval_text = str(uidval_raw[0])
-        new_uid_validity = int(uidval_text)
+    def sync_folder(
+        self,
+        folder_name: str,
+        *,
+        uid_validity: int,
+        last_synced_uid: int,
+        eml_dir: Path,
+        on_message: Callable[[bytes, int, str, str], None],
+        on_progress: ProgressFn | None = None,
+        limit: int | None = None,
+        skip_before: str | None = None,
+        batch_size: int = 100,
+    ) -> tuple[int, int]:
+        """Fetch new/changed messages from one folder.
 
-        # ── Determine UIDs to fetch ──
-        uid_validity_changed = new_uid_validity != uid_validity
+        Returns (new_uid_validity, last_fetched_uid).
 
-        if uid_validity_changed or last_synced_uid == 0:
-            search_cmd = "ALL"
-        else:
-            search_cmd = f"{last_synced_uid + 1}:*"
+        *last_fetched_uid* is the highest UID that was actually processed
+        (accounting for *limit*).  The caller should persist this so the
+        next sync can use ``last_fetched_uid + 1:*`` as the search range.
 
-        status, data = self._conn.uid("SEARCH", search_cmd)
-        if status != "OK":
-            raise RuntimeError(f"UID SEARCH {search_cmd!r} failed in {folder_name!r}")
+        When *last_synced_uid* is 0 or UIDVALIDITY has changed, does a
+        full scan — optionally filtered by *skip_before* via an IMAP
+        ``SINCE`` search to avoid fetching messages before the cutoff.
 
-        uid_list: list[int] = []
-        if data[0]:
-            uid_list = [int(uid) for uid in data[0].split()]
+        On authentication failure (stale OAuth2 token) the connection is
+        re-established with a fresh token and the current batch is retried.
 
-        if not uid_list:
-            return (0, 0, new_uid_validity)
+        Calls *on_message* for each new message with:
+          (raw_bytes, uid, folder_slug, eml_filename)
+        The caller is responsible for writing the .eml file and DB insert.
+        """
+        assert self._conn is not None
+        folder_slug = _slugify(folder_name)
 
-        total = len(uid_list)
-        if limit is not None:
-            uid_list = uid_list[:limit]
-            total = len(uid_list)
+        # ── Connection-retry loop ──
+        CONNECTION_RETRIES = 3
 
-        fetched = 0
-        skipped = 0
+        for sync_attempt in range(CONNECTION_RETRIES):
+            try:
+                # ── SELECT folder ──
+                self._select_folder(folder_name)
 
-        # ── Fetch in batches ──
-        for i in range(0, len(uid_list), batch_size):
-            batch = uid_list[i : i + batch_size]
-            batch_str = ",".join(str(uid) for uid in batch)
+                # Parse UIDVALIDITY from the untagged responses.
+                uidval_raw = self._conn.untagged_responses.get("UIDVALIDITY", [None])[0]
+                if uidval_raw is None:
+                    raise RuntimeError(f"Could not determine UIDVALIDITY for {folder_name!r}")
+                if isinstance(uidval_raw, bytes):
+                    uidval_text = uidval_raw.decode("ascii")
+                else:
+                    uidval_text = str(uidval_raw[0])
+                new_uid_validity = int(uidval_text)
 
-            status, fetch_data = self._conn.uid(
-                "FETCH", batch_str, "(BODY.PEEK[] INTERNALDATE FLAGS)"
-            )
-            if status != "OK":
-                # Retry once with smaller batch if this fails
-                time.sleep(0.5)
-                # Fall back to single UID fetches for the batch
-                for uid in batch:
+                # ── Determine UIDs to fetch ──
+                uid_validity_changed = new_uid_validity != uid_validity
+
+                if uid_validity_changed or last_synced_uid == 0:
+                    # Full scan — optionally filtered by date
+                    if skip_before:
+                        imap_date = _to_imap_date(skip_before)
+                        search_cmd = f"SINCE {imap_date}"
+                    else:
+                        search_cmd = "ALL"
+                else:
+                    search_cmd = f"{last_synced_uid + 1}:*"
+
+                status, data = self._conn.uid("SEARCH", search_cmd)
+                if status != "OK":
+                    raise RuntimeError(f"UID SEARCH {search_cmd!r} failed in {folder_name!r}")
+
+                uid_list: list[int] = []
+                if data[0]:
+                    uid_list = [int(uid) for uid in data[0].split()]
+
+                if not uid_list:
+                    return (new_uid_validity, 0)
+
+                total = len(uid_list)
+                if limit is not None:
+                    uid_list = uid_list[:limit]
+                    total = len(uid_list)
+
+                # ── Fetch in batches, with reconnect-on-failure retry ──
+                for i in range(0, len(uid_list), batch_size):
+                    batch = uid_list[i : i + batch_size]
+                    batch_str = ",".join(str(uid) for uid in batch)
+
                     try:
-                        f = self._conn.uid("FETCH", str(uid), "(BODY.PEEK[] INTERNALDATE FLAGS)")
-                        if f[0] == "OK":
-                            _process_fetch_response(
-                                f[1],
-                                uid,
-                                folder_slug,
-                                eml_dir,
-                                on_message,
-                            )
-                            fetched += 1
-                    except Exception:
-                        pass
-                continue
+                        self._fetch_batch(batch, batch_str, folder_slug, eml_dir, on_message)
+                    except (IMAPAuthError, imaplib.IMAP4.abort, OSError):
+                        # Transient error — reconnect, re-select, retry batch
+                        for retry_attempt in range(3):
+                            try:
+                                self.reconnect()
+                                self._select_folder(folder_name)
+                                self._fetch_batch(
+                                    batch, batch_str, folder_slug, eml_dir, on_message
+                                )
+                                break
+                            except (IMAPAuthError, imaplib.IMAP4.abort, OSError):
+                                if retry_attempt < 2:
+                                    time.sleep(1.0 * (2**retry_attempt))
+                                    continue
+                                raise
 
+                    if on_progress:
+                        # Progress as UIDs handed to the callback, regardless of
+                        # whether each ends up fetched, skipped, or cache-recovered.
+                        on_progress(folder_name, min(i + len(batch), total), total)
+
+                last_uid = uid_list[-1]
+                return (new_uid_validity, last_uid)
+
+            except (imaplib.IMAP4.abort, OSError):
+                if sync_attempt < CONNECTION_RETRIES - 1:
+                    time.sleep(1.0 * (2**sync_attempt))
+                    self.reconnect()
+                    continue
+                break
+
+        raise RuntimeError(
+            f"sync_folder failed for {folder_name!r} after {CONNECTION_RETRIES} connection retries"
+        )
+
+    def _fetch_batch(
+        self,
+        batch: list[int],
+        batch_str: str,
+        folder_slug: str,
+        eml_dir: Path,
+        on_message: Callable[[bytes, int, str, str], None],
+    ) -> None:
+        """Fetch a batch of UIDs and call *on_message* for each.
+
+        Raises ``IMAPAuthError`` if the server returns an authentication-related
+        error, signalling the caller to reconnect and retry the batch.
+        """
+        assert self._conn is not None
+        status, fetch_data = self._conn.uid("FETCH", batch_str, "(BODY.PEEK[] INTERNALDATE FLAGS)")
+        if status != "OK":
+            err_msg = fetch_data[0].decode("utf-8", errors="replace") if fetch_data else ""
+            _check_auth_error(err_msg)
+            # Non-auth failure — fall back to single-UID fetches
+            time.sleep(0.5)
             for uid in batch:
                 try:
-                    ok = _process_fetch_response(
-                        fetch_data,
-                        uid,
-                        folder_slug,
-                        eml_dir,
-                        on_message,
-                    )
-                    if ok:
-                        fetched += 1
-                    else:
-                        skipped += 1
+                    f = self._conn.uid("FETCH", str(uid), "(BODY.PEEK[] INTERNALDATE FLAGS)")
+                    if f[0] == "OK":
+                        _process_fetch_response(f[1], uid, folder_slug, eml_dir, on_message)
                 except Exception:
-                    skipped += 1
+                    pass
+            return
 
-            if on_progress:
-                on_progress(folder_name, fetched + skipped, total)
+        # status == "OK" — process every UID in the batch
+        for uid in batch:
+            try:
+                _process_fetch_response(fetch_data, uid, folder_slug, eml_dir, on_message)
+            except Exception:
+                pass
 
-        return (fetched, skipped, new_uid_validity)
+
+class IMAPAuthError(Exception):
+    """Raised when an IMAP command fails with an authentication-related error.
+
+    Signals that the access token has likely expired and the caller should
+    reconnect with a fresh token before retrying.
+    """
+
+
+def _check_auth_error(err_msg: str) -> None:
+    """Raise ``IMAPAuthError`` if *err_msg* looks like an auth failure."""
+    if not err_msg:
+        return
+    auth_indicators = [
+        "AUTHENTICATIONFAILED",
+        "AUTHFAILED",
+        "NO",
+        "authentication failed",
+        "not authenticated",
+        "login expired",
+        "token expired",
+    ]
+    lower = err_msg.lower()
+    for indicator in auth_indicators:
+        if indicator.lower() in lower:
+            raise IMAPAuthError(err_msg)
 
 
 def _process_fetch_response(

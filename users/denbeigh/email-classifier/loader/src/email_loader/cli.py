@@ -153,6 +153,8 @@ def main(argv: list[str] | None = None) -> None:
                 sys.exit(1)
             folders = matched
 
+        skip_before = args.skip_before or config.skip_before
+
         total_fetched = 0
         total_skipped = 0
 
@@ -182,13 +184,39 @@ def main(argv: list[str] | None = None) -> None:
                 _folder_row=folder_row,
                 _eml_dir=eml_dir,
                 _config=config,
-                _skip_before=args.skip_before,
+                _skip_before=skip_before,
             ) -> None:
-                """Callback: write .eml and insert DB record."""
+                """Write .eml and insert DB record (or recover from cached file)."""
                 nonlocal fetched, skipped
 
                 if db.email_exists(_folder_row.id, uid):
                     skipped += 1
+                    return
+
+                eml_path = _eml_dir / eml_filename
+
+                # ── Recover from cached file if DB was nuked ──
+                if eml_path.exists():
+                    cached = eml_path.read_bytes()
+                    headers = _extract_headers(cached)
+                    db.insert_email(
+                        _folder_row.id,
+                        uid,
+                        message_id=headers["message_id"],
+                        subject=headers["subject"],
+                        from_addr=headers["from_addr"],
+                        to_addrs=headers["to_addrs"],
+                        date=headers["date"],
+                        flags="",
+                        eml_path=str(eml_path.relative_to(_config.storage.eml_dir)),
+                        size_bytes=len(cached),
+                        body_preview=headers["body_preview"],
+                    )
+                    fetched += 1
+                    print(
+                        f"  [{folder_name!r}] UID {uid}: cache-recovered",
+                        file=sys.stderr,
+                    )
                     return
 
                 # Apply --skip-before cutoff (compare parsed Date header).
@@ -206,6 +234,10 @@ def main(argv: list[str] | None = None) -> None:
                                 dt = email_date
                             if dt < _skip_before_dt(_skip_before):
                                 skipped += 1
+                                print(
+                                    f"  [{folder_name!r}] UID {uid}: skip (before {_skip_before})",
+                                    file=sys.stderr,
+                                )
                                 return
                         except (ValueError, TypeError):
                             pass
@@ -214,7 +246,6 @@ def main(argv: list[str] | None = None) -> None:
                     headers = _extract_headers(raw_bytes)
 
                 # Write .eml file
-                eml_path = _eml_dir / eml_filename
                 eml_path.write_bytes(raw_bytes)
 
                 # Insert into DB
@@ -237,7 +268,7 @@ def main(argv: list[str] | None = None) -> None:
             skipped = 0
 
             try:
-                new_fetched, new_skipped, new_uid_validity = client.sync_folder(
+                new_uid_validity, last_uid = client.sync_folder(
                     folder_name,
                     uid_validity=uid_validity,
                     last_synced_uid=last_synced_uid,
@@ -245,9 +276,9 @@ def main(argv: list[str] | None = None) -> None:
                     on_message=on_message,
                     on_progress=_progress_cb,
                     limit=args.limit,
-                    skip_before=args.skip_before,
+                    skip_before=skip_before,
                 )
-                db.update_last_synced_uid(folder_row.id, new_uid_validity)
+                db.update_folder_sync_state(folder_row.id, new_uid_validity, last_uid)
 
                 # Log success
                 db.finish_sync_log(
@@ -267,7 +298,17 @@ def main(argv: list[str] | None = None) -> None:
             except Exception as e:
                 db.finish_sync_log(log_id, error=str(e))
                 print(f"  ✗ Error: {e}", file=sys.stderr)
-                # Continue to next folder
+
+            # Reset connection after every folder so a single failure
+            # (EOF / connection closed / token expiry) doesn't cascade
+            # through remaining folders.
+            try:
+                client._ensure_connected()
+            except Exception as conn_err:
+                print(
+                    f"  ⚠ Connection reset failed after {folder_name!r}: {conn_err}",
+                    file=sys.stderr,
+                )
 
         print(
             f"\nDone. {total_fetched} new emails, {total_skipped} skipped across {len(folders)} folders.",
