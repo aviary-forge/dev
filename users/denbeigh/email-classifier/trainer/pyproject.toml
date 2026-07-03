@@ -4,10 +4,15 @@ version = "0.1.0"
 description = "Model training pipeline"
 readme = "README.md"
 authors = [
-    { name = "Denbeigh Stevens", email = "denbeigh@denbeighstevens.com" }
+  { name = "Denbeigh Stevens", email = "denbeigh@denbeighstevens.com" },
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+  "sentence-transformers>=3.4.0",
+  "numpy>=2.0.0",
+  "scikit-learn>=1.6.0",
+  "html2text>=2024.2.0",
+]
 
 [project.scripts]
 email-trainer = "email_trainer:main"

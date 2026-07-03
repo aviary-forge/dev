@@ -1,2 +1,3 @@
-def main() -> None:
-    print("Hello from email-trainer!")
+from email_trainer.cli import main
+
+__all__ = ["main"]
