@@ -5,6 +5,7 @@ SQLite + .eml files.
 """
 
 import argparse
+import datetime
 import email.header
 import email.utils
 import sys
@@ -56,6 +57,18 @@ def _fix_email_date(date_str: str | None) -> str | None:
     if parsed:
         return parsed.isoformat()
     return None
+
+
+def _skip_before_dt(value: str) -> datetime.datetime:
+    """Parse a ``--skip-before`` ISO date string into an aware datetime.
+
+    Treats bare dates (e.g. ``'2023-07-01'``) as midnight UTC.
+    Raises ``ValueError`` on unparseable input.
+    """
+    dt = datetime.datetime.fromisoformat(value)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.UTC)
+    return dt
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -169,6 +182,7 @@ def main(argv: list[str] | None = None) -> None:
                 _folder_row=folder_row,
                 _eml_dir=eml_dir,
                 _config=config,
+                _skip_before=args.skip_before,
             ) -> None:
                 """Callback: write .eml and insert DB record."""
                 nonlocal fetched, skipped
@@ -177,12 +191,31 @@ def main(argv: list[str] | None = None) -> None:
                     skipped += 1
                     return
 
+                # Apply --skip-before cutoff (compare parsed Date header).
+                if _skip_before:
+                    headers = _extract_headers(raw_bytes)
+                    email_date = headers.get("date")
+                    if email_date:
+                        try:
+                            # Date header is ISO-8601 after _extract_headers normalises it
+                            if isinstance(email_date, str):
+                                dt = datetime.datetime.fromisoformat(email_date).replace(
+                                    tzinfo=datetime.UTC
+                                )
+                            else:
+                                dt = email_date
+                            if dt < _skip_before_dt(_skip_before):
+                                skipped += 1
+                                return
+                        except (ValueError, TypeError):
+                            pass
+                    # Don't re-extract headers again below; do it once
+                else:
+                    headers = _extract_headers(raw_bytes)
+
                 # Write .eml file
                 eml_path = _eml_dir / eml_filename
                 eml_path.write_bytes(raw_bytes)
-
-                # Extract headers
-                headers = _extract_headers(raw_bytes)
 
                 # Insert into DB
                 db.insert_email(

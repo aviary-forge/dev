@@ -371,7 +371,7 @@ class IMAPClient:
 
 
 def _process_fetch_response(
-    fetch_data: list[tuple],
+    fetch_data: list,
     target_uid: int,
     folder_slug: str,
     eml_dir: Path,  # noqa: ARG001
@@ -379,25 +379,45 @@ def _process_fetch_response(
 ) -> bool:
     """Process a single FETCH response for one UID.
 
-    Returns True if the message was new, False if skipped/duplicate.
+    Iterates the full untagged-response list.  Entries are either:
+      * ``(resp_line, body)`` tuples (a literal body), or
+      * plain ``bytes`` (trailers / response fragments like ``b" UID 1)"``).
+
+    Outlook / Exchange Online typically sends the UID fixnum *before*
+    the ``BODY[]`` literal, so it lives in ``resp_line``.  For servers
+    that place UID in the trailer we also scan the next entry (if it's
+    plain bytes).
+
+    Returns True if a matching UID was found and *on_message* called,
+    False otherwise.
     """
-    # fetch_data[1] is a list of raw response tuples
-    for resp_part in fetch_data[1]:
+    # Walk the list by index so we can peek at the next entry for trailers.
+    for idx in range(len(fetch_data)):
+        resp_part = fetch_data[idx]
         if not isinstance(resp_part, tuple):
             continue
+
         raw_resp, raw_body = resp_part
         if raw_body is None or raw_body == b"":
             continue
 
-        # Extract UID from the response line
-        uid_m = re.search(rb"UID\s+(\d+)", raw_resp)
-        if not uid_m:
-            continue
-        uid = int(uid_m.group(1))
-        if uid != target_uid:
+        # UID may be in this response line or in the next bytes trailer
+        uid = _extract_uid(raw_resp)
+        if uid is None and idx + 1 < len(fetch_data):
+            trailer = fetch_data[idx + 1]
+            if isinstance(trailer, bytes):
+                uid = _extract_uid(trailer)
+
+        if uid is None or uid != target_uid:
             continue
 
         eml_filename = f"{uid}.eml"
         on_message(raw_body, uid, folder_slug, eml_filename)
         return True
     return False
+
+
+def _extract_uid(data: bytes) -> int | None:
+    """Return the numeric UID from a FETCH response fragment, or None."""
+    m = re.search(rb"UID\s+(\d+)", data)
+    return int(m.group(1)) if m else None
