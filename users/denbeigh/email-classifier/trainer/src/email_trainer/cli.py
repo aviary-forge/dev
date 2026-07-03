@@ -13,6 +13,55 @@ from email_trainer.cluster import run_cluster
 from email_trainer.config import Config
 from email_trainer.db import Database
 from email_trainer.embed import run_embed
+from email_trainer.label import run_label
+
+
+def _add_label_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Register the ``label`` subcommand."""
+    p = subparsers.add_parser(
+        "label",
+        help="Label clusters using a local LLM (Phase 4)",
+        description=(
+            "Read cluster summaries from Phase 3, send each cluster's "
+            "centroid samples + metadata to a local instruction-tuned LLM "
+            "(e.g., Mistral-7B-Instruct), and write a labels.json mapping "
+            "cluster_id to textual label."
+        ),
+    )
+    p.add_argument(
+        "--model-path",
+        required=True,
+        help="Path to a local transformers-compatible model directory",
+    )
+    p.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=64,
+        help="Max tokens to generate per cluster (default: 64)",
+    )
+    p.add_argument(
+        "--temperature",
+        type=float,
+        default=0.1,
+        help="Sampling temperature (default: 0.1; 0 = greedy)",
+    )
+    p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max clusters to label (for testing)",
+    )
+    p.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print each label as it's generated",
+    )
+    p.add_argument(
+        "--storage-dir",
+        default="",
+        help="Override storage root directory",
+    )
 
 
 def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -332,8 +381,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     _add_cluster_parser(subparsers)
 
-    # Future subcommands:
-    # _add_label_parser(subparsers)
+    _add_label_parser(subparsers)
 
     return parser.parse_args(argv)
 
@@ -347,6 +395,8 @@ def main(argv: list[str] | None = None) -> None:
         run_embed(args)
     elif args.subcommand == "cluster":
         run_cluster(args)
+    elif args.subcommand == "label":
+        run_label(args)
     else:
         print(
             f"Unknown subcommand: {args.subcommand}",
