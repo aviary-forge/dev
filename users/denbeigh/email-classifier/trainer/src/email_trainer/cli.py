@@ -11,6 +11,7 @@ from pathlib import Path
 from email_trainer.clean_text import clean_email_text
 from email_trainer.config import Config
 from email_trainer.db import Database
+from email_trainer.embed import run_embed
 
 
 def _add_extract_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -56,6 +57,47 @@ def _add_extract_parser(subparsers: argparse._SubParsersAction) -> None:
     )
 
 
+def _add_embed_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Register the ``embed`` subcommand."""
+    p = subparsers.add_parser(
+        "embed",
+        help="Embed extracted texts using sentence-transformers (Phase 2)",
+        description=(
+            "Load a local sentence-transformers model (default: bge-m3), "
+            "read extracted texts from Phase 1, encode each one into a "
+            "dense vector, and save NumPy arrays to the storage directory."
+        ),
+    )
+    p.add_argument(
+        "--model-path",
+        default="~/small-models/bge-m3/",
+        help="Path to local sentence-transformers model directory (default: ~/small-models/bge-m3/)",
+    )
+    p.add_argument(
+        "--device",
+        choices=("cuda", "cpu"),
+        default=None,
+        help="Torch device (default: cuda if available else cpu)",
+    )
+    p.add_argument(
+        "--batch-size",
+        type=int,
+        default=16,
+        help="Batch size for encoding (default: 16)",
+    )
+    p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max emails to process (for testing)",
+    )
+    p.add_argument(
+        "--storage-dir",
+        default="",
+        help="Override storage root directory",
+    )
+
+
 def _load_processed_ids(output_path: Path) -> set[int]:
     """Return the set of ``email_id`` values already in the JSONL output.
 
@@ -72,7 +114,7 @@ def _load_processed_ids(output_path: Path) -> set[int]:
                 try:
                     record = json.loads(line)
                     ids.add(record["email_id"])
-                except (json.JSONDecodeError, KeyError):
+                except json.JSONDecodeError, KeyError:
                     continue
     return ids
 
@@ -218,8 +260,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     _add_extract_parser(subparsers)
 
+    _add_embed_parser(subparsers)
+
     # Future subcommands will be registered here:
-    # _add_embed_parser(subparsers)
     # _add_cluster_parser(subparsers)
     # _add_label_parser(subparsers)
 
@@ -231,6 +274,8 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.subcommand == "extract":
         _handle_extract(args)
+    elif args.subcommand == "embed":
+        run_embed(args)
     else:
         print(
             f"Unknown subcommand: {args.subcommand}",
