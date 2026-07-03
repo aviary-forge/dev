@@ -9,9 +9,77 @@ import sys
 from pathlib import Path
 
 from email_trainer.clean_text import clean_email_text
+from email_trainer.cluster import run_cluster
 from email_trainer.config import Config
 from email_trainer.db import Database
 from email_trainer.embed import run_embed
+
+
+def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
+    """Register the ``cluster`` subcommand."""
+    p = subparsers.add_parser(
+        "cluster",
+        help="Cluster embeddings using HDBSCAN or k-means (Phase 3)",
+        description=(
+            "Load embeddings from Phase 2, cluster them via HDBSCAN "
+            "(or k-means as a configurable fallback), and write "
+            "cluster labels, a structured summary for Phase 4, and "
+            "a human-readable review dump."
+        ),
+    )
+    p.add_argument(
+        "--algorithm",
+        choices=("hdbscan", "kmeans"),
+        default="hdbscan",
+        help="Clustering algorithm (default: hdbscan)",
+    )
+    p.add_argument(
+        "--min-cluster-size",
+        type=int,
+        default=15,
+        help="HDBSCAN minimum cluster size (default: 15)",
+    )
+    p.add_argument(
+        "--min-samples",
+        type=int,
+        default=None,
+        help=("HDBSCAN min_samples (default: same as --min-cluster-size)"),
+    )
+    p.add_argument(
+        "--cluster-selection-epsilon",
+        type=float,
+        default=0.0,
+        help="HDBSCAN cluster selection epsilon (default: 0.0)",
+    )
+    p.add_argument(
+        "--cluster-selection-method",
+        choices=("eom", "leaf"),
+        default="eom",
+        help="HDBSCAN cluster selection method (default: eom)",
+    )
+    p.add_argument(
+        "--n-clusters",
+        type=int,
+        default=None,
+        help=("Number of clusters for k-means (required if --algorithm=kmeans)"),
+    )
+    p.add_argument(
+        "--n-samples",
+        type=int,
+        default=20,
+        help="Samples per cluster for human review / LLM labeling (default: 20)",
+    )
+    p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max emails to process (for testing)",
+    )
+    p.add_argument(
+        "--storage-dir",
+        default="",
+        help="Override storage root directory",
+    )
 
 
 def _add_extract_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -262,8 +330,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     _add_embed_parser(subparsers)
 
-    # Future subcommands will be registered here:
-    # _add_cluster_parser(subparsers)
+    _add_cluster_parser(subparsers)
+
+    # Future subcommands:
     # _add_label_parser(subparsers)
 
     return parser.parse_args(argv)
@@ -276,6 +345,8 @@ def main(argv: list[str] | None = None) -> None:
         _handle_extract(args)
     elif args.subcommand == "embed":
         run_embed(args)
+    elif args.subcommand == "cluster":
+        run_cluster(args)
     else:
         print(
             f"Unknown subcommand: {args.subcommand}",
