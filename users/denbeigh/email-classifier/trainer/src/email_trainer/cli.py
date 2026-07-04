@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from email_trainer.clean_text import clean_email_text
-from email_trainer.cluster import run_hdbscan, run_kmeans
+from email_trainer.cluster import run_hdbscan, run_kmeans, run_refine
 from email_trainer.config import Config
 from email_trainer.db import Database
 from email_trainer.embed import run_embed
@@ -115,13 +115,15 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
     """Register the ``cluster`` parent subcommand with nested algorithm parsers."""
     p = subparsers.add_parser(
         "cluster",
-        help="Cluster embeddings using HDBSCAN or K-means (Phase 3)",
+        help="Cluster embeddings or refine existing clusters (Phase 3)",
         description=(
-            "Load embeddings from Phase 2 and cluster them. "
-            "Run ``cluster hdbscan`` or ``cluster kmeans`` for algorithm-specific flags."
+            "Load embeddings from Phase 2 and cluster them, or refine "
+            "existing cluster labels with noise recovery. "
+            "Run ``cluster hdbscan``, ``cluster kmeans``, or ``cluster refine`` "
+            "for algorithm-specific flags."
         ),
     )
-    # Common args shared by all cluster algorithms
+    # Common args shared by all cluster algorithm subcommands
     p.add_argument(
         "--n-samples",
         type=int,
@@ -257,6 +259,64 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
         type=int,
         required=True,
         help="Number of clusters (required)",
+    )
+
+    # ── refine ──
+    r = cluster_subparsers.add_parser(
+        "refine",
+        help="Refine cluster labels by recovering noise points (Phase 3b)",
+        description=(
+            "Read an existing cluster run and apply a two-stage noise "
+            "refinement: (1) recluster noise with relaxed HDBSCAN to catch "
+            "micro-clusters, (2) assign remaining noise to the nearest "
+            "cluster centroid if within a similarity threshold. "
+            "Writes a new set of cluster labels."
+        ),
+    )
+    r.add_argument(
+        "--cluster-run",
+        default=None,
+        help=(
+            "Source cluster run to refine (e.g. experiment-1). "
+            "Default: clusters/ directory."
+        ),
+    )
+    r.add_argument(
+        "--recluster-min-cluster-size",
+        type=int,
+        default=5,
+        help=(
+            "Minimum cluster size for noise reclustering (default: 5). "
+            "Lower than the primary pass since we're looking for micro-clusters."
+        ),
+    )
+    r.add_argument(
+        "--recluster-min-samples",
+        type=int,
+        default=2,
+        help=(
+            "min_samples for noise reclustering (default: 2). "
+            "Low value encourages even small dense pockets to form clusters."
+        ),
+    )
+    r.add_argument(
+        "--assign-threshold",
+        type=float,
+        default=0.6,
+        help=(
+            "Cosine similarity threshold for nearest-centroid assignment "
+            "(default: 0.6, range 0-1). Higher = stricter, only very similar "
+            "noise points get assigned."
+        ),
+    )
+    r.add_argument(
+        "--noise-sample",
+        type=int,
+        default=0,
+        help=(
+            "Sample N random remaining noise points and write them to "
+            "noise_samples.json (default: 0 = disabled)"
+        ),
     )
 
 
@@ -697,6 +757,8 @@ def main(argv: list[str] | None = None) -> None:
             run_hdbscan(args)
         elif args.cluster_subcommand == "kmeans":
             run_kmeans(args)
+        elif args.cluster_subcommand == "refine":
+            run_refine(args)
         else:
             print(
                 f"Unknown cluster algorithm: {args.cluster_subcommand}",

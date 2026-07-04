@@ -249,6 +249,115 @@ def _silhouette_stats(
 # ---------------------------------------------------------------------------
 
 
+def _recluster_noise(
+    labels: np.ndarray,
+    embeddings: np.ndarray,
+    min_cluster_size: int,
+    min_samples: int,
+) -> np.ndarray:
+    """Run a second HDBSCAN pass on noise points to catch micro-clusters.
+
+    Noise points that form small dense regions in the embedding space get
+    their own cluster IDs (starting at ``max(labels) + 1``).  Truly sparse
+    points remain as -1.
+    """
+    noise_mask = labels == -1
+    n_noise = int(noise_mask.sum())
+
+    if n_noise < min_cluster_size:
+        return labels  # not enough noise to bother
+
+    noise_embs = embeddings[noise_mask]
+
+    clusterer = HDBSCAN(
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
+        cluster_selection_epsilon=0.0,
+        cluster_selection_method="eom",
+        metric="euclidean",
+        copy=True,  # type: ignore[arg-type]
+        n_jobs=-1,
+    )
+    sub_labels = clusterer.fit_predict(noise_embs)
+
+    # Map sub-clusters to new IDs starting above the existing max
+    existing_max = int(labels.max()) if len(labels) > 0 and labels.max() != -1 else -1
+    new_cluster_ids = np.unique(sub_labels)
+    new_cluster_ids = new_cluster_ids[new_cluster_ids != -1]
+
+    if len(new_cluster_ids) == 0:
+        return labels  # no micro-clusters found
+
+    id_map = {old: existing_max + 1 + i for i, old in enumerate(new_cluster_ids)}
+
+    new_labels = labels.copy()
+    noise_indices = np.where(noise_mask)[0]
+    for old_id, new_id in id_map.items():
+        cluster_indices = noise_indices[sub_labels == old_id]
+        new_labels[cluster_indices] = new_id
+
+    return new_labels
+
+
+def _assign_noise_to_nearest_centroid(
+    labels: np.ndarray,
+    embeddings: np.ndarray,
+    threshold: float = 0.6,
+) -> np.ndarray:
+    """Assign noise points to the nearest cluster centroid via cosine similarity.
+
+    Each noise point is assigned to the cluster whose centroid has the highest
+    cosine similarity, provided that similarity is at least *threshold*.
+    Points below the threshold stay as -1.
+
+    Assumes *embeddings* are L2-normalized (as produced by the bge-m3
+    pipeline), so dot product *is* cosine similarity.
+    """
+    noise_mask = labels == -1
+    unique_labels = sorted(set(labels) - {-1})
+
+    if not unique_labels:
+        return labels  # all noise, nothing to assign to
+
+    n_noise = int(noise_mask.sum())
+    if n_noise == 0:
+        return labels
+
+    # Compute L2-normalized centroids
+    centroids: dict[int, np.ndarray] = {}
+    for cl in unique_labels:
+        mask = labels == cl
+        centroid = embeddings[mask].mean(axis=0)
+        norm = np.linalg.norm(centroid)
+        centroids[cl] = centroid / norm if norm > 0 else centroid
+
+    centroid_array = np.array([centroids[cl] for cl in unique_labels])  # (K, dim)
+
+    # Cosine similarity (dot product of normalized vectors)
+    noise_embs = embeddings[noise_mask]
+    similarities = noise_embs @ centroid_array.T  # (N_noise, K)
+
+    max_sim = similarities.max(axis=1)
+    best_idx = similarities.argmax(axis=1)
+
+    new_labels = labels.copy()
+    noise_indices = np.where(noise_mask)[0]
+
+    assigned = 0
+    for i in range(n_noise):
+        if max_sim[i] >= threshold:
+            new_labels[noise_indices[i]] = unique_labels[best_idx[i]]
+            assigned += 1
+
+    print(
+        f"  Assigned {assigned}/{n_noise} noise points to nearest cluster "
+        f"(threshold={threshold})",
+        file=sys.stderr,
+    )
+
+    return new_labels
+
+
 def _find_similar_clusters(
     labels: np.ndarray,
     embeddings: np.ndarray,
@@ -603,6 +712,8 @@ def _clustering_pipeline(
         "silhouette_min": sil_min,
         "silhouette_max": sil_max,
         "similar_clusters": similar_pairs,
+        "embed_run": getattr(args, "embed_run", None),
+        "limit": getattr(args, "limit", None),
     }
     if n_merged:
         summary["metadata"]["post_merge_similar"] = merge_threshold
@@ -956,5 +1067,141 @@ def run_kmeans(args: argparse.Namespace) -> None:
         algorithm_metadata={
             "algorithm": "kmeans",
             "n_clusters": args.n_clusters,
+        },
+    )
+
+
+def run_refine(args: argparse.Namespace) -> None:
+    """Refine existing cluster labels with two-stage noise recovery.
+
+    Stage 1 — Recluster noise points using a more permissive HDBSCAN pass
+    to catch micro-clusters that didn't survive the primary clustering.
+
+    Stage 2 — Assign remaining noise points to the nearest cluster centroid
+    if the cosine similarity exceeds ``--assign-threshold``.
+
+    Reads ``cluster_labels.npy`` from the source cluster run
+    (``--cluster-run``) along with the original embeddings from Phase 2,
+    and writes a refined set of labels to the output directory
+    (``--run-name``).
+    """
+    config, email_ids, embeddings, email_map, n_total = _load_inputs(args)
+
+    # ── Load existing labels ────────────────────────────────
+    cluster_dir = config.clusters_dir_resolved
+    if args.cluster_run:
+        cluster_dir = cluster_dir / args.cluster_run
+
+    labels_path = cluster_dir / "cluster_labels.npy"
+    if not labels_path.exists():
+        print(
+            f"Error: cluster_labels.npy not found at {labels_path}\n"
+            f"  Run `email-trainer cluster hdbscan` first.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    print(f"Loading existing labels from {labels_path}", file=sys.stderr)
+    labels = np.load(labels_path)
+
+    # ── Validate alignment ──────────────────────────────────
+    if len(labels) != n_total:
+        # Check if the source run used a limit
+        source_summary_path = cluster_dir / "summary.json"
+        if source_summary_path.exists():
+            with open(source_summary_path) as f:
+                source_meta = json.load(f).get("metadata", {})
+            source_n = source_meta.get("n_total")
+            source_limit = source_meta.get("limit")
+            if source_n is not None and source_n != n_total:
+                hint = (
+                    f" (try --limit {source_n})"
+                    if source_limit
+                    else ""
+                )
+                print(
+                    f"Error: source run has n_total={source_n}, "
+                    f"but loaded {n_total} embeddings from Phase 2{hint}.",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+        print(
+            f"Error: labels ({len(labels)}) don't match embeddings "
+            f"({n_total}).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    n_noise = int((labels == -1).sum())
+    n_clusters = len(set(labels) - {-1})
+    print(
+        f"  {n_clusters} cluster{'s' if n_clusters != 1 else ''}, "
+        f"{n_noise} noise points ({n_noise / n_total * 100:.1f}%)",
+        file=sys.stderr,
+    )
+
+    if n_noise == 0:
+        print("No noise points to refine. Nothing to do.", file=sys.stderr)
+        return
+
+    out_dir = _output_dir(config, args.run_name)
+
+    # ── Stage 1: Recluster noise ────────────────────────────
+    print(
+        f"Stage 1: Reclustering noise with HDBSCAN "
+        f"(min_cluster_size={args.recluster_min_cluster_size}, "
+        f"min_samples={args.recluster_min_samples})",
+        file=sys.stderr,
+    )
+    labels = _recluster_noise(
+        labels,
+        embeddings,
+        min_cluster_size=args.recluster_min_cluster_size,
+        min_samples=args.recluster_min_samples,
+    )
+    n_remaining = int((labels == -1).sum())
+    n_recovered = n_noise - n_remaining
+    print(f"  Recovered {n_recovered} noise points as micro-clusters", file=sys.stderr)
+
+    # ── Stage 2: Nearest-centroid assignment ────────────────
+    if n_remaining > 0:
+        print(
+            "Stage 2: Assigning remaining noise to nearest cluster centroid "
+            f"(threshold={args.assign_threshold})",
+            file=sys.stderr,
+        )
+        labels = _assign_noise_to_nearest_centroid(
+            labels,
+            embeddings,
+            threshold=args.assign_threshold,
+        )
+        n_final_noise = int((labels == -1).sum())
+        n_assigned = n_remaining - n_final_noise
+        print(
+            f"  Assigned {n_assigned} noise points via centroid matching",
+            file=sys.stderr,
+        )
+        print(f"  Final noise: {n_final_noise} points", file=sys.stderr)
+    else:
+        print(
+            "Stage 2: Skipped (no noise remaining after reclustering)",
+            file=sys.stderr,
+        )
+
+    # ── Shared pipeline ──
+    _clustering_pipeline(
+        args,
+        labels,
+        embeddings,
+        email_ids,
+        email_map,
+        n_total,
+        out_dir,
+        algorithm_metadata={
+            "algorithm": "refine",
+            "source_cluster_run": args.cluster_run or "(default)",
+            "recluster_min_cluster_size": args.recluster_min_cluster_size,
+            "recluster_min_samples": args.recluster_min_samples,
+            "assign_threshold": args.assign_threshold,
         },
     )
