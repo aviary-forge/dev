@@ -4,9 +4,13 @@ Parses arguments and dispatches to the appropriate pipeline phase.
 """
 
 import argparse
+import concurrent.futures
 import json
+import os
 import sys
+import threading
 from pathlib import Path
+from typing import Any
 
 from email_trainer.clean_text import clean_email_text
 from email_trainer.cluster import run_hdbscan, run_kmeans
@@ -297,6 +301,17 @@ def _add_extract_parser(subparsers: argparse._SubParsersAction) -> None:
         action="store_true",
         help="Use body_preview from DB instead of full MIME parsing",
     )
+    p.add_argument(
+        "--workers",
+        type=int,
+        default=None,
+        help=(
+            "Number of parallel worker threads for .eml extraction "
+            "(default: min(32, cpu_count + 4)). "
+            "On a high-core-count machine with fast storage, "
+            "start at 16 and work up."
+        ),
+    )
 
 
 def _add_embed_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -527,73 +542,111 @@ def _handle_extract(args: argparse.Namespace) -> None:
 
     # Load already-processed IDs for resumability
     processed_ids = _load_processed_ids(output_path)
-    skipped_count = 0
-    extracted_count = 0
-    error_count = 0
+
+    # Filter to pending (unprocessed) emails
+    pending = [rec for rec in emails if rec.email_id not in processed_ids]
+    n_pending = len(pending)
+    n_skipped = len(emails) - n_pending
 
     print(
         f"Extracting clean text…  (output: {output_path})",
         file=sys.stderr,
     )
     print(
-        f"  {len(emails)} emails in DB, {len(processed_ids)} already extracted",
+        f"  {len(emails)} emails in DB, {n_skipped} already extracted, {n_pending} to process",
         file=sys.stderr,
     )
 
-    with open(output_path, "a") as out_f:
-        for i, rec in enumerate(emails):
-            # Progress indicator
-            if (i + 1) % 100 == 0 or i == 0:
-                print(
-                    f"  [{i + 1}/{len(emails)}] "
-                    f"extracted={extracted_count} "
-                    f"skipped={skipped_count} "
-                    f"errors={error_count}",
-                    file=sys.stderr,
-                )
+    if not pending:
+        print("No new emails to extract.  Nothing to do.", file=sys.stderr)
+        db.close()
+        return
 
-            # Resumability: skip already-processed
-            if rec.email_id in processed_ids:
-                skipped_count += 1
-                continue
+    n_workers = args.workers or min(32, (os.cpu_count() or 1) + 4)
+    print(f"  Using {n_workers} worker threads", file=sys.stderr)
 
-            eml_path = eml_dir / rec.eml_path_rel
-            subject = rec.subject
-            from_addr = rec.from_addr
+    extracted_count = 0
+    error_count = 0
+    write_lock = threading.Lock()
+
+    with (
+        open(output_path, "a") as out_f,
+        concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor,
+    ):
+        futures = {
+            executor.submit(_extract_one, eml_dir, rec, args.use_preview): rec for rec in pending
+        }
+
+        done = 0
+        for future in concurrent.futures.as_completed(futures):
+            done += 1
+            rec = futures[future]
 
             try:
-                text = clean_email_text(
-                    eml_path,
-                    subject=subject,
-                    from_addr=from_addr,
-                    body_preview=rec.body_preview,
-                    use_preview=args.use_preview,
-                )
+                record = future.result()
             except Exception as e:
                 print(
-                    f"  Error processing email_id={rec.email_id}: {e}",
+                    f"  Unhandled error for email_id={rec.email_id}: {e}",
                     file=sys.stderr,
                 )
                 error_count += 1
                 continue
 
-            # Write JSONL record
-            record = {
-                "email_id": rec.email_id,
-                "folder": rec.folder_name,
-                "from_addr": from_addr,
-                "subject": subject,
-                "text": text,
-                "char_count": len(text),
-            }
-            out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            if record is None:
+                error_count += 1
+                continue
+
+            with write_lock:
+                out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
             extracted_count += 1
 
+            if done % 100 == 0 or done == n_pending:
+                print(
+                    f"  [{done}/{n_pending}] extracted={extracted_count} errors={error_count}",
+                    file=sys.stderr,
+                )
+
     print(
-        f"\nDone.  extracted={extracted_count}  skipped={skipped_count}  errors={error_count}",
+        f"\nDone.  extracted={extracted_count}  skipped={n_skipped}  errors={error_count}",
         file=sys.stderr,
     )
     db.close()
+
+
+def _extract_one(
+    eml_dir: Path,
+    rec: Any,
+    use_preview: bool,
+) -> dict | None:
+    """Extract clean text from a single email record.
+
+    Returns a JSONL-ready dict on success, or ``None`` on error.
+    Prints errors to stderr but does not abort the batch.
+    """
+    eml_path = eml_dir / rec.eml_path_rel
+    try:
+        text = clean_email_text(
+            eml_path,
+            subject=rec.subject,
+            from_addr=rec.from_addr,
+            body_preview=rec.body_preview,
+            use_preview=use_preview,
+        )
+    except Exception as e:
+        print(
+            f"  Error processing email_id={rec.email_id}: {e}",
+            file=sys.stderr,
+        )
+        return None
+
+    return {
+        "email_id": rec.email_id,
+        "folder": rec.folder_name,
+        "from_addr": rec.from_addr,
+        "subject": rec.subject,
+        "text": text,
+        "char_count": len(text),
+    }
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
