@@ -776,6 +776,7 @@ def _epsilon_sweep(
                 cluster_selection_method=args.cluster_selection_method,
                 metric="euclidean",
                 copy=True,
+                n_jobs=-1,
             )
             labels = clusterer.fit_predict(embeddings)
         except Exception as exc:
@@ -902,6 +903,7 @@ def run_hdbscan(args: argparse.Namespace) -> None:
         cluster_selection_method=args.cluster_selection_method,
         metric="euclidean",
         copy=True,  # type: ignore[arg-type]  # sklearn stubs type copy as str ('warn' special value)
+        n_jobs=-1,
     )
     labels = clusterer.fit_predict(embeddings)
 
