@@ -347,8 +347,7 @@ def _merge_similar_clusters(
 
     # Build mapping: old cluster_id -> merged cluster_id
     merged = labels.copy()
-    unique = np.unique(labels)
-    for cl in unique:
+    for cl in map(int, np.unique(labels)):
         if cl == -1:
             continue
         if cl in parent:
@@ -563,6 +562,28 @@ def _clustering_pipeline(
     else:
         print("  No similar cluster pairs found at 0.65 threshold", file=sys.stderr)
 
+    # --- Post-merge similar clusters (workaround for epsilon crash) ---
+    merge_threshold = getattr(args, "post_merge_similar", None)
+    n_merged = 0
+    if merge_threshold is not None and merge_threshold > 0 and similar_pairs:
+        n_before = n_clusters
+        labels = _merge_similar_clusters(labels, similar_pairs, threshold=merge_threshold)
+        n_clusters = len(set(labels) - {-1})
+        n_noise = int((labels == -1).sum())
+        n_merged = n_before - n_clusters
+        if n_merged:
+            print(
+                f"  Post-merge: {n_merged} cluster"
+                f"{'s' if n_merged != 1 else ''} merged "
+                f"({n_before} → {n_clusters})",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"  Post-merge: no clusters merged at threshold {merge_threshold}",
+                file=sys.stderr,
+            )
+
     # --- Build cluster summaries ---
     print("Building cluster summaries\u2026", file=sys.stderr)
     summary = _build_cluster_summaries(
@@ -583,27 +604,8 @@ def _clustering_pipeline(
         "silhouette_max": sil_max,
         "similar_clusters": similar_pairs,
     }
-
-    # --- Post-merge similar clusters (workaround for epsilon crash) ---
-    merge_threshold = getattr(args, "post_merge_similar", None)
-    if merge_threshold is not None and merge_threshold > 0 and similar_pairs:
-        n_before = len(set(labels) - {-1})
-        labels = _merge_similar_clusters(labels, similar_pairs, threshold=merge_threshold)
-        n_after = len(set(labels) - {-1})
-        n_merged = n_before - n_after
-        if n_merged:
-            print(
-                f"  Post-merge: {n_merged} cluster"
-                f"{'s' if n_merged != 1 else ''} merged "
-                f"({n_before} → {n_after})",
-                file=sys.stderr,
-            )
-            algorithm_metadata["post_merge_similar"] = merge_threshold
-        else:
-            print(
-                f"  Post-merge: no clusters merged at threshold {merge_threshold}",
-                file=sys.stderr,
-            )
+    if n_merged:
+        summary["metadata"]["post_merge_similar"] = merge_threshold
 
     # --- Write outputs ---
     output_dir.mkdir(parents=True, exist_ok=True)
