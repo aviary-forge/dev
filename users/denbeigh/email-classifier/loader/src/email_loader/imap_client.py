@@ -237,7 +237,7 @@ class IMAPClient:
             return
         try:
             self._conn.noop()
-        except (imaplib.IMAP4.abort, OSError):
+        except imaplib.IMAP4.abort, OSError:
             self.reconnect()
 
     # ── folder listing ──────────────────────────────────────
@@ -253,7 +253,8 @@ class IMAPClient:
         # raw_list[1] is a list of byte strings like:
         # b'(\\HasNoChildren) "/" "INBOX"'
         # b'(\\HasChildren \\Noselect) "/" "[Gmail]"'
-        raw_items: list[bytes] = raw_list[1]  # type: ignore[assignment]
+        # imaplib.list() returns mixed-type results; filter to bytes for safety.
+        raw_items: list[bytes] = [item for item in raw_list[1] if isinstance(item, bytes)]
         folders: list[tuple[str, str, str]] = []
         for item in raw_items:
             decoded = item.decode("utf-8", errors="replace")
@@ -344,9 +345,9 @@ class IMAPClient:
         folder_slug = _slugify(folder_name)
 
         # ── Connection-retry loop ──
-        CONNECTION_RETRIES = 3
+        connection_retries = 3
 
-        for sync_attempt in range(CONNECTION_RETRIES):
+        for sync_attempt in range(connection_retries):
             try:
                 # ── SELECT folder ──
                 self._select_folder(folder_name)
@@ -397,7 +398,7 @@ class IMAPClient:
 
                     try:
                         self._fetch_batch(batch, batch_str, folder_slug, eml_dir, on_message)
-                    except (IMAPAuthError, imaplib.IMAP4.abort, OSError):
+                    except IMAPAuthError, imaplib.IMAP4.abort, OSError:
                         # Transient error — reconnect, re-select, retry batch
                         for retry_attempt in range(3):
                             try:
@@ -407,7 +408,7 @@ class IMAPClient:
                                     batch, batch_str, folder_slug, eml_dir, on_message
                                 )
                                 break
-                            except (IMAPAuthError, imaplib.IMAP4.abort, OSError):
+                            except IMAPAuthError, imaplib.IMAP4.abort, OSError:
                                 if retry_attempt < 2:
                                     time.sleep(1.0 * (2**retry_attempt))
                                     continue
@@ -421,15 +422,15 @@ class IMAPClient:
                 last_uid = uid_list[-1]
                 return (new_uid_validity, last_uid)
 
-            except (imaplib.IMAP4.abort, OSError):
-                if sync_attempt < CONNECTION_RETRIES - 1:
+            except imaplib.IMAP4.abort, OSError:
+                if sync_attempt < connection_retries - 1:
                     time.sleep(1.0 * (2**sync_attempt))
                     self.reconnect()
                     continue
                 break
 
         raise RuntimeError(
-            f"sync_folder failed for {folder_name!r} after {CONNECTION_RETRIES} connection retries"
+            f"sync_folder failed for {folder_name!r} after {connection_retries} connection retries"
         )
 
     def _fetch_batch(
@@ -453,20 +454,16 @@ class IMAPClient:
             # Non-auth failure — fall back to single-UID fetches
             time.sleep(0.5)
             for uid in batch:
-                try:
+                with contextlib.suppress(Exception):
                     f = self._conn.uid("FETCH", str(uid), "(BODY.PEEK[] INTERNALDATE FLAGS)")
                     if f[0] == "OK":
                         _process_fetch_response(f[1], uid, folder_slug, eml_dir, on_message)
-                except Exception:
-                    pass
             return
 
         # status == "OK" — process every UID in the batch
         for uid in batch:
-            try:
+            with contextlib.suppress(Exception):
                 _process_fetch_response(fetch_data, uid, folder_slug, eml_dir, on_message)
-            except Exception:
-                pass
 
 
 class IMAPAuthError(Exception):
@@ -500,7 +497,7 @@ def _process_fetch_response(
     fetch_data: list,
     target_uid: int,
     folder_slug: str,
-    eml_dir: Path,  # noqa: ARG001
+    _eml_dir: Path,  # noqa: ARG001
     on_message: Callable[[bytes, int, str, str], None],
 ) -> bool:
     """Process a single FETCH response for one UID.

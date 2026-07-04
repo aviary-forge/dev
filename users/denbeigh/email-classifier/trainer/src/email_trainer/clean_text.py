@@ -98,7 +98,7 @@ def _extract_body_from_msg(msg: email.message.Message) -> str:
         try:
             charset = part.get_content_charset() or "utf-8"
             decoded = payload.decode(charset, errors="replace")
-        except (LookupError, UnicodeDecodeError):
+        except LookupError, UnicodeDecodeError:
             decoded = payload.decode("utf-8", errors="replace")
 
         if content_type == "text/plain":
@@ -116,7 +116,7 @@ def _extract_body_from_msg(msg: email.message.Message) -> str:
     for part in msg.walk():
         if part.get_content_maintype() == "text":
             payload = part.get_payload(decode=True)
-            if payload:
+            if isinstance(payload, bytes):
                 try:
                     return payload.decode("utf-8", errors="replace")
                 except UnicodeDecodeError:
@@ -161,7 +161,7 @@ def clean_email_text(
         try:
             with open(eml_abs_path, "rb") as f:
                 msg = email.message_from_binary_file(f)
-        except (FileNotFoundError, PermissionError):
+        except FileNotFoundError, PermissionError:
             # If the .eml file is missing, fall back to body_preview.
             body = body_preview or ""
         else:

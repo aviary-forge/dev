@@ -179,8 +179,9 @@ def main(argv: list[str] | None = None) -> None:
             def on_message(
                 raw_bytes: bytes,
                 uid: int,
-                folder_slug: str,  # noqa: ARG001
+                _folder_slug: str,  # noqa: ARG001
                 eml_filename: str,
+                _folder_name=folder_name,
                 _folder_row=folder_row,
                 _eml_dir=eml_dir,
                 _config=config,
@@ -214,7 +215,7 @@ def main(argv: list[str] | None = None) -> None:
                     )
                     fetched += 1
                     print(
-                        f"  [{folder_name!r}] UID {uid}: cache-recovered",
+                        f"  [{_folder_name!r}] UID {uid}: cache-recovered",
                         file=sys.stderr,
                     )
                     return
@@ -235,11 +236,11 @@ def main(argv: list[str] | None = None) -> None:
                             if dt < _skip_before_dt(_skip_before):
                                 skipped += 1
                                 print(
-                                    f"  [{folder_name!r}] UID {uid}: skip (before {_skip_before})",
+                                    f"  [{_folder_name!r}] UID {uid}: skip (before {_skip_before})",
                                     file=sys.stderr,
                                 )
                                 return
-                        except (ValueError, TypeError):
+                        except ValueError, TypeError:
                             pass
                     # Don't re-extract headers again below; do it once
                 else:
@@ -341,8 +342,9 @@ def _do_dry_run(config: Config, args: argparse.Namespace) -> None:
             # Try to get count
             try:
                 # Python 3.14's imaplib._command() does not quote string args.
-                quoted = client._conn._quote(name)  # type: ignore[union-attr]
-                status, data = client._conn.select(quoted, readonly=True)  # type: ignore[union-attr]
+                assert client._conn is not None, "connect() must be called before listing"
+                quoted = client._conn._quote(name)
+                status, data = client._conn.select(quoted, readonly=True)
                 if status == "OK":
                     count = data[0]
                     if isinstance(count, bytes):

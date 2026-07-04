@@ -133,9 +133,10 @@ def _load_training_data(
                 file=sys.stderr,
             )
             sys.exit(1)
-        texts, label_names = zip(*filtered, strict=True) if filtered else ([], [])
-        texts = list(texts)
-        label_names = list(label_names)
+        # `filtered` is guaranteed non-empty here (see exit guard above).
+        text_tuples, label_tuples = zip(*filtered, strict=True)
+        texts = list(text_tuples)
+        label_names = list(label_tuples)
         unique_labels = sorted(set(label_names))
 
     label_map = {lbl: idx for idx, lbl in enumerate(unique_labels)}
@@ -237,7 +238,7 @@ def _train_setfit(
 
     device = st_body.device
     head = SetFitHead(
-        in_features=st_body.get_sentence_embedding_dimension(),
+        in_features=st_body.get_embedding_dimension(),
         device=device,
     )
 
@@ -248,8 +249,10 @@ def _train_setfit(
 
     elapsed = time.time() - t0
     print(f"  Loaded in {elapsed:.1f}s", file=sys.stderr)
+    # Just constructed SetFitModel with st_body — model_body is never None here.
+    assert model.model_body is not None
     print(
-        f"  Output dim: {model.model_body.get_sentence_embedding_dimension()}",
+        f"  Output dim: {model.model_body.get_embedding_dimension()}",
         file=sys.stderr,
     )
 
@@ -262,7 +265,7 @@ def _train_setfit(
         batch_size=batch_size,
         num_epochs=num_epochs,
         num_iterations=num_iterations,  # contrastive pairs per example
-        learning_rate=learning_rate,
+        body_learning_rate=learning_rate,
         seed=seed,
     )
 
@@ -287,10 +290,12 @@ def _train_setfit(
 
     # ── Evaluate ──
     print("Evaluating…", file=sys.stderr)
-    preds = model(eval_texts)
-    if hasattr(preds, "numpy"):
-        preds = preds.numpy()
-    preds = preds.tolist() if hasattr(preds, "tolist") else list(preds)
+    from numpy import asarray  # type: ignore[import-untyped]
+
+    raw = model(eval_texts)
+    # model() returns Union[torch.Tensor, np.ndarray, List[str], int, str].
+    # Normalise via numpy so we always get a list.
+    preds = asarray(raw).tolist()
 
     acc = accuracy_score(eval_labels, preds)
     f1_macro = f1_score(eval_labels, preds, average="macro", zero_division=0)
@@ -345,9 +350,13 @@ def _export_onnx(
 
     from setfit.exporters.onnx import export_onnx
 
+    body = model.model_body
+    head = model.model_head
+    assert body is not None, "model_body must be set before ONNX export"
+    assert head is not None, "model_head must be set before ONNX export"
     export_onnx(
-        model_body=model.model_body,
-        model_head=model.model_head,
+        model_body=body,
+        model_head=head,
         opset=17,
         output_path=str(onnx_path),
     )
@@ -365,14 +374,26 @@ def _export_onnx(
     ]
     # Find the tokenizer in the sentence transformer's first module
     body = model.model_body
-    if hasattr(body, "_first_module") and body._first_module is not None:
-        tok_dir = Path(body._first_module.tokenizer_files_folder)
+    if body is None:
+        print("  Warning: model_body is None, skipping tokenizer copy", file=sys.stderr)
+        return
+
+    # _first_module is a method — call it to get the actual module.
+    if hasattr(body, "_first_module") and body._first_module() is not None:
+        first_mod = body._first_module()
+        tok_dir = Path(str(first_mod.tokenizer_files_folder))
     elif hasattr(body, "tokenizer") and hasattr(body.tokenizer, "name_or_path"):
         # Some ST models store tokenizer in the model directory
         tok_dir = Path(body.tokenizer.name_or_path)
-    else:
+    elif hasattr(body, "_modules") and "0" in body._modules:
         # Fall back to the sentence transformer's model path
         tok_dir = Path(body._modules["0"].tokenizer_files_folder)
+    else:
+        print(
+            "  Warning: could not locate tokenizer directory, skipping tokenizer copy",
+            file=sys.stderr,
+        )
+        return
 
     for fname in tokenizer_files:
         src = tok_dir / fname
