@@ -547,6 +547,16 @@ def _clustering_pipeline(
     _write_review_dump(summary, review_path)
     print(f"  Review:     {review_path}", file=sys.stderr)
 
+    # --- Noise samples ---
+    if getattr(args, "noise_sample", 0) > 0 and n_noise > 0:
+        _write_noise_samples(
+            labels=labels,
+            email_ids=email_ids,
+            email_map=email_map,
+            output_dir=output_dir,
+            n_sample=args.noise_sample,
+        )
+
     print("\nDone.", file=sys.stderr)
 
 
@@ -613,11 +623,196 @@ def _output_dir(config: Config, run_name: str | None) -> Path:
     return base
 
 
+def _write_noise_samples(
+    labels: np.ndarray,
+    email_ids: np.ndarray,
+    email_map: dict[int, dict],
+    output_dir: Path,
+    n_sample: int,
+) -> None:
+    """Sample random noise points and write them to ``noise_samples.json``."""
+    noise_mask = labels == -1
+    noise_ids = email_ids[noise_mask]
+    n_noise_avail = len(noise_ids)
+    n_take = min(n_sample, n_noise_avail)
+
+    rng = np.random.default_rng(42)
+    sampled = rng.choice(noise_ids, size=n_take, replace=False)
+
+    samples: list[dict] = []
+    for eid in sampled.tolist():
+        rec = email_map.get(int(eid), {})
+        body = rec.get("text") or ""
+        samples.append(
+            {
+                "email_id": int(eid),
+                "subject": rec.get("subject"),
+                "from_addr": rec.get("from_addr"),
+                "body_snippet": body[:500],
+            }
+        )
+
+    path = output_dir / "noise_samples.json"
+    with open(path, "w") as f:
+        json.dump(samples, f, indent=2, ensure_ascii=False)
+    print(
+        f"  Noise:      {path}  ({len(samples)} of {n_noise_avail} noise points)",
+        file=sys.stderr,
+    )
+
+
+def _epsilon_sweep(
+    args: argparse.Namespace,
+    embeddings: np.ndarray,
+    n_total: int,
+) -> None:
+    """Run HDBSCAN at multiple epsilon values and report metrics.
+
+    Sweeps from ``args.cluster_selection_epsilon`` to ``args.epsilon_max``
+    with step ``args.epsilon_step``.  Catches and reports crashes per value
+    so the sweep continues even when sklearn's epsilon_search blows up at
+    certain thresholds.
+    """
+    start_eps = args.cluster_selection_epsilon
+    max_eps = args.epsilon_max
+    step = args.epsilon_step
+    n_steps = max(1, round((max_eps - start_eps) / step) + 1)
+
+    # We'll run inside a dummy output dir (no outputs written in sweep mode)
+    print(
+        f"\nEpsilon sweep: {start_eps} to {max_eps} step {step} ({n_steps} values)",
+        file=sys.stderr,
+    )
+    print(
+        f"{''.ljust(72)}",
+        file=sys.stderr,
+    )
+
+    rows: list[dict] = []
+    for eps_idx in range(n_steps):
+        eps = round(start_eps + eps_idx * step, 6)
+        label = f"eps={eps:.4f}"
+        print(f"  {label}".ljust(28), end="", file=sys.stderr)
+
+        try:
+            clusterer = HDBSCAN(
+                min_cluster_size=args.min_cluster_size,
+                min_samples=args.min_samples,
+                cluster_selection_epsilon=eps,
+                cluster_selection_method=args.cluster_selection_method,
+                metric="euclidean",
+                copy=True,
+            )
+            labels = clusterer.fit_predict(embeddings)
+        except Exception as exc:
+            print(f"  CRASHED: {exc}", file=sys.stderr)
+            rows.append(
+                {
+                    "epsilon": eps,
+                    "status": "crashed",
+                    "error": str(exc),
+                }
+            )
+            continue
+
+        n_clusters = len(set(labels) - {-1})
+        n_noise = int((labels == -1).sum())
+        noise_pct = n_noise / n_total * 100
+        sil_mean, sil_min, sil_max = _silhouette_stats(embeddings, labels)
+
+        if sil_mean is not None:
+            print(
+                f"clusters={n_clusters:>4}  noise={n_noise:>5} "
+                f"({noise_pct:>5.1f}%)  "
+                f"silhouette={sil_mean:.4f}",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"clusters={n_clusters:>4}  noise={n_noise:>5} "
+                f"({noise_pct:>5.1f}%)  "
+                f"silhouette=N/A (<2 clusters)",
+                file=sys.stderr,
+            )
+
+        rows.append(
+            {
+                "epsilon": eps,
+                "status": "ok",
+                "n_clusters": n_clusters,
+                "n_noise": n_noise,
+                "noise_pct": round(noise_pct, 1),
+                "silhouette_mean": sil_mean,
+                "silhouette_min": sil_min,
+                "silhouette_max": sil_max,
+            }
+        )
+
+    # Summary table
+    print(
+        f"\n{'=' * 72}",
+        file=sys.stderr,
+    )
+    print(
+        f"{'Epsilon':>10}  {'Clusters':>9}  {'Noise':>8}  {'Noise%':>7}  {'Silhouette':>10}",
+        file=sys.stderr,
+    )
+    print(
+        f"{'-' * 10}  {'-' * 9}  {'-' * 8}  {'-' * 7}  {'-' * 10}",
+        file=sys.stderr,
+    )
+    for row in rows:
+        if row["status"] == "crashed":
+            print(
+                f"{row['epsilon']:>10.4f}  {'CRASHED':>9}  {'':>8}  {'':>7}  {row['error'][:50]:>10}",
+                file=sys.stderr,
+            )
+        else:
+            sil = f"{row['silhouette_mean']:.4f}" if row["silhouette_mean"] is not None else "N/A"
+            print(
+                f"{row['epsilon']:>10.4f}  "
+                f"{row['n_clusters']:>9}  "
+                f"{row['n_noise']:>8}  "
+                f"{row['noise_pct']:>6.1f}%  "
+                f"{sil:>10}",
+                file=sys.stderr,
+            )
+
+    print(f"{'=' * 72}\n", file=sys.stderr)
+
+    # Optionally write the table as JSON for inspection
+    sweep_path = Path("epsilon_sweep.json")
+    with open(sweep_path, "w") as f:
+        json.dump({"sweep": rows}, f, indent=2)
+    print(f"Sweep results written to {sweep_path.resolve()}", file=sys.stderr)
+    print("No cluster outputs written in sweep mode.", file=sys.stderr)
+
+
 def run_hdbscan(args: argparse.Namespace) -> None:
     """Cluster embeddings with HDBSCAN and write outputs."""
     config, email_ids, embeddings, email_map, n_total = _load_inputs(args)
     out_dir = _output_dir(config, args.run_name)
 
+    # ── min_cluster_size_ratio ────────────────────────────────
+    if args.min_cluster_size_ratio is not None:
+        computed = max(1, int(args.min_cluster_size_ratio * n_total))
+        print(
+            f"  Computed min_cluster_size={computed} "
+            f"from ratio={args.min_cluster_size_ratio} (n_total={n_total})",
+            file=sys.stderr,
+        )
+        args.min_cluster_size = computed
+
+    # ── Epsilon sweep mode ────────────────────────────────────
+    if args.epsilon_step is not None:
+        _epsilon_sweep(
+            args,
+            embeddings,
+            n_total,
+        )
+        return
+
+    # ── Single-run mode ───────────────────────────────────────
     print(
         f"Clustering with HDBSCAN "
         f"(min_cluster_size={args.min_cluster_size}, "

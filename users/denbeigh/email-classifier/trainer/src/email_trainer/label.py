@@ -295,6 +295,22 @@ def run_label(args: argparse.Namespace) -> None:
         file=sys.stderr,
     )
 
+    # ── System prompt ────────────────────────────────────────
+    system_prompt = _SYSTEM_PROMPT
+    if args.system_prompt:
+        prompt_path = Path(args.system_prompt).expanduser().resolve()
+        if not prompt_path.exists():
+            print(
+                f"Error: system prompt file not found: {prompt_path}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        system_prompt = prompt_path.read_text(encoding="utf-8")
+        print(
+            f"  Using custom system prompt from {prompt_path}",
+            file=sys.stderr,
+        )
+
     # ── Load model ──────────────────────────────────────────
     model, tokenizer = _load_model(args.model_path)
 
@@ -329,7 +345,7 @@ def run_label(args: argparse.Namespace) -> None:
         )
 
         messages = [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
         ]
         input_ids = tokenizer.apply_chat_template(
@@ -362,6 +378,11 @@ def run_label(args: argparse.Namespace) -> None:
         "model_load_args": {"torch_dtype": "float16"},
         "generation_args": {k: v for k, v in gen_kwargs.items() if v is not None},
         "prompt_args": {
+            "system_prompt_source": (
+                str(Path(args.system_prompt).expanduser().resolve())
+                if args.system_prompt
+                else "default"
+            ),
             "body_chars": args.body_chars,
             "max_samples": args.max_samples,
             "max_prompt_tokens": args.max_prompt_tokens,

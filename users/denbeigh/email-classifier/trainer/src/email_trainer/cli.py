@@ -97,9 +97,13 @@ def _add_label_parser(subparsers: argparse._SubParsersAction) -> None:
         ),
     )
     p.add_argument(
-        "--storage-dir",
-        default="",
-        help="Override storage root directory",
+        "--system-prompt",
+        default=None,
+        help=(
+            "Path to a custom system prompt file. Overrides the default "
+            "prompt that expects 'LABEL:' and 'NOTES:' output. "
+            "The file is read verbatim as the system message content."
+        ),
     )
 
 
@@ -113,6 +117,30 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
             "Run ``cluster hdbscan`` or ``cluster kmeans`` for algorithm-specific flags."
         ),
     )
+    # Common args shared by all cluster algorithms
+    p.add_argument(
+        "--n-samples",
+        type=int,
+        default=20,
+        help="Samples per cluster for review / labeling (default: 20)",
+    )
+    p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max emails to process (for testing)",
+    )
+    p.add_argument(
+        "--embed-run",
+        default=None,
+        help=("Embed run-name to read from (e.g. gte-small). Default: embeddings/"),
+    )
+    p.add_argument(
+        "--run-name",
+        default=None,
+        help="Subdirectory for output (e.g. clusters/experiment-1). Default: clusters/",
+    )
+
     cluster_subparsers = p.add_subparsers(
         dest="cluster_subcommand",
         title="Algorithms",
@@ -160,31 +188,41 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Cluster selection method (default: eom)",
     )
     h.add_argument(
-        "--n-samples",
+        "--noise-sample",
         type=int,
-        default=20,
-        help="Samples per cluster for review / labeling (default: 20)",
+        default=0,
+        help=(
+            "Sample N random noise points and write them to noise_samples.json "
+            "(default: 0 = disabled)"
+        ),
     )
     h.add_argument(
-        "--limit",
-        type=int,
+        "--epsilon-step",
+        type=float,
         default=None,
-        help="Max emails to process (for testing)",
+        help=(
+            "Epsilon sweep step size. Enables sweep mode: runs HDBSCAN at each "
+            "epsilon value from --cluster-selection-epsilon to --epsilon-max, "
+            "reports metrics for each, and skips writing outputs. "
+            "Crashes at individual values don't abort the sweep. "
+            "(default: disabled; e.g. 0.05 sweeps 0.0, 0.05, 0.1, \u2026, 0.5)"
+        ),
     )
     h.add_argument(
-        "--embed-run",
+        "--epsilon-max",
+        type=float,
+        default=0.5,
+        help="Maximum epsilon for sweep mode (default: 0.5)",
+    )
+    h.add_argument(
+        "--min-cluster-size-ratio",
+        type=float,
         default=None,
-        help=("Embed run-name to read from (e.g. gte-small). Default: embeddings/"),
-    )
-    h.add_argument(
-        "--run-name",
-        default=None,
-        help="Subdirectory for output (e.g. clusters/experiment-1). Default: clusters/",
-    )
-    h.add_argument(
-        "--storage-dir",
-        default="",
-        help="Override storage root directory",
+        help=(
+            "Fraction of total emails for min_cluster_size "
+            "(e.g. 0.005 \u2192 120 for 24K emails). "
+            "Overrides --min-cluster-size when set."
+        ),
     )
 
     # ── kmeans ──
@@ -202,33 +240,6 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
         type=int,
         required=True,
         help="Number of clusters (required)",
-    )
-    k.add_argument(
-        "--n-samples",
-        type=int,
-        default=20,
-        help="Samples per cluster for review / labeling (default: 20)",
-    )
-    k.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Max emails to process (for testing)",
-    )
-    k.add_argument(
-        "--embed-run",
-        default=None,
-        help=("Embed run-name to read from (e.g. gte-small). Default: embeddings/"),
-    )
-    k.add_argument(
-        "--run-name",
-        default=None,
-        help="Subdirectory for output (e.g. clusters/experiment-1). Default: clusters/",
-    )
-    k.add_argument(
-        "--storage-dir",
-        default="",
-        help="Override storage root directory",
     )
 
 
@@ -313,11 +324,6 @@ def _add_embed_parser(subparsers: argparse._SubParsersAction) -> None:
         "--run-name",
         default=None,
         help=("Subdirectory for output (e.g. embeddings/gte-small). Default: embeddings/"),
-    )
-    p.add_argument(
-        "--storage-dir",
-        default="",
-        help="Override storage root directory",
     )
 
 
@@ -411,11 +417,6 @@ def _add_train_parser(subparsers: argparse._SubParsersAction) -> None:
         "--skip-onnx",
         action="store_true",
         help="Skip ONNX export (only save SetFit format)",
-    )
-    p.add_argument(
-        "--storage-dir",
-        default="",
-        help="Override storage root directory",
     )
 
 
@@ -570,6 +571,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Processes .eml files produced by email-loader through multiple "
             "stages: extract \u2192 embed \u2192 cluster \u2192 label."
         ),
+    )
+
+    parser.add_argument(
+        "--storage-dir",
+        default="",
+        help="Override storage root directory for all phases",
     )
 
     subparsers = parser.add_subparsers(
