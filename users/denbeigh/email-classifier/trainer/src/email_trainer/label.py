@@ -1,10 +1,22 @@
 """Label clusters via a local instruction-tuned LLM (Phase 4).
 
-Reads ``summary.json`` produced by Phase 3, sends each cluster's
-centroid samples + metadata to a local model (default: Mistral-7B),
-and writes a ``labels.json`` mapping ``cluster_id → label``.
+Reads ``summary.json`` produced by Phase 3 (optionally from a
+``--cluster-run`` subdirectory), sends each cluster's centroid samples
++ metadata to a local model, and writes a ``labels.json`` mapping
+``cluster_id → label``.
 
-Resumable: re-running skips clusters already present in the output.
+Supports resumability, token-budget-guided prompt assembly, and
+separate output subdirectories via ``--run-name``.
+
+Usage::
+
+    email-trainer label \\
+        --model-path ~/models/Qwen3-30B-A3B-Instruct \\
+        --cluster-run experiment-1  \\
+        --run-name qwen3-label-v1 \\
+        --body-chars 500 \\
+        --max-prompt-tokens 24576 \\
+        --verbose
 """
 
 import argparse
@@ -36,39 +48,97 @@ NOTES: <brief note about any misclassified emails, or "None">
 """
 
 
-def _build_prompt(cluster: dict) -> str:
-    """Build the user message for a single cluster."""
-    lines: list[str] = []
-    lines.append("Cluster samples (nearest to centroid):")
-    lines.append("")
-
-    for i, s in enumerate(cluster.get("samples", []), 1):
+def _format_samples(raw_samples: list[dict], body_chars: int) -> list[dict]:
+    """Build a clean sample list, truncating body snippets to *body_chars*."""
+    out: list[dict] = []
+    for s in raw_samples:
         subj = s.get("subject") or "(no subject)"
-        snippet = (s.get("body_snippet") or "")[:200].replace("\n", " ")
-        lines.append(f"{i}. Subject: {subj}")
-        lines.append(f"   Snippet: {snippet}")
-        lines.append("")
+        snippet = (s.get("body_snippet") or "")[:body_chars].replace("\n", " ")
+        out.append({"subject": subj, "snippet": snippet})
+    return out
 
-    # Add top domains if available
+
+def _format_cluster_metadata(cluster: dict) -> str:
+    """Build the metadata section (domains + subject tokens)."""
+    lines: list[str] = []
+
     domains = cluster.get("top_domains", [])
     if domains:
         domain_str = ", ".join(f"{d['domain']} ({d['count']}x)" for d in domains[:8])
         lines.append(f"Top sender domains: {domain_str}")
         lines.append("")
 
-    # Add top subject tokens if available
     tokens = cluster.get("top_subject_tokens", [])
     if tokens:
         token_str = ", ".join(f"'{t['token']}' ({t['count']}x)" for t in tokens[:8])
         lines.append(f"Common subject words: {token_str}")
         lines.append("")
 
-    lines.append(
-        "Suggest a short label (1-3 words) that describes this category. "
-        "Also note any emails that seem misclassified."
-    )
-
     return "\n".join(lines)
+
+
+def _build_prompt(
+    cluster: dict,
+    *,
+    tokenizer=None,
+    body_chars: int = 500,
+    max_samples: int | None = None,
+    max_prompt_tokens: int | None = None,
+) -> str:
+    """Build the ``user`` message content for a single cluster.
+
+    When *max_prompt_tokens* is set, samples are trimmed from the end
+    until the chat-template-formatted input fits within the budget.
+    The *tokenizer* is required for token-counting; when both
+    *max_prompt_tokens* and *tokenizer* are provided, the budget is
+    enforced.
+    """
+    raw_samples = cluster.get("samples", [])
+    if max_samples is not None:
+        raw_samples = raw_samples[:max_samples]
+
+    samples = _format_samples(raw_samples, body_chars)
+    metadata = _format_cluster_metadata(cluster)
+
+    def _make_prompt_text(samples_list: list[dict]) -> str:
+        lines: list[str] = []
+        lines.append("Cluster samples (nearest to centroid):")
+        lines.append("")
+        for i, s in enumerate(samples_list, 1):
+            lines.append(f"{i}. Subject: {s['subject']}")
+            lines.append(f"   Snippet: {s['snippet']}")
+            lines.append("")
+        lines.append(metadata)
+        lines.append(
+            "Suggest a short label (1-3 words) that describes this category. "
+            "Also note any emails that seem misclassified."
+        )
+        return "\n".join(lines)
+
+    # No budget → full prompt with all samples
+    if max_prompt_tokens is None or tokenizer is None:
+        return _make_prompt_text(samples)
+
+    # Token budget: trim samples from the end until we fit
+    while True:
+        prompt = _make_prompt_text(samples)
+        messages = [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ]
+        n_tokens = tokenizer.apply_chat_template(
+            messages,
+            return_tensors="pt",
+            add_generation_prompt=True,
+        ).shape[1]
+
+        if n_tokens <= max_prompt_tokens:
+            return prompt
+        if not samples:
+            # Even zero samples exceeds budget — return the empty prompt
+            return prompt
+
+        samples = samples[:-1]
 
 
 # ---------------------------------------------------------------------------
@@ -154,21 +224,33 @@ def _load_model(model_path: str | Path) -> tuple:
 def run_label(args: argparse.Namespace) -> None:
     """Execute the ``label`` subcommand — Phase 4 of the pipeline.
 
-    Reads ``summary.json`` from Phase 3, labels each cluster via a local
-    LLM, and writes ``labels.json``.
+    Reads ``summary.json`` from Phase 3 (optionally from a
+    ``--cluster-run`` subdirectory), labels each cluster via a local
+    LLM, and writes ``labels.json`` to the output directory
+    (``--run-name`` subdirectory under ``labels/``).
+
+    Resumable: re-running skips clusters already present in the output.
     """
     kwargs = {}
     if args.storage_dir:
         kwargs["storage_dir"] = args.storage_dir
     config = Config(**kwargs)
 
+    # ── Resolve input (cluster summary) ────────────────────
     cluster_dir = config.clusters_dir_resolved
-    if args.run_name:
-        cluster_dir = cluster_dir / args.run_name
+    if args.cluster_run:
+        cluster_dir = cluster_dir / args.cluster_run
         print(f"Using cluster run: {cluster_dir}", file=sys.stderr)
 
     summary_path = cluster_dir / "summary.json"
-    labels_path = cluster_dir / "labels.json"
+
+    # ── Resolve output (labels) ────────────────────────────
+    labels_dir = config.labels_dir_resolved
+    if args.run_name:
+        labels_dir = labels_dir / args.run_name
+        print(f"Output directory: {labels_dir}", file=sys.stderr)
+
+    labels_path = labels_dir / "labels.json"
 
     # ── Validate inputs ────────────────────────────────────
     if not summary_path.exists():
@@ -188,7 +270,7 @@ def run_label(args: argparse.Namespace) -> None:
 
     print(f"Loaded {len(clusters)} clusters from {summary_path}", file=sys.stderr)
 
-    # ── Resumability: load existing labels ──────────────────
+    # ── Resumability: load existing labels from output ─────
     existing_labels: dict = {}
     if labels_path.exists():
         with open(labels_path) as f:
@@ -208,7 +290,10 @@ def run_label(args: argparse.Namespace) -> None:
         print("All clusters already labeled. Nothing to do.", file=sys.stderr)
         return
 
-    print(f"  {len(pending)} cluster{'s' if len(pending) != 1 else ''} to label", file=sys.stderr)
+    print(
+        f"  {len(pending)} cluster{'s' if len(pending) != 1 else ''} to label",
+        file=sys.stderr,
+    )
 
     # ── Load model ──────────────────────────────────────────
     model, tokenizer = _load_model(args.model_path)
@@ -217,7 +302,6 @@ def run_label(args: argparse.Namespace) -> None:
         tokenizer.pad_token = tokenizer.eos_token
 
     # ── Label clusters ──────────────────────────────────────
-    # Copy existing labels so we can merge
     labels = dict(existing_labels)
 
     gen_kwargs = {
@@ -236,7 +320,14 @@ def run_label(args: argparse.Namespace) -> None:
             file=sys.stderr,
         )
 
-        prompt = _build_prompt(cluster)
+        prompt = _build_prompt(
+            cluster,
+            tokenizer=tokenizer,
+            body_chars=args.body_chars,
+            max_samples=args.max_samples,
+            max_prompt_tokens=args.max_prompt_tokens,
+        )
+
         messages = [
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
@@ -261,17 +352,20 @@ def run_label(args: argparse.Namespace) -> None:
         }
 
         if args.verbose:
-            print(f"    → {label}", file=sys.stderr)
+            print(f"    \u2192 {label}", file=sys.stderr)
             if notes:
                 print(f"      notes: {notes[:120]}", file=sys.stderr)
 
     # ── Write output ────────────────────────────────────────
     metadata = {
         "model": str(Path(args.model_path).expanduser().resolve()),
-        "model_load_args": {
-            "torch_dtype": "float16",
-        },
+        "model_load_args": {"torch_dtype": "float16"},
         "generation_args": {k: v for k, v in gen_kwargs.items() if v is not None},
+        "prompt_args": {
+            "body_chars": args.body_chars,
+            "max_samples": args.max_samples,
+            "max_prompt_tokens": args.max_prompt_tokens,
+        },
         "n_clusters_total": len(clusters),
         "n_clusters_labeled": len(labels),
         "n_clusters_this_run": len(pending),
@@ -282,6 +376,7 @@ def run_label(args: argparse.Namespace) -> None:
         "metadata": metadata,
     }
 
+    labels_dir.mkdir(parents=True, exist_ok=True)
     with open(labels_path, "w") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 

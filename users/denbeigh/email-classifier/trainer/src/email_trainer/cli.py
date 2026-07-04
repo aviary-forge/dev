@@ -24,9 +24,8 @@ def _add_label_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Label clusters using a local LLM (Phase 4)",
         description=(
             "Read cluster summaries from Phase 3, send each cluster's "
-            "centroid samples + metadata to a local instruction-tuned LLM "
-            "(e.g., Mistral-7B-Instruct), and write a labels.json mapping "
-            "cluster_id to textual label."
+            "centroid samples + metadata to a local instruction-tuned LLM, "
+            "and write a labels.json mapping cluster_id to textual label."
         ),
     )
     p.add_argument(
@@ -61,7 +60,41 @@ def _add_label_parser(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument(
         "--run-name",
         default=None,
-        help=("Cluster run subdirectory to read from (e.g. experiment-1). Default: clusters/"),
+        help=("Subdirectory for output (e.g. qwen3-label). Default: labels/"),
+    )
+    p.add_argument(
+        "--cluster-run",
+        default=None,
+        help=(
+            "Cluster run subdirectory to read summary.json from "
+            "(e.g. experiment-1). Default: clusters/"
+        ),
+    )
+    p.add_argument(
+        "--body-chars",
+        type=int,
+        default=500,
+        help=(
+            "Max body characters to include per sample (default: 500; "
+            "stored limit is 500 — re-cluster with larger n_samples for more)"
+        ),
+    )
+    p.add_argument(
+        "--max-samples",
+        type=int,
+        default=None,
+        help=(
+            "Max samples per cluster to include in prompt (default: all, as set at cluster time)"
+        ),
+    )
+    p.add_argument(
+        "--max-prompt-tokens",
+        type=int,
+        default=None,
+        help=(
+            "Soft token budget for the input prompt per cluster "
+            "(default: no limit; e.g. 24576 leaves room for 8K of generation)"
+        ),
     )
     p.add_argument(
         "--storage-dir",
