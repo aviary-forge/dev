@@ -292,8 +292,8 @@ def _find_similar_clusters(
             if sim >= similarity_threshold:
                 pairs.append(
                     {
-                        "cluster_a": ci,
-                        "cluster_b": cj,
+                        "cluster_a": int(ci),
+                        "cluster_b": int(cj),
                         "similarity": round(sim, 4),
                         "size_a": int((labels == ci).sum()),
                         "size_b": int((labels == cj).sum()),
