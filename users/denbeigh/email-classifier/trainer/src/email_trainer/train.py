@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 from datasets import Dataset
+from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel, TrainingArguments
 from setfit import Trainer as SetFitTrainer
 from sklearn.metrics import (
@@ -170,6 +171,39 @@ def _stratified_split(
     return train_texts, test_texts, train_y, test_y
 
 
+def _load_setfit_body(
+    model_path: str,
+    max_seq_length: int,
+    flash_attention: bool = False,
+) -> SentenceTransformer:
+    """Load a SentenceTransformer body, optionally with flash attention.
+
+    ``SetFitModel.from_pretrained`` won't forward ``model_kwargs`` to
+    ``SentenceTransformer`` (setfit 1.1.x), so we load the body separately
+    and construct the SetFitModel ourselves.
+    """
+    import torch
+
+    if flash_attention:
+        print(
+            "  Enabling flash_attention_2 (fp16 + left padding)",
+            file=sys.stderr,
+        )
+        st_model = SentenceTransformer(
+            model_path,
+            model_kwargs={
+                "attn_implementation": "flash_attention_2",
+                "torch_dtype": torch.float16,
+            },
+            tokenizer_kwargs={"padding_side": "left"},
+        )
+    else:
+        st_model = SentenceTransformer(model_path)
+
+    st_model.max_seq_length = max_seq_length
+    return st_model
+
+
 def _train_setfit(
     model_path: str | Path,
     train_texts: list[str],
@@ -182,6 +216,7 @@ def _train_setfit(
     learning_rate: float,
     max_seq_length: int,
     seed: int,
+    flash_attention: bool = False,
 ) -> tuple[SetFitModel, dict]:
     """Create, train, and evaluate a SetFit model.
 
@@ -193,13 +228,23 @@ def _train_setfit(
     print(f"Loading base model from {model_path}…", file=sys.stderr)
     t0 = time.time()
 
-    model = SetFitModel.from_pretrained(
-        model_path,
-        use_differentiable_head=True,  # PyTorch head — cleaner ONNX export
+    # Load body separately so we can pass model_kwargs (flash attention, etc).
+    st_body = _load_setfit_body(model_path, max_seq_length, flash_attention)
+
+    # Build a random differentiable head; SetFitTrainer will overwrite it
+    # during contrastive training.
+    from setfit.modeling import SetFitHead
+
+    device = st_body.device
+    head = SetFitHead(
+        in_features=st_body.get_sentence_embedding_dimension(),
+        device=device,
     )
 
-    # Set max sequence length on the underlying sentence transformer
-    model.model_body.max_seq_length = max_seq_length
+    model = SetFitModel(
+        model_body=st_body,
+        model_head=head,
+    )
 
     elapsed = time.time() - t0
     print(f"  Loaded in {elapsed:.1f}s", file=sys.stderr)
@@ -439,6 +484,7 @@ def run_train(args: argparse.Namespace) -> None:
         learning_rate=args.learning_rate,
         max_seq_length=args.max_seq_length,
         seed=args.seed,
+        flash_attention=args.flash_attention,
     )
 
     # ── Save model ──

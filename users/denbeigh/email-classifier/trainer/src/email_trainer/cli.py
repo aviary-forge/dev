@@ -224,6 +224,19 @@ def _add_cluster_parser(subparsers: argparse._SubParsersAction) -> None:
             "Overrides --min-cluster-size when set."
         ),
     )
+    h.add_argument(
+        "--post-merge-similar",
+        type=float,
+        default=None,
+        help=(
+            "Merge clusters whose centroid cosine similarity is at or above "
+            "this threshold. Reads pairs from the just-computed "
+            "similar_clusters analysis, finds connected components, and "
+            "reassigns labels. A workaround for sklearn 1.9.0's "
+            "epsilon_search crash at epsilon > 0. "
+            "(default: disabled; try 0.75)"
+        ),
+    )
 
     # ── kmeans ──
     k = cluster_subparsers.add_parser(
@@ -321,6 +334,17 @@ def _add_embed_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Max emails to process (for testing)",
     )
     p.add_argument(
+        "--max-seq-length",
+        type=int,
+        default=None,
+        help=(
+            "Override the model's default max_seq_length for embedding. "
+            "Useful for Qwen3-Embedding (defaults to 32K) — lower to 8192 "
+            "for faster throughput with minimal quality loss. "
+            "(default: model default)"
+        ),
+    )
+    p.add_argument(
         "--run-name",
         default=None,
         help=("Subdirectory for output (e.g. embeddings/gte-small). Default: embeddings/"),
@@ -412,6 +436,15 @@ def _add_train_parser(subparsers: argparse._SubParsersAction) -> None:
         type=int,
         default=None,
         help="Only use the N most frequent labels (for testing)",
+    )
+    p.add_argument(
+        "--flash-attention",
+        action="store_true",
+        help=(
+            "Enable flash_attention_2 for the transformer backbone. "
+            "Loads the model in fp16 with left padding. "
+            "Requires a compatible GPU and transformers>=4.40."
+        ),
     )
     p.add_argument(
         "--skip-onnx",

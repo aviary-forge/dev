@@ -304,6 +304,59 @@ def _find_similar_clusters(
     return pairs[:max_pairs]
 
 
+def _merge_similar_clusters(
+    labels: np.ndarray,
+    similar_pairs: list[dict],
+    threshold: float,
+) -> np.ndarray:
+    """Merge cluster labels via connected components of similar pairs.
+
+    For each connected component of clusters linked by pairs whose
+    centroid cosine similarity is >= *threshold*, all members are
+    reassigned to the lowest cluster ID in the component.
+
+    Noise points (label -1) are left untouched.
+    """
+    # Filter pairs at threshold
+    pairs = [p for p in similar_pairs if p["similarity"] >= threshold]
+    if not pairs:
+        return labels
+
+    # Union-find: map cluster_id -> parent
+    parent: dict[int, int] = {}
+
+    def _find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def _union(x: int, y: int) -> None:
+        parent.setdefault(x, x)
+        parent.setdefault(y, y)
+        rx, ry = _find(x), _find(y)
+        if rx != ry:
+            # Merge into the smaller ID
+            if rx < ry:
+                parent[ry] = rx
+            else:
+                parent[rx] = ry
+
+    for p in pairs:
+        _union(p["cluster_a"], p["cluster_b"])
+
+    # Build mapping: old cluster_id -> merged cluster_id
+    merged = labels.copy()
+    unique = np.unique(labels)
+    for cl in unique:
+        if cl == -1:
+            continue
+        if cl in parent:
+            merged[labels == cl] = _find(cl)
+
+    return merged
+
+
 def _build_cluster_summaries(
     labels: np.ndarray,
     embeddings: np.ndarray,
@@ -530,6 +583,27 @@ def _clustering_pipeline(
         "silhouette_max": sil_max,
         "similar_clusters": similar_pairs,
     }
+
+    # --- Post-merge similar clusters (workaround for epsilon crash) ---
+    merge_threshold = getattr(args, "post_merge_similar", None)
+    if merge_threshold is not None and merge_threshold > 0 and similar_pairs:
+        n_before = len(set(labels) - {-1})
+        labels = _merge_similar_clusters(labels, similar_pairs, threshold=merge_threshold)
+        n_after = len(set(labels) - {-1})
+        n_merged = n_before - n_after
+        if n_merged:
+            print(
+                f"  Post-merge: {n_merged} cluster"
+                f"{'s' if n_merged != 1 else ''} merged "
+                f"({n_before} → {n_after})",
+                file=sys.stderr,
+            )
+            algorithm_metadata["post_merge_similar"] = merge_threshold
+        else:
+            print(
+                f"  Post-merge: no clusters merged at threshold {merge_threshold}",
+                file=sys.stderr,
+            )
 
     # --- Write outputs ---
     output_dir.mkdir(parents=True, exist_ok=True)

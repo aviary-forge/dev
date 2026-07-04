@@ -69,6 +69,16 @@ def run_embed(args: argparse.Namespace) -> None:
         model_path.as_posix(),
         device=device,
     )
+
+    # Override max_seq_length if requested (e.g. Qwen3-Embedding-0.6B
+    # defaults to 32K; lowering to 8192 speeds up embedding).
+    if args.max_seq_length is not None:
+        model.max_seq_length = args.max_seq_length
+        print(
+            f"  Overriding max_seq_length to {args.max_seq_length}",
+            file=sys.stderr,
+        )
+
     print(
         f"  Model loaded.  max_seq_length={model.max_seq_length}  "
         f"output dimension={model.get_embedding_dimension()}",
