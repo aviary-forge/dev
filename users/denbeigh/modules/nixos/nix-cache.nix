@@ -38,7 +38,7 @@ in
     users.groups.nix-copy-receiver = { };
 
     dev.denbeigh.services.www.nix-cache.enable = true;
-    services.harmonia = {
+    services.harmonia.cache = {
       enable = true;
       signKeyPaths = [ cfg.keyFile ];
       settings = {
