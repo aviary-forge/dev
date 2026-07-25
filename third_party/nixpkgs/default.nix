@@ -92,7 +92,15 @@ let
 
   nixpkgsUnstable = import dev.third_party.nix.nixpkgs-unstable commonNixpkgsArgs;
   unstableOverlay = final: prev: {
-    inherit (nixpkgsUnstable) llama-cpp pi-coding-agent;
+    # Pull these from unstable to get newer versions than the stable channel
+    inherit (nixpkgsUnstable)
+      llama-cpp
+      pi-coding-agent
+      radarr
+      sonarr
+      prowlarr
+      jackett
+      ;
   };
 
   overridesOverlay =
