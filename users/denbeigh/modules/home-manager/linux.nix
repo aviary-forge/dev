@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   inherit (lib) mkIf mkDefault;
@@ -6,16 +11,17 @@ let
 in
 
 {
-  imports = [ ./noisetorch.nix ./i3 ./autorandr ];
+  imports = [
+    ./noisetorch.nix
+    ./i3
+    ./autorandr
+  ];
 
   config = mkIf isLinux (
     let
-      inherit (config.dev.denbeigh) graphical isNixOS location;
+      inherit (config.dev.denbeigh.machine) graphical isNixOS location;
 
-      hasCoordinates = (
-        location != null &&
-        location ? coordinates
-      );
+      hasCoordinates = (location != null && location ? coordinates);
       enableRedshift = graphical && isLinux && hasCoordinates;
       graphicalPackages = with pkgs; [ nitrogen ];
 
@@ -23,8 +29,7 @@ in
     in
     {
       home = {
-        packages = with pkgs; [ glibcLocales ]
-          ++ (if graphical then graphicalPackages else [ ]);
+        packages = with pkgs; [ glibcLocales ] ++ (if graphical then graphicalPackages else [ ]);
       };
 
       # TODO: Check if necessary on NixOS?
@@ -40,7 +45,8 @@ in
             night = 3700;
           };
           tray = true;
-        } // coords;
+        }
+        // coords;
       };
     }
   );

@@ -36,9 +36,10 @@ rec {
 
         specialArgs = { inherit dev; };
       });
-    in
-    {
-      inherit (config) system;
-      activate = (activateSystem config.system);
-    };
+     in
+     {
+       inherit (config) system;
+       activate = (activateSystem config.system);
+       __devAttrType = "darwin-system";
+     };
 }

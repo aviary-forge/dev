@@ -12,7 +12,7 @@ let
     types
     ;
   inherit (pkgs.stdenv.hostPlatform) isLinux isDarwin;
-  inherit (config.dev.denbeigh) isNixOS;
+  inherit (config.dev.denbeigh.machine) isNixOS;
 
   # We only need to explicitly wrap if we're on linux and we are _not_ on NixOS
   inherit (config.dev.denbeigh.alacritty)
@@ -28,7 +28,7 @@ in
   options.dev.denbeigh.alacritty = {
     enable = mkOption {
       type = types.bool;
-      default = config.dev.denbeigh.graphical;
+      default = config.dev.denbeigh.machine.graphical;
       description = ''
         Whether to install and manage Alacritty.
       '';

@@ -1,14 +1,14 @@
-{ dev
-, config
-, pkgs
-, lib
-, ...
+{
+  dev,
+  config,
+  pkgs,
+  lib,
+  ...
 }:
-
 
 let
   inherit (lib) mkOption types;
-  inherit (config.dev.denbeigh) username;
+  inherit (config.dev.denbeigh.machine) username;
   inherit (pkgs.stdenvNoCC.hostPlatform) isDarwin;
 in
 {
@@ -24,19 +24,45 @@ in
   ];
 
   options.dev.denbeigh = {
-    username = mkOption {
-      type = types.str;
-      default = "denbeigh";
-      description = ''
-        Username of the user to provision on the system.
-      '';
-    };
+    machine = {
+      username = mkOption {
+        type = types.str;
+        default = "denbeigh";
+        description = ''
+          Username of the user to provision on the system.
+        '';
+      };
 
-    hostname = mkOption {
-      type = types.str;
-      description = ''
-        The hostname of the machine being provisioned.
-      '';
+      hostname = mkOption {
+        type = types.str;
+        description = ''
+          The hostname of the machine being provisioned.
+        '';
+      };
+
+      graphical = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Whether this machine will be used interactively.
+        '';
+      };
+
+      # TODO: Make naming consistent
+      isNixOS = mkOption {
+        type = types.bool;
+        description = ''
+          Whether the machine being provisioned is running NixOS.
+        '';
+      };
+
+      work = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Whether this machine will be used for "work" purposes.
+        '';
+      };
     };
 
     shell = mkOption {
@@ -56,31 +82,8 @@ in
       '';
     };
 
-    graphical = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Whether this machine will be used interactively.
-      '';
-    };
-
     inherit (dev.users.denbeigh.utils.locations.options) location;
 
-    # TODO: Make naming consistent
-    isNixOS = mkOption {
-      type = types.bool;
-      description = ''
-        Whether the machine being provisioned is running NixOS.
-      '';
-    };
-
-    work = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Whether this machine will be used for "work" purposes.
-      '';
-    };
   };
 
   config = {
@@ -110,7 +113,7 @@ in
       aria2.enable = true;
       fzf.enable = true;
       gh.enable = true;
-      jq.enable = !config.dev.denbeigh.work;
+      jq.enable = !config.dev.denbeigh.machine.work;
       tmux.enable = true;
 
       keychain = {
@@ -120,4 +123,3 @@ in
     };
   };
 }
-
