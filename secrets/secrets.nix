@@ -18,7 +18,7 @@ in
   "buildkite-ssh-private-key.age" = key [ systems.aviary ];
   "tailscaleAuthKey.age" = key [ systems.aviary ];
   "digitalOceanAPIKey.age" = key [ systems.aviary ];
-  "cfdyndnsApiToken.age" = key [ systems.aviary ];
+  # "cfdyndnsApiToken.age" = key [ systems.aviary ];  # disabled: key rotation
   "terraform.age" = key [ systems.aviary ];
   "fontDeployKey.age" = key [ systems.aviary ];
 }

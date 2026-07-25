@@ -18,7 +18,7 @@ dev.nix.nixos.eval (
       ../../users/denbeigh/modules/nixos/nix-cache.nix
       ../../users/denbeigh/modules/nixos/terraform.nix
       ../../users/denbeigh/modules/nixos/update-fonts.nix
-      ../../users/denbeigh/modules/nixos/3rdparty/cfdyndns
+      # ../../users/denbeigh/modules/nixos/3rdparty/cfdyndns  # disabled: key rotation
 
       # Infrastructure
       ../modules/nixos/ci
@@ -46,11 +46,11 @@ dev.nix.nixos.eval (
 
           www.enable = true;
 
-          cfdyndns = {
-            enable = true;
-            records = [ "aviary.denbeigh.cloud" ];
-            secretKeyPath = config.age.secrets.cfdyndnsApiToken.path;
-          };
+          # cfdyndns = {
+          #   enable = true;
+          #   records = [ "aviary.denbeigh.cloud" ];
+          #   secretKeyPath = config.age.secrets.cfdyndnsApiToken.path;
+          # };
         };
       };
 
@@ -83,14 +83,7 @@ dev.nix.nixos.eval (
             "buildkite-agent-token"
             "buildkite-graphql-token"
             "buildkite-ssh-private-key"
-          ])
-          # Secrets not owned by CI group
-          // {
-            cfdyndnsApiToken = {
-              file = dev.secrets."cfdyndnsApiToken.age";
-              mode = "400";
-            };
-          };
+          ]);
       };
 
       # ── Data directories ──────────────────────────────────────────
