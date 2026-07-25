@@ -41,10 +41,10 @@
         "homepage": "",
         "owner": "nix-community",
         "repo": "fenix",
-        "rev": "df161b9bd5f8ff444b2c213cd45410b7da6da602",
-        "sha256": "0p0y00z3468klnhgbm7zhn10irqw1avc6kqw4a598k4jhpmg73pr",
+        "rev": "58d7d6171b8f226fbac2eddb3adf922863f82352",
+        "sha256": "168d6kjy4imdfi90qlzvf1dsxqkfdza2dwc1r4apy3djzhhgrqb1",
         "type": "tarball",
-        "url": "https://github.com/nix-community/fenix/archive/df161b9bd5f8ff444b2c213cd45410b7da6da602.tar.gz",
+        "url": "https://github.com/nix-community/fenix/archive/58d7d6171b8f226fbac2eddb3adf922863f82352.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "fonts": {
@@ -96,15 +96,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "e9183409c2be80e2cd9d633582fdab543bb8d084",
+        "branch": "nixos-26.05",
         "description": "Nix Packages collection & NixOS",
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "e9183409c2be80e2cd9d633582fdab543bb8d084",
-        "sha256": "0kdd9wfqplngncdw7rr4p4haj82ljp991rhfb2n1blmgfsd2jbyp",
+        "rev": "597283ad8aa0b331c788e97c4c262d58877074ef",
+        "sha256": "102vwf86cjx5c4bki98f7as62j69189qbh892vv8hylfkvap3q17",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/e9183409c2be80e2cd9d633582fdab543bb8d084.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/597283ad8aa0b331c788e97c4c262d58877074ef.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "e9183409c2be80e2cd9d633582fdab543bb8d084"
     },
@@ -114,10 +114,10 @@
         "homepage": "",
         "owner": "nix-community",
         "repo": "nixpkgs-terraform-providers-bin",
-        "rev": "90bb3c602da9e5a897d72c697c443433e0c81bfd",
-        "sha256": "1f6nqc1i3qyf34bn6q8bnjskqdy39z8rzp649dr5xv1mwfgjc4kn",
+        "rev": "4ff8b52d609815d152011fad300c443369ed3e7a",
+        "sha256": "0bxcxflmydzqf1qsi89ik98i403cg5fya4lzvs4qlyljdk3i4x90",
         "type": "tarball",
-        "url": "https://github.com/nix-community/nixpkgs-terraform-providers-bin/archive/90bb3c602da9e5a897d72c697c443433e0c81bfd.tar.gz",
+        "url": "https://github.com/nix-community/nixpkgs-terraform-providers-bin/archive/4ff8b52d609815d152011fad300c443369ed3e7a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "3d9d667c5f669d4b93a86a42650aa78d06df16d5"
     },
@@ -127,10 +127,10 @@
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "b5aa0fbd538984f6e3d201be0005b4463d8b09f8",
-        "sha256": "1r0ixj83k41mmkl6xzdcgxgq2l0vkdw10ld234f8jlljyi9w5xd0",
+        "rev": "e2587caef70cea85dd97d7daab492899902dbf5d",
+        "sha256": "14jrgz4z2m8n1c8qwcla44kdy9kd7x0xnwfyrajnyvnhkxbnnqf1",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/b5aa0fbd538984f6e3d201be0005b4463d8b09f8.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/e2587caef70cea85dd97d7daab492899902dbf5d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixvim": {

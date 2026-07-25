@@ -53,7 +53,7 @@ let
   # argument. This is intended for use-cases where the monorepo is
   # bisected against nixpkgs to find the root cause of an issue in a
   # channel bump.
-  nixpkgsSrc = externalArgs.nixpkgsBisectPath or dev.third_party.nix.nixpkgs;
+  nixpkgsSrc = externalArgs.nixpkgsBisectPath or (import ../nix { }).nixpkgs;
   # Overlay to expose the nixpkgs commits we are using to other Nix code.
   commitsOverlay = _: _: {
     nixpkgsCommits = {
@@ -117,6 +117,7 @@ let
       mkLlama = import ../overrides/llama-cpp.nix;
     in
     {
+
       llama-cpp-server = mkLlama {
         inherit (prev) llama-cpp fetchFromGitHub;
         cudaSupport = true;
