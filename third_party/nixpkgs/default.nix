@@ -92,10 +92,12 @@ let
       crate2nix = prev.callPackage crate2nixSrc {
         cargo = fenix.complete.toolchain;
       };
+      craneLib = prev.callPackage "${dev.third_party.nix.crane}/lib" { };
     in
     {
       inherit fenix;
       inherit crate2nix;
+      inherit craneLib;
     };
 
   nixpkgsUnstable = import dev.third_party.nix.nixpkgs-unstable commonNixpkgsArgs;
