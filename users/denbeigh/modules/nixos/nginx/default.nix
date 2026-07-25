@@ -101,7 +101,11 @@ in
     security.acme = {
       acceptTerms = true;
       defaults = {
-        credentialFiles = [ config.age.secrets.digitalOceanKey.path ];
+        credentialFiles = {
+          # Lego reads this env var and expects the file to contain the raw
+          # API token (not KEY=value format as the old credentialsFile did).
+          "DO_AUTH_TOKEN_FILE" = config.age.secrets.digitalOceanKey.path;
+        };
         dnsProvider = "digitalocean";
         email = "denbeigh+letsencrypt@denbeighstevens.com";
       };

@@ -147,7 +147,6 @@ dev.nix.nixos.eval (
       };
 
       boot.initrd.luks.devices."root" = {
-        preLVM = false;
         device = "/dev/disk/by-uuid/6bbc9e9f-ca71-4a12-9fa0-ca05df1a4071";
       };
 

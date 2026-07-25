@@ -56,7 +56,8 @@
         python313
         go
         nodejs
-        nodePackages
+        yarn
+        pnpm
         ;
       inherit (pkgs.lib) optionals;
 
@@ -64,8 +65,8 @@
       go-pkgs = optionals cfg.go.enable [ go ];
       node-pkgs = optionals cfg.node.enable [
         nodejs
-        nodePackages.yarn
-        nodePackages.pnpm
+        yarn
+        pnpm
       ];
       python-pkgs = optionals cfg.python.enable [ python313 ];
     in
