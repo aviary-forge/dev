@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   cfg = config.dev.denbeigh;
@@ -21,6 +26,20 @@ in
     dev.denbeigh.tailscale.enable = mkDefault true;
 
     networking.hostName = cfg.machine.hostname;
+
+    # pip3, clang, etc are often called from various tooling, and cause the
+    # xcode licence agreement popup
+    environment.systemPackages = [
+      (pkgs.python3.withPackages (
+        ps: with ps; [
+          pip
+          setuptools
+          wheel
+          virtualenv
+        ]
+      ))
+      pkgs.stdenv.cc
+    ];
 
     users = {
       knownUsers = [ cfg.user.username ];
