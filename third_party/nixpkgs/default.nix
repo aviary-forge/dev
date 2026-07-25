@@ -80,23 +80,12 @@ let
   rustOverlay =
     final: prev:
     let
-      pkgs = prev;
-
-      crate2nixSrcRoot = dev.third_party.nix.crate2nix;
-      crate2nixSrc = (import "${crate2nixSrcRoot}/crate2nix/default.nix");
-
       fenixSrc = (import "${dev.third_party.nix.fenix}/default.nix");
-      fenix = (pkgs.callPackage fenixSrc { });
-      # fenix = (pkgs.callPackage dev.third_party.nix.fenix) { };
-      # fenix = pkgs.fenix;
-      crate2nix = prev.callPackage crate2nixSrc {
-        cargo = fenix.complete.toolchain;
-      };
+      fenix = (prev.callPackage fenixSrc { });
       craneLib = prev.callPackage "${dev.third_party.nix.crane}/lib" { };
     in
     {
       inherit fenix;
-      inherit crate2nix;
       inherit craneLib;
     };
 
