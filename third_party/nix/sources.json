@@ -60,15 +60,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "home-manager": {
-        "branch": "release-25.11",
+        "branch": "release-26.05",
         "description": "Manage a user environment using Nix  [maintainer=@khaneliman, @rycee] ",
         "homepage": "https://nix-community.github.io/home-manager/",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "3ee51fbdac8c8bdfe1e7e1fcaba6520a563f394f",
-        "sha256": "13fmry1jd0na71fxhzms9qf3ybj6shgvnphq4p1akxxmv44gzq20",
+        "rev": "4ce190229c73d44536caa7072f6308fb2d8feeb3",
+        "sha256": "1cqangi17i4nfkjpzpzpsavcgnaqdvarjjsjg09sbj5mnhnv6v35",
         "type": "tarball",
-        "url": "https://github.com/nix-community/home-manager/archive/3ee51fbdac8c8bdfe1e7e1fcaba6520a563f394f.tar.gz",
+        "url": "https://github.com/nix-community/home-manager/archive/4ce190229c73d44536caa7072f6308fb2d8feeb3.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nix-darwin": {
