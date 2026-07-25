@@ -11,6 +11,18 @@
         "url": "https://github.com/ryantm/agenix/archive/b027ee29d959fda4b60b57566d64c98a202e0feb.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "crane": {
+        "branch": "master",
+        "description": "A Nix library for building cargo projects. Never build twice thanks to incremental artifact caching.",
+        "homepage": "https://crane.dev",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "7930f6c291de6f83c257839d434592aa085f290a",
+        "sha256": "0y49sj1pn2garc7gn7424qa68xn03cz6zrfcvnjcbzsm28vdci2f",
+        "type": "tarball",
+        "url": "https://github.com/ipetkov/crane/archive/7930f6c291de6f83c257839d434592aa085f290a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "crate2nix": {
         "branch": "master",
         "description": "rebuild only changed crates in CI with crate2nix and nix",
