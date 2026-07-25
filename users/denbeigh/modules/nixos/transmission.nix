@@ -7,7 +7,7 @@
 
 with builtins;
 {
-  imports = [ ./nginx/transmission.nix ];
+
   options =
     with lib.options;
     with lib.types;

@@ -1,7 +1,10 @@
 { config, lib, ... }:
 
 {
-  imports = [ ./openwebui-module.nix ];
+  imports = [
+    ./openwebui-module.nix
+    ../../../systems/modules/nixos/reverse-proxy
+  ];
   options =
     let
       inherit (lib) mkOption types;
@@ -37,14 +40,11 @@
         mode = "400";
       };
 
-      dev.denbeigh.services.www.services = [
-        {
-          name = cfg.subdomain;
-          backend = "http://localhost:${toString cfg.port}";
-          tailscale = true;
-          ssl = true;
-        }
-      ];
+      services.dev.reverse-proxy.services."${cfg.subdomain}" = {
+        enable = true;
+        backend = "http://localhost:${toString cfg.port}";
+        tailscale = true;
+      };
 
       services.open-webui-patched = {
         enable = true;

@@ -22,6 +22,7 @@ dev.nix.nixos.eval (
 
       # Infrastructure
       ../modules/nixos/ci
+      ../modules/nixos/reverse-proxy
     ];
 
     config = {
@@ -44,13 +45,32 @@ dev.nix.nixos.eval (
             keyFile = "/var/lib/denbeigh/nix-cache/serve-key";
           };
 
-          www.enable = true;
-
           # cfdyndns = {
           #   enable = true;
           #   records = [ "aviary.denbeigh.cloud" ];
           #   secretKeyPath = config.age.secrets.cfdyndnsApiToken.path;
           # };
+        };
+      };
+
+      services.dev.reverse-proxy = {
+        enable = true;
+        baseDomain = "denbeigh.cloud";
+        tailscaleAddr = "100.71.134.67";
+        openFirewall = true;
+
+        defaultVhost = {
+          serverName = "_";
+          return = "444";
+        };
+
+        acme = {
+          enable = true;
+          email = "denbeigh+letsencrypt@denbeighstevens.com";
+          dnsProvider = "digitalocean";
+          credentialFiles = {
+            "DO_AUTH_TOKEN_FILE" = config.age.secrets.digitalOceanKey.path;
+          };
         };
       };
 
@@ -83,7 +103,13 @@ dev.nix.nixos.eval (
             "buildkite-agent-token"
             "buildkite-graphql-token"
             "buildkite-ssh-private-key"
-          ]);
+          ])
+          # DigitalOcean API token for ACME DNS-01 challenge
+          // {
+            digitalOceanKey = {
+              file = dev.secrets."digitalOceanAPIKey.age";
+            };
+          };
       };
 
       # ── Data directories ──────────────────────────────────────────

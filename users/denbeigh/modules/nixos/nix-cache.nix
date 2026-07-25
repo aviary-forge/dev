@@ -11,7 +11,7 @@ let
   cfg = config.dev.denbeigh.services.nix-cache;
 in
 {
-  imports = [ ./nginx ];
+  imports = [ ../../../systems/modules/nixos/reverse-proxy ];
 
   # NOTE: Subtly different from dev.denbeigh.nix-cache (adds .services)
   options.dev.denbeigh.services.nix-cache = {
@@ -37,7 +37,11 @@ in
     };
     users.groups.nix-copy-receiver = { };
 
-    dev.denbeigh.services.www.nix-cache.enable = true;
+    services.dev.reverse-proxy.services.nix-cache = {
+      enable = true;
+      backend = "http://localhost:5000";
+      tailscale = true;
+    };
     services.harmonia.cache = {
       enable = true;
       signKeyPaths = [ cfg.keyFile ];

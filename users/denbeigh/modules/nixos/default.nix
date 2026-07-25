@@ -16,7 +16,6 @@ let
     tailscale = ./tailscale.nix;
     terraform = ./terraform.nix;
     update-fonts = ./update-fonts.nix;
-    www = ./nginx;
   };
 in
 mapAttrs (_: path: import path) paths
