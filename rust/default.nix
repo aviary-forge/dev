@@ -1,70 +1,65 @@
-{ pkgs, ... }@args:
+{ pkgs, lib, ... }@args:
 
 let
   inherit (builtins)
-    readDir
-    listToAttrs
-    map
+    mapAttrs
     pathExists
+    readDir
     ;
-  inherit (pkgs.lib)
-    attrNames
+  inherit (lib)
     filterAttrs
-    mapAttrs'
-    nameValuePair
     ;
 
-  # This allows us to specify overrides in an optional overrides.nix file in
-  # the create's directory. In practice, most crates should specify this file,
-  # because
-  loadCrateOverride = crateName: (import ./${crateName}/overrides.nix args);
-  crateHasOverride = crateName: pathExists ./${crateName}/overrides.nix;
-  crateOverrides =
+  craneLib = pkgs.craneLib;
+
+  # Source filtered to just cargo-relevant files
+  src = craneLib.cleanCargoSource ./.;
+
+  # Shared: all workspace dependencies compiled once
+  cargoArtifacts = craneLib.buildDepsOnly {
+    inherit src;
+    pname = "rust-workspace-deps";
+    version = "0.1.0";
+    strictDeps = true;
+  };
+
+  # Load a crate's optional overrides.nix
+  loadOverride = crateName:
     let
-      filter = name: value: (value == "directory" && crateHasOverride name);
-      cratesWithOverrides = attrNames (filterAttrs filter (readDir ./.));
-      mkOverride = crateName: nameValuePair crateName (loadCrateOverride crateName);
-
+      p = ./${crateName}/overrides.nix;
     in
-    listToAttrs (map mkOverride cratesWithOverrides);
+    if pathExists p then import p args else { };
 
-  mkCrateOverrides =
-    pkgs:
-    pkgs.buildRustCrate.override {
-      defaultCrateOverrides = pkgs.defaultCrateOverrides // crateOverrides;
-    };
+  # Build a single workspace member, inheriting shared cargoArtifacts
+  mkMember = crateName:
+    let
+      override = loadOverride crateName;
+    in
+    craneLib.buildPackage ({
+      inherit cargoArtifacts src;
+      pname = crateName;
+      version = override.version or "0.1.0";
+      cargoBuildArgs = "-p ${crateName}";
+      strictDeps = true;
+      buildInputs = override.buildInputs or [ ];
+      nativeBuildInputs = override.nativeBuildInputs or [ ];
+      meta = override.meta or { };
+    } // builtins.removeAttrs override [
+      "buildInputs"
+      "nativeBuildInputs"
+      "version"
+      "meta"
+    ]);
 
-  cargo = pkgs.callPackage ./cargo/default.nix {
-    buildRustCrateForPkgs = mkCrateOverrides;
-  };
+  # Discover workspace members: directories containing a Cargo.toml
+  memberDirs = filterAttrs
+    (name: type: type == "directory" && pathExists ./${name}/Cargo.toml)
+    (readDir ./.);
 
-  crates = builtins.mapAttrs (name: value: value.build) cargo.workspaceMembers;
-
-  regenerate = pkgs.writeShellApplication {
-    name = "generate-cargo-nix";
-    runtimeInputs = with pkgs; [
-      crate2nix
-      git
-    ];
-    text = ''
-      set -euo pipefail
-
-      working_dir="$(git rev-parse --show-toplevel)/rust"
-      cargo_toml="$working_dir/Cargo.toml"
-      output_path="$working_dir/cargo/default.nix"
-
-      crate2nix generate \
-        --cargo-toml "$cargo_toml" \
-        --output "$output_path"
-    '';
-  };
+  members = mapAttrs (name: _: mkMember name) memberDirs;
 in
-crates
+members
 // {
-  inherit regenerate;
-  # We don't really want to parse the subtree of all the crates in Nix,
-  # but we do want to be able to gather these for use in CI etc
-  __readTreeChildrenOverride = crates // {
-    inherit regenerate;
-  };
+  inherit cargoArtifacts;
+  __readTreeChildrenOverride = members;
 }
