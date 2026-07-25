@@ -15,7 +15,6 @@ in
   imports = [
     ./nginx
     ./transmission.nix
-    ./wireguard.nix
   ];
 
   options.dev.denbeigh.ahoy = {
@@ -36,11 +35,6 @@ in
     ];
 
     dev.denbeigh = {
-      # wireguard = {
-      #   enable = false;
-      #   users = [ "transmission" "jackett" ];
-      # };
-
       # Be sure we have access to web-facing services
       services.www = {
         enable = true;
