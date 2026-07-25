@@ -65,9 +65,9 @@ in
             tailscale = mkEnableOption "tailscale proxy serving";
 
             tailscaleIP = mkOption {
-              # NOTE: This defaults bruce's tailscale IP
+              # NOTE: This defaults aviary's tailscale IP
               # TODO: Use interface name instead somehow?
-              default = "100.110.24.108";
+              default = "100.71.134.67";
               type = types.str;
               description = ''
                 Tailscale IP to serve tailscale services on.
