@@ -134,15 +134,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixvim": {
-        "branch": "nixos-25.11",
+        "branch": "nixos-26.05",
         "description": "Configure Neovim with Nix! [maintainers=@GaetanLepage, @traxys, @mattsturgeon, @khaneliman]",
         "homepage": "https://nix-community.github.io/nixvim",
         "owner": "nix-community",
         "repo": "nixvim",
-        "rev": "68e314303bc60b8a58cdd2f361013809620b2473",
-        "sha256": "182k9q408svagsl0pagmssx7gqcym47g75d3x9m8y8rnj7x0pk2h",
+        "rev": "667c8471f4a0fb24d702d1a61af8609f1a5f1ba6",
+        "sha256": "139rki73ydxhq2m98l6miqffvwd46wg3j6wzy3k9sh273ry26755",
         "type": "tarball",
-        "url": "https://github.com/nix-community/nixvim/archive/68e314303bc60b8a58cdd2f361013809620b2473.tar.gz",
+        "url": "https://github.com/nix-community/nixvim/archive/667c8471f4a0fb24d702d1a61af8609f1a5f1ba6.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "opam2nix": {
