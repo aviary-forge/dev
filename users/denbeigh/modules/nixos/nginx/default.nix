@@ -101,7 +101,7 @@ in
     security.acme = {
       acceptTerms = true;
       defaults = {
-        credentialsFile = config.age.secrets.digitalOceanKey.path;
+        credentialFiles = [ config.age.secrets.digitalOceanKey.path ];
         dnsProvider = "digitalocean";
         email = "denbeigh+letsencrypt@denbeighstevens.com";
       };
