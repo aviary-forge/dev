@@ -25,6 +25,12 @@ in
     users.groups."${groupName}".gid = 94;
 
     dev.denbeigh = {
+      # Use the custom transmission wrapper (handles transmission_4, settings, etc.)
+      services.transmission = {
+        enable = true;
+        group = groupName;
+      };
+
       # Be sure we have access to web-facing services
       services.www = {
         enable = true;
@@ -44,7 +50,6 @@ in
       sonarr = serviceConfig;
       radarr = serviceConfig;
       jackett = serviceConfig;
-      transmission = serviceConfig;
     };
   };
 }
