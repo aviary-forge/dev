@@ -24,15 +24,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "darwin": {
-        "branch": "nix-darwin-25.11",
+        "branch": "nix-darwin-26.05",
         "description": "Manage your macOS using Nix",
         "homepage": "https://nix-darwin.org",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "ebec37af18215214173c98cf6356d0aca24a2585",
-        "sha256": "1s554xv08msaqbmkab8xzaj43kixffw6k8zw4hagnk0jvz6k9naj",
+        "rev": "c3e90c89649b07d1a96e4b9dd6cd0d6e44b91a74",
+        "sha256": "1l6vq4djcmiydrag5ilnn31a93rlgsirfz9w5nc73hpbg8vpmjnr",
         "type": "tarball",
-        "url": "https://github.com/nix-darwin/nix-darwin/archive/ebec37af18215214173c98cf6356d0aca24a2585.tar.gz",
+        "url": "https://github.com/nix-darwin/nix-darwin/archive/c3e90c89649b07d1a96e4b9dd6cd0d6e44b91a74.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "fenix": {
@@ -72,15 +72,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nix-darwin": {
-        "branch": "nix-darwin-25.11",
+        "branch": "nix-darwin-26.05",
         "description": "Manage your macOS using Nix",
         "homepage": "https://nix-darwin.org",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "ebec37af18215214173c98cf6356d0aca24a2585",
-        "sha256": "1s554xv08msaqbmkab8xzaj43kixffw6k8zw4hagnk0jvz6k9naj",
+        "rev": "c3e90c89649b07d1a96e4b9dd6cd0d6e44b91a74",
+        "sha256": "1l6vq4djcmiydrag5ilnn31a93rlgsirfz9w5nc73hpbg8vpmjnr",
         "type": "tarball",
-        "url": "https://github.com/nix-darwin/nix-darwin/archive/ebec37af18215214173c98cf6356d0aca24a2585.tar.gz",
+        "url": "https://github.com/nix-darwin/nix-darwin/archive/c3e90c89649b07d1a96e4b9dd6cd0d6e44b91a74.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixgl": {
