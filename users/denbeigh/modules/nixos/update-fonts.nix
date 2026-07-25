@@ -12,7 +12,7 @@
     in
     {
       age.secrets.fontDeployKey = {
-        file = ../../secrets/fontDeployKey.age;
+        file = dev.secrets."fontDeployKey.age";
         owner = user;
         mode = "600";
       };

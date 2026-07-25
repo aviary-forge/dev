@@ -17,6 +17,7 @@ dev.nix.nixos.eval (
       ../../users/denbeigh/modules/nixos/ahoy.nix
       ../../users/denbeigh/modules/nixos/nix-cache.nix
       ../../users/denbeigh/modules/nixos/terraform.nix
+      ../../users/denbeigh/modules/nixos/update-fonts.nix
       ../../users/denbeigh/modules/nixos/3rdparty/cfdyndns
 
       # Infrastructure

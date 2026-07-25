@@ -20,4 +20,5 @@ in
   "digitalOceanAPIKey.age" = key [ systems.aviary ];
   "cfdyndnsApiToken.age" = key [ systems.aviary ];
   "terraform.age" = key [ systems.aviary ];
+  "fontDeployKey.age" = key [ systems.aviary ];
 }
