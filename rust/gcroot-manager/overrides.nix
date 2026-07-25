@@ -4,10 +4,9 @@ let
   inherit (pkgs.stdenvNoCC.hostPlatform) isLinux;
 in
 {
-  buildInputs = lib.optional isLinux pkgs.makeWrapper;
+  buildInputs = [ pkgs.openssl ] ++ lib.optional isLinux pkgs.makeWrapper;
 
   nativeBuildInputs = with pkgs; [
-    openssl.dev
     pkg-config
   ];
 

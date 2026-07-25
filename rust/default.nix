@@ -15,20 +15,32 @@ let
   # Source filtered to just cargo-relevant files
   src = craneLib.cleanCargoSource ./.;
 
-  # Shared: all workspace dependencies compiled once
-  cargoArtifacts = craneLib.buildDepsOnly {
-    inherit src;
-    pname = "rust-workspace-deps";
-    version = "0.1.0";
-    strictDeps = true;
-  };
-
   # Load a crate's optional overrides.nix
   loadOverride = crateName:
     let
       p = ./${crateName}/overrides.nix;
     in
     if pathExists p then import p args else { };
+
+  # Discover workspace members: directories containing a Cargo.toml
+  memberDirs = filterAttrs
+    (name: type: type == "directory" && pathExists ./${name}/Cargo.toml)
+    (readDir ./.);
+
+  # Collect build inputs from all overrides for the shared deps build
+  allOverrides = mapAttrs (name: _: loadOverride name) memberDirs;
+  mergedBuildInputs = lib.unique (lib.concatMap (o: o.buildInputs or [ ]) (builtins.attrValues allOverrides));
+  mergedNativeBuildInputs = lib.unique (lib.concatMap (o: o.nativeBuildInputs or [ ]) (builtins.attrValues allOverrides));
+
+  # Shared: all workspace dependencies compiled once, with deps from all overrides
+  cargoArtifacts = craneLib.buildDepsOnly {
+    inherit src;
+    pname = "rust-workspace-deps";
+    version = "0.1.0";
+    strictDeps = true;
+    buildInputs = mergedBuildInputs;
+    nativeBuildInputs = mergedNativeBuildInputs;
+  };
 
   # Build a single workspace member, inheriting shared cargoArtifacts
   mkMember = crateName:
@@ -50,11 +62,6 @@ let
       "version"
       "meta"
     ]);
-
-  # Discover workspace members: directories containing a Cargo.toml
-  memberDirs = filterAttrs
-    (name: type: type == "directory" && pathExists ./${name}/Cargo.toml)
-    (readDir ./.);
 
   members = mapAttrs (name: _: mkMember name) memberDirs;
 in
