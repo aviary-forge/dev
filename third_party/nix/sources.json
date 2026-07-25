@@ -71,18 +71,6 @@
         "url": "https://github.com/nix-community/home-manager/archive/4ce190229c73d44536caa7072f6308fb2d8feeb3.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "nix-darwin": {
-        "branch": "nix-darwin-26.05",
-        "description": "Manage your macOS using Nix",
-        "homepage": "https://nix-darwin.org",
-        "owner": "nix-darwin",
-        "repo": "nix-darwin",
-        "rev": "c3e90c89649b07d1a96e4b9dd6cd0d6e44b91a74",
-        "sha256": "1l6vq4djcmiydrag5ilnn31a93rlgsirfz9w5nc73hpbg8vpmjnr",
-        "type": "tarball",
-        "url": "https://github.com/nix-darwin/nix-darwin/archive/c3e90c89649b07d1a96e4b9dd6cd0d6e44b91a74.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "nixgl": {
         "branch": "main",
         "description": "A wrapper tool for nix OpenGL application [maintainer=@guibou]",
