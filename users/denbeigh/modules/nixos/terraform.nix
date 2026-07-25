@@ -1,30 +1,23 @@
-{ self, config, pkgs, ... }:
+{ dev, config, pkgs, lib, ... }:
 
+# NOTE: This module is currently non-functional pending terraform config migration.
+# TODO(denbeigh): migrate terraform configs from ~/.dotfiles/terraform/ into
+# this monorepo, update third_party/terraform to include needed providers
+# (cloudflare, digitalocean, aws, tailscale), and fix the apply-terraform script.
 let
-  tf-providers = import self.inputs.terraform-providers-bin {
-    inherit (pkgs.stdenv) system;
-  };
-  tf = (import ../../terraform {
-    inherit pkgs tf-providers;
-  }).packages;
+  # tf-providers = dev.third_party.terraform.providers-src;
+  # tf-packages = dev.third_party.terraform;
 
   applyTerraform = pkgs.writeShellScriptBin "apply-terraform" ''
-    set -euo pipefail
-
-    TF_DIR="$(mktemp -d)"
-    cd $TF_DIR
-    MOD_SRC="$(${pkgs.coreutils}/bin/realpath --relative-to . ${tf.terraform-config})"
-
-    source <(sudo cat ${config.age.secrets.terraform.path})
-    ${tf.terraform}/bin/terraform init -from-module=$MOD_SRC
-
-    ${tf.terraform}/bin/terraform apply
+    echo "terraform module: apply-terraform not yet implemented in monorepo" >&2
+    echo "TODO: migrate terraform configs from ~/.dotfiles/terraform/" >&2
+    exit 1
   '';
 in
 
 {
   age.secrets.terraform = {
-    file = ../../secrets/terraform.age;
+    file = dev.secrets."terraform.age";
   };
 
   environment.systemPackages = [ applyTerraform ];

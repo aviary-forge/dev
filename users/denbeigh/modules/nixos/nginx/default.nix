@@ -1,4 +1,5 @@
 {
+  dev,
   config,
   lib,
   ...
@@ -95,7 +96,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    age.secrets.digitalOceanKey.file = ../../../secrets/digitalOceanAPIKey.age;
+    age.secrets.digitalOceanKey.file = dev.secrets."digitalOceanAPIKey.age";
 
     security.acme = {
       acceptTerms = true;

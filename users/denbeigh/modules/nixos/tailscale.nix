@@ -1,4 +1,5 @@
 {
+  dev,
   config,
   lib,
   pkgs,
@@ -14,7 +15,7 @@ in
   imports = [ ../common/tailscale.nix ];
 
   config = mkIf cfg.enable {
-    age.secrets.tailscaleAuthKey.file = ../../secrets/tailscaleAuthKey.age;
+    age.secrets.tailscaleAuthKey.file = dev.secrets."tailscaleAuthKey.age";
 
     networking.firewall = {
       checkReversePath = "loose";
