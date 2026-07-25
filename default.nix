@@ -52,6 +52,34 @@ readTree.fix (
 
     ci =
       let
+        mkSystemDiscovery =
+          isSystemPredicate:
+          let
+            inherit (builtins) concatStringsSep filter listToAttrs;
+
+            targets = readTree.gather isSystemPredicate self;
+            byPath =
+              let
+                paths = map (
+                  t:
+                  let
+                    p = concatStringsSep "." t.__readTree;
+                  in
+                  if p != "" then
+                    {
+                      name = p;
+                      value = t;
+                    }
+                  else
+                    null
+                ) targets;
+              in
+              listToAttrs (filter (x: x != null) paths);
+          in
+          {
+            inherit targets byPath;
+          };
+
         excluded = [
           # e.g.: self.path.to.package
         ];
@@ -83,48 +111,21 @@ readTree.fix (
       in
       {
         inherit excluded targets gcroot;
-      };
 
-    systems =
-      let
-        mkSystemDiscovery =
-          isSystemPredicate:
-          let
-            inherit (builtins) concatStringsSep filter listToAttrs;
-
-            targets = readTree.gather isSystemPredicate self;
-            byPath =
-              let
-                paths = map (
-                  t:
-                  let
-                    p = concatStringsSep "." t.__readTree;
-                  in
-                  if p != "" then
-                    {
-                      name = p;
-                      value = t;
-                    }
-                  else
-                    null
-                ) targets;
-              in
-              listToAttrs (filter (x: x != null) paths);
-          in
-          {
-            inherit targets byPath;
-          };
-      in
-      {
-        nixos = mkSystemDiscovery (
-          target: target ? __devAttrType && target.__devAttrType == "nixos-system"
-        );
-        darwin = mkSystemDiscovery (
-          target: target ? __devAttrType && target.__devAttrType == "darwin-system"
-        );
-        "home-manager" = mkSystemDiscovery (
-          target: target ? __devAttrType && target.__devAttrType == "home-manager-system"
-        );
+        # Grouped system discovery for CI pipeline generation.
+        # Use `ci.systems.nixos.targets` etc. to get all NixOS/darwin/home-manager configs.
+        # Individual configs are at `systems.configs.<name>` (readTree natural path).
+        systems = {
+          nixos = mkSystemDiscovery (
+            target: target ? __devAttrType && target.__devAttrType == "nixos-system"
+          );
+          darwin = mkSystemDiscovery (
+            target: target ? __devAttrType && target.__devAttrType == "darwin-system"
+          );
+          "home-manager" = mkSystemDiscovery (
+            target: target ? __devAttrType && target.__devAttrType == "home-manager-system"
+          );
+        };
       };
 
     ownership =
