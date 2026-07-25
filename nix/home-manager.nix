@@ -5,7 +5,7 @@ let
   activateHomeManager = (
     targetSystem: hmConfig:
     pkgs.writeShellApplication {
-      name = "activate-home-manager";
+      name = "activate";
       runtimeInputs = [ dev.third_party.home-manager.cli ];
       text = ''
         # We use the activation script from the built configuration.

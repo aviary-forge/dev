@@ -3,7 +3,7 @@
 let
   activateSystem = (system:
     pkgs.writeShellApplication {
-      name = "activate-system";
+      name = "activate";
 
       text = ''
         if [[ "$EUID" -ne "0" ]]
