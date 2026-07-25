@@ -1,7 +1,7 @@
 { dev, ... }:
 
 dev.nix.nixos.eval (
-  { pkgs, config, ... }:
+  { pkgs, config, lib, ... }:
 
   let
     ciGroupName = "ci-agents";
@@ -9,101 +9,124 @@ dev.nix.nixos.eval (
 
   {
     imports = [
-      (dev.third_party.agenix.src + "/modules/age.nix")
+      # Personal NixOS standard module chain (agenix, user, home-manager, common config)
+      ../../users/denbeigh/modules/nixos/standard.nix
+
+      # Services
+      ../../users/denbeigh/modules/nixos/tailscale.nix
+      ../../users/denbeigh/modules/nixos/ahoy.nix
+      ../../users/denbeigh/modules/nixos/nix-cache.nix
+      ../../users/denbeigh/modules/nixos/terraform.nix
+      ../../users/denbeigh/modules/nixos/3rdparty/cfdyndns
+
+      # Infrastructure
       ../modules/nixos/ci
     ];
 
     config = {
-      networking = {
-        hostName = "aviary";
-        domain = "denbeigh.cloud";
-      };
-
-      # TODO(denbeigh) transfer my dotfiles repo here
-      users.users.denbeigh = {
-        isNormalUser = true;
-        group = "denbeigh";
-        extraGroups = [ "wheel" ];
-      };
-
-      users.groups.denbeigh = { };
-      users.groups."${ciGroupName}" = { };
-
-      services.dev.ci =
-        let
-          inherit (config.age) secrets;
-        in
-        {
-          enable = true;
-          tokenPath = secrets.buildkite-agent-token.path;
-          privateSshKeyPath = secrets.buildkite-ssh-private-key.path;
-          groupName = ciGroupName;
+      # ── Machine identity ──────────────────────────────────────────
+      dev.denbeigh = {
+        machine = {
+          hostname = "aviary";
+          domain = "denbeigh.cloud";
+          location = dev.users.denbeigh.utils.locations.locations.utc;
+          graphical = false;
         };
 
-      environment.systemPackages = with pkgs; [
-        vim
-        nano
-        nix
-        git
-        htop
-        wget
-        curl
-        zsh
-      ];
+        ssh.enable = true;
+        tailscale.enable = true;
+        ahoy.enable = true;
 
+        services = {
+          nix-cache = {
+            enable = true;
+            keyFile = "/var/lib/denbeigh/nix-cache/serve-key";
+          };
+
+          www.enable = true;
+
+          cfdyndns = {
+            enable = true;
+            records = [ "aviary.denbeigh.cloud" ];
+            secretKeyPath = config.age.secrets.cfdyndnsApiToken.path;
+          };
+        };
+      };
+
+      # ── CI ────────────────────────────────────────────────────────
+      services.dev.ci = {
+        enable = true;
+        tokenPath = config.age.secrets.buildkite-agent-token.path;
+        privateSshKeyPath = config.age.secrets.buildkite-ssh-private-key.path;
+        groupName = ciGroupName;
+      };
+
+      # ── Secrets ───────────────────────────────────────────────────
       age = {
         identityPaths = [ "/var/agenix/keys/id_ed25519" ];
         secrets =
           let
             inherit (builtins) listToAttrs map;
-
-            secret = name: {
-              inherit name;
-              value = {
-                file = dev.secrets."${name}.age";
-                group = ciGroupName;
-                mode = "640";
+            secret =
+              name:
+              {
+                inherit name;
+                value = {
+                  file = dev.secrets."${name}.age";
+                  group = ciGroupName;
+                  mode = "640";
+                };
               };
-            };
-
-            includedSecrets = [
-              "buildkite-agent-token"
-              "buildkite-graphql-token"
-              "buildkite-ssh-private-key"
-            ];
           in
-          listToAttrs (map secret includedSecrets);
+          listToAttrs (map secret [
+            "buildkite-agent-token"
+            "buildkite-graphql-token"
+            "buildkite-ssh-private-key"
+          ])
+          # Secrets not owned by CI group
+          // {
+            cfdyndnsApiToken = {
+              file = dev.secrets."cfdyndnsApiToken.age";
+              mode = "400";
+            };
+          };
       };
 
-      services.openssh = {
-        enable = true;
-        openFirewall = true;
-        settings = {
-          PasswordAuthentication = false;
-          PermitRootLogin = "no";
-        };
+      # ── Data directories ──────────────────────────────────────────
+      systemd.tmpfiles.rules = [
+        "d /data 0755 root root -"
+        "d /data/downloads 0770 transmission media -"
+        "d /data/media 0775 root media -"
+      ];
+
+      # ── System packages (beyond what standard module provides) ────
+      environment.systemPackages = with pkgs; [
+        vim
+        nano
+        htop
+        wget
+        curl
+      ];
+
+      networking.firewall.enable = true;
+
+      # ── Locale / console ──────────────────────────────────────────
+      i18n.defaultLocale = "en_US.UTF-8";
+      console = {
+        font = "Lat2-Terminus16";
+        useXkbConfig = true;
       };
 
+      # ── Hardware ──────────────────────────────────────────────────
       boot.loader.efi.canTouchEfiVariables = true;
       boot.loader.systemd-boot.enable = true;
 
       boot.kernelPackages = pkgs.linuxPackages_latest;
-      # The manual says this *must* be set, but we're using systemd-boot? :shrug:
+      # The manual says this *must* be set, but we're using systemd-boot
       boot.loader.grub.device = "/dev/nvme0n1p1";
 
-      # TODO: we probably want to configure this properly?
-      networking.networkmanager.enable = true; # Easiest to use and most distros use this by default.
-      networking.firewall.enable = true;
+      networking.networkmanager.enable = true;
 
-      time.timeZone = "UTC";
-
-      i18n.defaultLocale = "en_US.UTF-8";
-      console = {
-        font = "Lat2-Terminus16";
-        useXkbConfig = true; # use xkb.options in tty.
-      };
-
-      # Mostly generated from hardware-configuration
       boot.initrd.availableKernelModules = [
         "xhci_pci"
         "ahci"
@@ -119,7 +142,6 @@ dev.nix.nixos.eval (
 
       fileSystems."/" = {
         device = "/dev/disk/by-uuid/47b7287a-dac5-40c2-9c6d-9234fda53763";
-        # { device = "/dev/volgroup/cryptroot";
         fsType = "ext4";
       };
 
@@ -139,19 +161,12 @@ dev.nix.nixos.eval (
 
       swapDevices = [ ];
 
-      # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-      # (the default) this is the recommended approach. When using systemd-networkd it's
-      # still possible to use this option, but it's recommended to use it in conjunction
-      # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
       networking.useDHCP = pkgs.lib.mkDefault true;
-      # networking.interfaces.eno1.useDHCP = lib.mkDefault true;
-      # networking.interfaces.eno2.useDHCP = lib.mkDefault true;
-      # networking.interfaces.enp0s20f0u8u3c2.useDHCP = lib.mkDefault true;
 
       nixpkgs.hostPlatform = pkgs.lib.mkDefault "x86_64-linux";
       hardware.cpu.intel.updateMicrocode = pkgs.lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-      system.stateVersion = "25.05"; # Did you read the comment?
+      system.stateVersion = "25.05";
     };
   }
 )

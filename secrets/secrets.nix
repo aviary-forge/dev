@@ -16,4 +16,8 @@ in
   "buildkite-agent-token.age" = key [ systems.aviary ];
   "buildkite-graphql-token.age" = key [ systems.aviary ];
   "buildkite-ssh-private-key.age" = key [ systems.aviary ];
+  "tailscaleAuthKey.age" = key [ systems.aviary ];
+  "digitalOceanAPIKey.age" = key [ systems.aviary ];
+  "cfdyndnsApiToken.age" = key [ systems.aviary ];
+  "terraform.age" = key [ systems.aviary ];
 }
