@@ -10,7 +10,7 @@
     }:
     let
       eval = import (pkgs.path + "/nixos/lib/eval-config.nix") {
-        inherit specialArgs system;
+        inherit pkgs specialArgs system;
         modules = [
           configuration
           # NOTE: here is where we can inject our repo-specific modules, when
@@ -19,7 +19,7 @@
       };
 
       vmConfig = import (pkgs.path + "/nixos/lib/eval-config.nix") {
-        inherit specialArgs system;
+        inherit pkgs specialArgs system;
         modules = [
           configuration
           (pkgs.path + "/nixos/modules/virtualisation/qemu-vm.nix")

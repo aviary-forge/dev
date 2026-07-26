@@ -6,8 +6,8 @@ let
     { configuration, specialArgs ? { } }:
     let
       eval = import (dev.third_party.nix.darwin + "/eval-config.nix") {
+        inherit pkgs specialArgs;
         inherit (pkgs) lib;
-        inherit specialArgs;
 
         modules = [
           configuration
