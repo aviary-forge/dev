@@ -62,7 +62,8 @@ in
 
     in
     {
-      inherit (nixosEval) system vm;
+      inherit (nixosEval) vm;
+      system = nixosEval.system.system;
       inherit (nixosEval.system) outPath drvPath;
       inherit meta;
       activate = activateSystem nixosEval.system;
