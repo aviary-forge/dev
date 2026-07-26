@@ -109,7 +109,9 @@ let
     name = "setup-pre-commit";
     runtimeInputs = [ git ];
     text = ''
-      hook_path="$(git rev-parse --git-dir)/hooks/pre-commit"
+      # --git-common-dir so worktrees install to the shared hooks dir;
+      # git always executes hooks from the common dir, not per-worktree.
+      hook_path="$(git rev-parse --git-common-dir)/hooks/pre-commit"
       target="${lib.getExe pre-commit-hook}"
 
       # Already pointing at the right thing — nothing to do.
