@@ -63,7 +63,10 @@ let
       inherit cargoArtifacts src;
       pname = name;
       version = override.version or "0.1.0";
-      cargoBuildArgs = "-p ${name}";
+      # NB: crane ignores `cargoBuildArgs`; use cargoBuildExtraArgs / cargoTestExtraArgs
+      # which are appended to the build and test commands respectively.
+      cargoBuildExtraArgs = "-p ${name}";
+      cargoTestExtraArgs = "-p ${name}";
       strictDeps = true;
       buildInputs = override.buildInputs or [ ];
       nativeBuildInputs = override.nativeBuildInputs or [ ];
