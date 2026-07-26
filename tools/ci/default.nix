@@ -1,16 +1,19 @@
 # CI orchestrator — readTree entry point.
 #
-# The binary is built by the shared crane workspace (rust/default.nix)
-# and exposed at dev.rust.ci. This file exists only so readTree can
-# discover the tools/ci path. We can't access `dev` during import
-# (circular dependency during fixpoint construction), so we return a
-# placeholder that the workspace build overrides.
+# This file exists so readTree can discover the tools/ci path.
+# The actual binary is built separately (nix-build -A rust.ci or via
+# the crane workspace).  We can't build it here because doing so
+# during readTree's fixpoint construction would cause a cycle
+# (pkgs.craneLib ← nixpkgs overlay ← dev.third_party.nix ← dev).
 #
-# At runtime, consumers should reference `dev.rust.ci` directly.
+# Consumers should reference the workspace output at dev.rust.ci
+# or build via `nix-build -A pipelines.tasks.ci-orchestrator`.
 { ... }:
 
-# Placeholder — the real binary is at dev.rust.ci.
-# This file's only job is to exist so readTree doesn't skip this directory.
+# Thin placeholder — the real binary is at dev.rust.ci.
+#
+# To use in pipeline steps:
+#   "$(nix-build -A rust.ci)/bin/ci-orchestrator"
 {
   __readTreeChildrenOverride = { };
 }
