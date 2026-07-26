@@ -12,12 +12,22 @@ struct BuildkiteStep {
     label: String,
     key: String,
     command: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    skip: Option<SkipReason>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     depends_on: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     agents: Option<BuildkiteAgents>,
     #[serde(skip_serializing_if = "Option::is_none")]
     env: Option<std::collections::BTreeMap<String, String>>,
+}
+
+/// Buildkite skip field — bool or reason string.
+#[derive(Debug, serde::Serialize)]
+#[serde(untagged)]
+enum SkipReason {
+    Bool(bool),
+    Reason(String),
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -69,10 +79,20 @@ pub fn generate_pipeline(
 
         let (arch, os) = parse_nix_system(system);
 
+        // No macOS Buildkite agent yet — skip darwin steps.
+        let skip = if os == "darwin" {
+            Some(SkipReason::Reason(
+                "no macOS Buildkite agent available".to_string(),
+            ))
+        } else {
+            None
+        };
+
         steps.push(BuildkiteStep {
             label: format!(":nix: build {} ({})", system, target_count),
             key: format!("build-{}", system.replace('.', "-")),
             command: build_step_command(target_count),
+            skip,
             depends_on: vec!["pipeline-gen".to_string()],
             agents: Some(BuildkiteAgents {
                 arch: arch.to_string(),
@@ -95,6 +115,7 @@ pub fn generate_pipeline(
             command:
                 "\"$(nix-build -A pipelines.tasks.ci-orchestrator)/bin/ci-orchestrator\" post-build"
                     .to_string(),
+            skip: None,
             depends_on: steps.iter().map(|s| s.key.clone()).collect(),
             agents: None,
             env: None,
