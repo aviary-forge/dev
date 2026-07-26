@@ -16,6 +16,7 @@ pkgs.mkShell {
     uv
     ty
     ruff
+    statix
   ];
 
   shellHook = ''

@@ -1,7 +1,7 @@
 { pkgs, lib, ... }:
 
 let
-  craneLib = pkgs.craneLib;
+  inherit (pkgs) craneLib;
 in
 rec {
   # Standardised Rust package builder.

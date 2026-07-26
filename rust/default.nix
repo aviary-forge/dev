@@ -12,7 +12,7 @@ let
   memberPaths = workspaceToml.workspace.members or [ ];
 
   # Short crate name from a member path (e.g. "rust/gcroot-manager" -> "gcroot-manager")
-  crateName = memberPath: baseNameOf memberPath;
+  crateName = baseNameOf;
 
   # Load a crate's optional overrides.nix.
   # Returns a function attrs -> attrs (crate2nix defaultCrateOverrides format)

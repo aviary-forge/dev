@@ -100,7 +100,7 @@ in
 
   config = lib.mkIf cfg.enable {
     users.users.open-webui = {
-      uid = cfg.uid;
+      inherit (cfg) uid;
       name = cfg.user;
       group = cfg.user;
 

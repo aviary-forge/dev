@@ -295,7 +295,7 @@ rec {
           # parent derivation somehow.
           #
           # Note that this will never affect the label.
-          overridable = f: mkStep (mkStepArgs // { target = (f target); });
+          overridable = f: mkStep (mkStepArgs // { target = f target; });
 
           # Split extra steps by phase.
           splitExtraSteps = lib.groupBy ({ phase, ... }: phase) (

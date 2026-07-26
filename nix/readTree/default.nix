@@ -15,7 +15,7 @@
 #           be a function of the form `args -> location -> args`, where the
 #           location is a list of strings representing the path components of
 #           the current readTree target. Optional.
-{ ... }:
+_:
 
 let
   inherit (builtins)
@@ -158,10 +158,10 @@ let
         name = c;
         value = readTreeImpl {
           inherit argsFilter scopedArgs;
-          args = args;
-          initPath = (joinChild c);
+          inherit args;
+          initPath = joinChild c;
           rootDir = false;
-          parts = (parts ++ [ c ]);
+          parts = parts ++ [ c ];
         };
       }) (filter filterDir (attrNames dir));
 
@@ -304,7 +304,7 @@ let
           // {
             # Keep the same tree location, but explicitly mark this
             # node as a subtarget.
-            __readTree = node.__readTree;
+            inherit (node) __readTree;
             __readTreeChildren = [ ];
             __subtarget = k;
           }

@@ -25,7 +25,11 @@ dev.nix.darwin.eval {
         ];
         services.openssh.enable = true;
 
-        system.defaults.loginwindow.autoLoginUser = "denbeigh";
+        system = {
+          defaults.loginwindow.autoLoginUser = "denbeigh";
+          stateVersion = 6;
+          primaryUser = "denbeigh";
+        };
 
         users.users.denbeigh = {
           packages = [ dev.users.denbeigh.neovim ];
@@ -33,9 +37,6 @@ dev.nix.darwin.eval {
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBrWuq0cLFKo4KKLYKF/SG3U/6/7U0o7JDHDeJOwadAf"
           ];
         };
-
-        system.stateVersion = 6;
-        system.primaryUser = "denbeigh";
       };
     };
 

@@ -34,7 +34,7 @@ let
             entry: ${nixfmt}/bin/nixfmt --check
             language: system
             files: \.nix$
-            exclude: '^rust/Cargo\.nix$'
+            exclude: '^rust/Cargo\.nix$|/_build/'
             types: [file]
           - id: rustfmt-check
             name: rustfmt
@@ -44,11 +44,11 @@ let
             types: [file]
           - id: statix-check
             name: statix
-            entry: ${statix}/bin/statix check
+            entry: ${statix}/bin/statix check --ignore rust/Cargo.nix .
             language: system
             files: \.nix$
-            exclude: '^rust/Cargo\.nix$'
-            types: [file]
+            exclude: '^rust/Cargo\.nix$|/_build/'
+            pass_filenames: false
           - id: taplo-check
             name: taplo format --check
             entry: ${taplo}/bin/taplo format --check
@@ -109,8 +109,7 @@ let
     name = "setup-pre-commit";
     runtimeInputs = [ git ];
     text = ''
-      repo_root=$(git rev-parse --show-toplevel)
-      hook_path="$repo_root/.git/hooks/pre-commit"
+      hook_path="$(git rev-parse --git-dir)/hooks/pre-commit"
       target="${lib.getExe pre-commit-hook}"
 
       # Already pointing at the right thing — nothing to do.

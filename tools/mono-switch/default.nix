@@ -5,7 +5,7 @@
   members,
   ...
 }:
-(dev.python."mono-switch").overrideAttrs (old: {
+dev.python."mono-switch".overrideAttrs (old: {
   nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
     pkgs.makeWrapper
   ];

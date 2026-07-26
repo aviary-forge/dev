@@ -44,7 +44,7 @@ rec {
     {
       location = mkOption {
         type = types.location;
-        default = locations.default;
+        inherit (locations) default;
         description = ''
           Coordinates and timezone of the machine.
           Used for redshift (on graphical machines) and setting timezone.

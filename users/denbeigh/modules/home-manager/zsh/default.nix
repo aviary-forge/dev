@@ -42,7 +42,7 @@ in
         EDITOR = "nvim";
       };
 
-      initContent = (builtins.readFile ./zshrc);
+      initContent = builtins.readFile ./zshrc;
     };
   };
 }

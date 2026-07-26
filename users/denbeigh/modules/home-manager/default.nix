@@ -13,4 +13,4 @@ let
     webcam = ./webcam.nix;
   };
 in
-mapAttrs (_: path: import path) paths
+mapAttrs (_: import) paths

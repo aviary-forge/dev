@@ -1,4 +1,4 @@
-{ ... }:
+_:
 
 # Discourage use of mouse and keyboard
 {

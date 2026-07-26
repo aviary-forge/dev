@@ -21,7 +21,7 @@ in
     let
       inherit (config.dev.denbeigh.machine) graphical isNixOS location;
 
-      hasCoordinates = (location != null && location ? coordinates);
+      hasCoordinates = location != null && location ? coordinates;
       enableRedshift = graphical && isLinux && hasCoordinates;
       graphicalPackages = with pkgs; [ nitrogen ];
 

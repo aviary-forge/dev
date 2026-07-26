@@ -20,11 +20,9 @@ let
       '';
     };
 
-  baseModule =
-    { ... }:
-    {
-      nixpkgs.pkgs = dev.third_party.nixpkgs;
-    };
+  baseModule = _: {
+    nixpkgs.pkgs = dev.third_party.nixpkgs;
+  };
 
 in
 
@@ -36,28 +34,26 @@ in
   # Accepts either a configuration function directly (legacy) or an
   # attrset with `configuration` and optional `meta` (preferred).
   # `meta.owners` is threaded through to the drvmap for CI ownership.
-  eval = (
+  eval =
     arg:
     let
       configuration = if builtins.isFunction arg then arg else arg.configuration;
       meta = if builtins.isFunction arg then { } else arg.meta or { };
 
-      nixosEval = (
-        dev.third_party.nixos {
-          configuration =
-            { ... }:
-            {
-              imports = [
-                baseModule
-                configuration
-              ];
-            };
-
-          specialArgs = {
-            inherit dev pkgs;
+      nixosEval = dev.third_party.nixos {
+        configuration =
+          { ... }:
+          {
+            imports = [
+              baseModule
+              configuration
+            ];
           };
-        }
-      );
+
+        specialArgs = {
+          inherit dev pkgs;
+        };
+      };
 
     in
     {
@@ -67,6 +63,5 @@ in
       inherit meta;
       activate = activateSystem nixosEval.system;
       __devAttrType = "nixos-system";
-    }
-  );
+    };
 }

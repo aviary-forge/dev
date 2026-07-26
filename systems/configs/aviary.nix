@@ -134,7 +134,11 @@ dev.nix.nixos.eval {
           curl
         ];
 
-        networking.firewall.enable = true;
+        networking = {
+          firewall.enable = true;
+          networkmanager.enable = true;
+          useDHCP = pkgs.lib.mkDefault true;
+        };
 
         # ── Locale / console ──────────────────────────────────────────
         i18n.defaultLocale = "en_US.UTF-8";
@@ -144,49 +148,48 @@ dev.nix.nixos.eval {
         };
 
         # ── Hardware ──────────────────────────────────────────────────
-        boot.loader.efi.canTouchEfiVariables = true;
-        boot.loader.systemd-boot.enable = true;
-
-        boot.kernelPackages = pkgs.linuxPackages_latest;
-        # The manual says this *must* be set, but we're using systemd-boot
-        boot.loader.grub.device = "/dev/nvme0n1p1";
-
-        networking.networkmanager.enable = true;
-
-        boot.initrd.availableKernelModules = [
-          "xhci_pci"
-          "ahci"
-          "nvme"
-          "usb_storage"
-          "usbhid"
-          "sd_mod"
-          "sr_mod"
-        ];
-        boot.initrd.kernelModules = [ "dm-snapshot" ];
-        boot.kernelModules = [ "kvm-intel" ];
-        boot.extraModulePackages = [ ];
-
-        fileSystems."/" = {
-          device = "/dev/disk/by-uuid/47b7287a-dac5-40c2-9c6d-9234fda53763";
-          fsType = "ext4";
+        boot = {
+          loader = {
+            efi.canTouchEfiVariables = true;
+            systemd-boot.enable = true;
+            grub.device = "/dev/nvme0n1p1";
+          };
+          kernelPackages = pkgs.linuxPackages_latest;
+          initrd = {
+            availableKernelModules = [
+              "xhci_pci"
+              "ahci"
+              "nvme"
+              "usb_storage"
+              "usbhid"
+              "sd_mod"
+              "sr_mod"
+            ];
+            kernelModules = [ "dm-snapshot" ];
+            luks.devices."root" = {
+              device = "/dev/disk/by-uuid/6bbc9e9f-ca71-4a12-9fa0-ca05df1a4071";
+            };
+          };
+          kernelModules = [ "kvm-intel" ];
+          extraModulePackages = [ ];
         };
 
-        boot.initrd.luks.devices."root" = {
-          device = "/dev/disk/by-uuid/6bbc9e9f-ca71-4a12-9fa0-ca05df1a4071";
-        };
-
-        fileSystems."/boot" = {
-          device = "/dev/disk/by-uuid/1E47-0C51";
-          fsType = "vfat";
-          options = [
-            "fmask=0022"
-            "dmask=0022"
-          ];
+        fileSystems = {
+          "/" = {
+            device = "/dev/disk/by-uuid/47b7287a-dac5-40c2-9c6d-9234fda53763";
+            fsType = "ext4";
+          };
+          "/boot" = {
+            device = "/dev/disk/by-uuid/1E47-0C51";
+            fsType = "vfat";
+            options = [
+              "fmask=0022"
+              "dmask=0022"
+            ];
+          };
         };
 
         swapDevices = [ ];
-
-        networking.useDHCP = pkgs.lib.mkDefault true;
 
         nixpkgs.hostPlatform = pkgs.lib.mkDefault "x86_64-linux";
         hardware.cpu.intel.updateMicrocode = pkgs.lib.mkDefault config.hardware.enableRedistributableFirmware;

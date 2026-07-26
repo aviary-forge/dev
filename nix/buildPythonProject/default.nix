@@ -64,7 +64,7 @@ in
 
         ${preCheck}'';
 
-      postCheck = postCheck;
+      inherit postCheck;
 
       passthru = (old.passthru or { }) // passthru // { inherit package venv; };
 

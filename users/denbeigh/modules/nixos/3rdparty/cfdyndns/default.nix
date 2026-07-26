@@ -63,7 +63,7 @@ in
   config = mkIf cfg.enable {
     users = {
       users.${cfg.user} = {
-        group = cfg.group;
+        inherit (cfg) group;
         isSystemUser = true;
       };
 

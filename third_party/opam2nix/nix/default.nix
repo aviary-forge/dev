@@ -6,7 +6,7 @@
 pkgs.callPackage ./nix (
   if ocamlPackagesOverride != null then
     {
-      ocamlPackagesOverride = ocamlPackagesOverride;
+      inherit ocamlPackagesOverride;
     }
   else
     { }

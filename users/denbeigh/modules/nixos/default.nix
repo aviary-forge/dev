@@ -18,4 +18,4 @@ let
     update-fonts = ./update-fonts.nix;
   };
 in
-mapAttrs (_: path: import path) paths
+mapAttrs (_: import) paths

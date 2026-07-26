@@ -2,7 +2,7 @@
 #
 #     stateMonad s a = s -> { state : s; value : a }
 #
-{ ... }:
+_:
 
 rec {
   #

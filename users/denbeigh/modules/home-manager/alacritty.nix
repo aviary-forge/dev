@@ -22,7 +22,7 @@ let
     fontFamily
     ;
   tools = pkgs.callPackage ./lib { };
-  package = (if shouldGlWrap then (tools.glWrap pkgs.alacritty "alacritty") else pkgs.alacritty);
+  package = if shouldGlWrap then (tools.glWrap pkgs.alacritty "alacritty") else pkgs.alacritty;
 in
 {
   options.dev.denbeigh.alacritty = {
@@ -36,7 +36,7 @@ in
 
     shouldGlWrap = mkOption {
       type = types.bool;
-      default = (isLinux && !isNixOS);
+      default = isLinux && !isNixOS;
       description = ''
         Whether to wrap Alacritty in NixGL.
       '';

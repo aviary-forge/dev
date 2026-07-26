@@ -28,7 +28,7 @@ let
   # Includes everything but overlays which are only passed to unstable nixpkgs.
   commonNixpkgsArgs = {
     # allow users to inject their config into builds (e.g. to test CA derivations)
-    config = (if externalArgs ? nixpkgsConfig then externalArgs.nixpkgsConfig else { }) // {
+    config = (externalArgs.nixpkgsConfig or { }) // {
       allowUnfree = true;
       allowUnfreeRedistributable = true;
       allowBroken = true;
@@ -80,8 +80,8 @@ let
   rustOverlay =
     final: prev:
     let
-      fenixSrc = (import "${dev.third_party.nix.fenix}/default.nix");
-      fenix = (prev.callPackage fenixSrc { });
+      fenixSrc = import "${dev.third_party.nix.fenix}/default.nix";
+      fenix = prev.callPackage fenixSrc { };
       craneLib = prev.callPackage "${dev.third_party.nix.crane}/lib" { };
     in
     {
@@ -140,7 +140,7 @@ import nixpkgsSrc (
           rustOverlay
         ]
       else
-        [ ] ++ additionalOverlays
+        additionalOverlays
     );
   }
 )
