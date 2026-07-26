@@ -3,7 +3,7 @@
 {
   imports = [
     ./openwebui-module.nix
-    ../../../systems/modules/nixos/reverse-proxy
+    ../../../../systems/modules/nixos/reverse-proxy
   ];
   options =
     let

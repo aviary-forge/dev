@@ -11,7 +11,7 @@ let
   cfg = config.dev.denbeigh.services.nix-cache;
 in
 {
-  imports = [ ../../../systems/modules/nixos/reverse-proxy ];
+  imports = [ ../../../../systems/modules/nixos/reverse-proxy ];
 
   # NOTE: Subtly different from dev.denbeigh.nix-cache (adds .services)
   options.dev.denbeigh.services.nix-cache = {
