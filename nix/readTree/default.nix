@@ -214,8 +214,12 @@ let
                 processAttrChildren childParts value // (marker childParts (processAttrChildren childParts value))
               )
             else if isAttrs value then
-              # Derivation/already marked
-              merge value (marker childParts { })
+              # Preserve existing __readTree if present (lets derivations
+              # declare their own path), but still set __readTreeChildren.
+              if value ? __readTree then
+                value // { __readTreeChildren = [ ]; }
+              else
+                merge value (marker childParts { })
             # Not an attrset
             else
               value;
