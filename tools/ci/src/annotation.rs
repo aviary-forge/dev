@@ -238,11 +238,11 @@ impl AnnotationTracker {
 
         for t in &sorted {
             let status_icon = match t.state {
-                BuildState::Pending => "⏳",
-                BuildState::Building => "🔨",
-                BuildState::Succeeded => "✅",
-                BuildState::Failed => "❌",
-                BuildState::Skipped => "⏭",
+                BuildState::Pending => ":hourglass:",
+                BuildState::Building => ":hammer:",
+                BuildState::Succeeded => ":white_check_mark:",
+                BuildState::Failed => ":x:",
+                BuildState::Skipped => ":no_entry_sign:",
             };
 
             let duration_str = match t.state {
@@ -279,10 +279,10 @@ impl AnnotationTracker {
             };
 
             let type_badge = match t.dev_attr_type.as_deref() {
-                Some("nixos-system") => "🖥",
-                Some("darwin-system") => "🍏",
-                Some("home-manager-system") => "🏠",
-                _ => "📦",
+                Some("nixos-system") => ":nix:",
+                Some("darwin-system") => ":mac:",
+                Some("home-manager-system") => ":house_with_garden:",
+                _ => ":package:",
             };
             out.push_str(&format!(
                 "| {} | {} | `{}` | {} | {} |\n",
