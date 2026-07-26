@@ -36,9 +36,7 @@ let
       );
 
   # --- Per-member builder ---
-  inherit (import ../nix/buildPythonProject { inherit dev pkgs lib; })
-    buildPythonProject
-    ;
+  buildPythonProject = import ../nix/buildPythonProject { inherit dev pkgs lib; };
 
   # Parse workspace members from root pyproject.toml
   workspaceToml = fromTOML (readFile (repoRoot + "/pyproject.toml"));

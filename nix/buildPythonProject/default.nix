@@ -9,65 +9,62 @@ let
   pyproject-nix = dev.third_party."pyproject-nix";
   inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
 in
+# Standardised Python project builder.
+#
+# Wraps pyproject.nix's mkApplication to produce a clean derivation from a
+# shared workspace pythonSet, with ruff lint/format and ty type-checking
+# enforced during the check phase.
+#
+# Every Python tool in the monorepo gets formatting + lint enforcement
+# automatically — no separate derivation needed, no double-build cost.
+#
+# A pyproject.toml at the repo root provides the ruff config baseline;
+# individual projects can override via their own pyproject.toml.
 {
-  # Standardised Python project builder.
-  #
-  # Wraps pyproject.nix's mkApplication to produce a clean derivation from a
-  # shared workspace pythonSet, with ruff lint/format and ty type-checking
-  # enforced during the check phase.
-  #
-  # Every Python tool in the monorepo gets formatting + lint enforcement
-  # automatically — no separate derivation needed, no double-build cost.
-  #
-  # A pyproject.toml at the repo root provides the ruff config baseline;
-  # individual projects can override via their own pyproject.toml.
-  buildPythonProject =
-    {
-      # pyproject.nix package derivation (from the workspace pythonSet)
-      package,
-      # Virtualenv containing the package and its deps
-      venv,
-      # Source tree for static analysis — must contain a pyproject.toml
-      src,
-      # Extra packages for the check phase (e.g. mypy, pytest)
-      nativeCheckInputs ? [ ],
-      # Shell snippet to run before ruff checks
-      preCheck ? "",
-      # Shell snippet to run after ruff checks
-      postCheck ? "",
-      # Passthru attributes merged into derivation
-      passthru ? { },
-      ...
-    }@attrs:
-    let
-      app = mkApplication { inherit venv package; };
-    in
-    app.overrideAttrs (old: {
-      inherit src;
+  # pyproject.nix package derivation (from the workspace pythonSet)
+  package,
+  # Virtualenv containing the package and its deps
+  venv,
+  # Source tree for static analysis — must contain a pyproject.toml
+  src,
+  # Extra packages for the check phase (e.g. mypy, pytest)
+  nativeCheckInputs ? [ ],
+  # Shell snippet to run before ruff checks
+  preCheck ? "",
+  # Shell snippet to run after ruff checks
+  postCheck ? "",
+  # Passthru attributes merged into derivation
+  passthru ? { },
+  ...
+}@attrs:
+let
+  app = mkApplication { inherit venv package; };
+in
+app.overrideAttrs (old: {
+  inherit src;
 
-      nativeCheckInputs =
-        (old.nativeCheckInputs or [ ])
-        ++ [
-          pkgs.ruff
-          pkgs.ty
-        ]
-        ++ nativeCheckInputs;
+  nativeCheckInputs =
+    (old.nativeCheckInputs or [ ])
+    ++ [
+      pkgs.ruff
+      pkgs.ty
+    ]
+    ++ nativeCheckInputs;
 
-      preCheck = ''
-        cd "$src"
-        ruff check .
-        ruff format --check .
+  preCheck = ''
+    cd "$src"
+    ruff check .
+    ruff format --check .
 
-        ty check .
-      ''
-      + lib.optionalString (preCheck != "") ''
+    ty check .
+  ''
+  + lib.optionalString (preCheck != "") ''
 
-        ${preCheck}'';
+    ${preCheck}'';
 
-      inherit postCheck;
+  inherit postCheck;
 
-      passthru = (old.passthru or { }) // passthru // { inherit package venv; };
+  passthru = (old.passthru or { }) // passthru // { inherit package venv; };
 
-      meta = (old.meta or { }) // (attrs.meta or { });
-    });
-}
+  meta = (old.meta or { }) // (attrs.meta or { });
+})
