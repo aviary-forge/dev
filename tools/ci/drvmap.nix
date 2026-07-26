@@ -15,8 +15,13 @@ let
   inherit (dev.nix.buildkite) targetAttrPath;
   inherit (dev.nix.dependency-analyzer) drvsToPaths;
 
-  # All CI targets
-  targets = dev.ci.targets;
+  # All CI targets, filtered to the evaluating system.
+  # Cross-platform targets (e.g. darwin configs on a Linux agent)
+  # are excluded until a matching Buildkite agent is available.
+  currentSystem = dev.third_party.nixpkgs.system;
+  targets = builtins.filter
+    (t: (t.system or currentSystem) == currentSystem)
+    dev.ci.targets;
 
   # Build a drvPath -> treePath reverse lookup
   drvToTreePath =
