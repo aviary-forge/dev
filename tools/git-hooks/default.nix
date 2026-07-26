@@ -5,6 +5,9 @@ let
     runCommand
     nixfmt
     pre-commit
+    ruff
+    ty
+    uv
     writeShellApplication
     git
     ;
@@ -31,6 +34,30 @@ let
             language: system
             files: \.rs$
             types: [file]
+          - id: ruff-check
+            name: ruff
+            entry: ${ruff}/bin/ruff check
+            language: system
+            files: \.py$
+            types: [file]
+          - id: ruff-format-check
+            name: ruff format --check
+            entry: ${ruff}/bin/ruff format --check
+            language: system
+            files: \.py$
+            types: [file]
+          - id: ty-check
+            name: ty
+            entry: ${ty}/bin/ty check
+            language: system
+            files: \.py$
+            pass_filenames: false
+          - id: uv-lock-check
+            name: uv lock --check
+            entry: ${uv}/bin/uv lock --check
+            language: system
+            files: pyproject\.toml$|uv\.lock$
+            pass_filenames: false
     EOF
   '';
 

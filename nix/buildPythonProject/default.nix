@@ -9,12 +9,12 @@ let
   pyproject-nix = dev.third_party."pyproject-nix";
   inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
 in
-rec {
+{
   # Standardised Python project builder.
   #
   # Wraps pyproject.nix's mkApplication to produce a clean derivation from a
-  # shared workspace pythonSet, with ruff lint/format checks enforced during
-  # the check phase.
+  # shared workspace pythonSet, with ruff lint/format and ty type-checking
+  # enforced during the check phase.
   #
   # Every Python tool in the monorepo gets formatting + lint enforcement
   # automatically — no separate derivation needed, no double-build cost.
@@ -45,13 +45,20 @@ rec {
     app.overrideAttrs (old: {
       inherit src;
 
-      nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.ruff ] ++ nativeCheckInputs;
+      nativeCheckInputs =
+        (old.nativeCheckInputs or [ ])
+        ++ [
+          pkgs.ruff
+          pkgs.ty
+        ]
+        ++ nativeCheckInputs;
 
       preCheck = ''
-        echo "⟳  Checking ruff…"
         cd "$src"
         ruff check .
         ruff format --check .
+
+        ty check .
       ''
       + lib.optionalString (preCheck != "") ''
 

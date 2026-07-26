@@ -7,12 +7,13 @@ let
   inherit (pkgs) lib;
 in
 pkgs.mkShell {
-  packages = [
-    pkgs.stdenv.cc
-    pkgs.buildkite-cli
-    pkgs.nixfmt
-    pkgs.fenix.latest.rustfmt
-    pkgs.pre-commit
+  packages = with pkgs; [
+    stdenv.cc
+    buildkite-cli
+    nixfmt
+    fenix.latest.rustfmt
+    pre-commit
+    uv
   ];
 
   shellHook = ''
