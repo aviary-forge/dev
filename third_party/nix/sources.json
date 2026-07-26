@@ -156,5 +156,41 @@
         "type": "tarball",
         "url": "https://github.com/timbertson/opam2nix/archive/d6823b9428515654157d2cbe59a808caaba08726.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "pyproject-build-systems": {
+        "branch": "main",
+        "description": "Build system dependency packages for pyproject.nix",
+        "homepage": "https://github.com/pyproject-nix/build-system-pkgs",
+        "owner": "pyproject-nix",
+        "repo": "build-system-pkgs",
+        "rev": "5c4cc964cfb1e3cab9134dabe2d86bc4858f3867",
+        "sha256": "1ydwmqhx2gmsbhjp3219sp4s69dldsjwvkgdnwj5bn3cr2ia76pb",
+        "type": "tarball",
+        "url": "https://github.com/pyproject-nix/build-system-pkgs/archive/5c4cc964cfb1e3cab9134dabe2d86bc4858f3867.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "pyproject-nix": {
+        "branch": "main",
+        "description": "Nix tooling for Python projects & metadata",
+        "homepage": "https://pyproject-nix.github.io/pyproject.nix/",
+        "owner": "pyproject-nix",
+        "repo": "pyproject.nix",
+        "rev": "e3b599ca2e7fcf93d4edf65d7f19bbf6491724f3",
+        "sha256": "1csknfjk7yv95lrdl4844zpzzd6qjmgynk6n003fyikb7ilddzyc",
+        "type": "tarball",
+        "url": "https://github.com/pyproject-nix/pyproject.nix/archive/e3b599ca2e7fcf93d4edf65d7f19bbf6491724f3.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "uv2nix": {
+        "branch": "main",
+        "description": "Ingest uv workspaces using Nix",
+        "homepage": "https://pyproject-nix.github.io/uv2nix/",
+        "owner": "pyproject-nix",
+        "repo": "uv2nix",
+        "rev": "49dac8d206c42175b069b7c6050ba27060a21106",
+        "sha256": "19y6hgc60vix6s0607vbzhvjjqi9i5w7gbj842yqsfwqshaaxxxq",
+        "type": "tarball",
+        "url": "https://github.com/pyproject-nix/uv2nix/archive/49dac8d206c42175b069b7c6050ba27060a21106.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
