@@ -25,13 +25,22 @@ in
 {
   inherit baseModule;
 
+  # eval: produce a home-manager system target.
+  #
+  # Accepts either a configuration function directly (legacy) or an
+  # attrset with `configuration` and optional `meta` (preferred).
+  # `meta.owners` is threaded through to the drvmap for CI ownership.
   eval = (
-    configuration:
+    arg:
     let
+      configuration =
+        if builtins.isFunction arg then arg else arg.configuration;
+      meta = if builtins.isFunction arg then { } else arg.meta or { };
+
       # We need to know the target system to select the right pkgs/hm-cli
       # but since we want to be able to build it, we'll use the provided localSystem or default to current
       targetSystem = configuration ? targetSystem || (dev.third_party.nixpkgs.system or "x86_64-linux");
-      system = (
+      hmConfig = (
         dev.third_party.home-manager.cli.mkHomeManagerConfiguration {
           inherit targetSystem;
           modules = [
@@ -44,8 +53,10 @@ in
       );
     in
     {
-      inherit (system) system;
-      activate = activateHomeManager targetSystem dev.third_party.home-manager.cli system;
+      inherit (hmConfig) system;
+      inherit (hmConfig.activationPackage) outPath drvPath;
+      inherit meta;
+      activate = activateHomeManager targetSystem dev.third_party.home-manager.cli hmConfig;
       __devAttrType = "home-manager-system";
     }
   );
