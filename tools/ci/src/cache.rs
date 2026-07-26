@@ -163,3 +163,65 @@ pub fn store_cached_parent(commit: &str, drvmap_nix_content: &str, drvmap: &Drvm
 
     Ok(())
 }
+
+/// Remove all but the `retain` most recently modified cache entries.
+/// Returns the number of files deleted.
+pub fn clean(retain: usize) -> Result<usize> {
+    let dir = cache_dir();
+
+    if !dir.exists() {
+        tracing::info!(
+            "cache directory {} does not exist, nothing to clean",
+            dir.display()
+        );
+        return Ok(0);
+    }
+
+    // Collect all .json cache files with their modification times.
+    let mut entries: Vec<(std::time::SystemTime, PathBuf)> = Vec::new();
+    for entry in std::fs::read_dir(&dir)
+        .with_context(|| format!("reading cache directory {}", dir.display()))?
+    {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+
+        let meta = std::fs::metadata(&path)?;
+        let mtime = meta.modified()?;
+        entries.push((mtime, path));
+    }
+
+    if entries.is_empty() || entries.len() <= retain {
+        tracing::info!(
+            "{} cache entries, retain is {} — nothing to clean",
+            entries.len(),
+            retain
+        );
+        return Ok(0);
+    }
+
+    // Sort by modification time, oldest first.
+    entries.sort_by_key(|(a, _)| *a);
+
+    let to_delete = entries.len() - retain;
+    tracing::info!(
+        "cleaning {} of {} cache entries, retaining {} most recent",
+        to_delete,
+        entries.len(),
+        retain
+    );
+
+    let mut removed = 0;
+    for (_mtime, path) in entries.iter().take(to_delete) {
+        std::fs::remove_file(path)
+            .with_context(|| format!("removing cache file {}", path.display()))?;
+        tracing::debug!("removed {}", path.display());
+        removed += 1;
+    }
+
+    tracing::info!("cleaned {} cache entries", removed);
+    Ok(removed)
+}

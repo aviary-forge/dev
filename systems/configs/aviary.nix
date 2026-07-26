@@ -90,6 +90,7 @@ dev.nix.nixos.eval {
           cache = {
             enable = true;
             group = ciGroupName;
+            package = dev.rust.ci;
           };
         };
 

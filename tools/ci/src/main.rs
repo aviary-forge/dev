@@ -69,6 +69,13 @@ enum Commands {
     /// Post-build: aggregate results, dispatch Discord notifications, gcroot.
     PostBuild,
 
+    /// Remove old merge-base drvmap cache entries, keeping the N most recent.
+    CacheClean {
+        /// Number of cache entries to retain.
+        #[arg(long, default_value = "50")]
+        retain: usize,
+    },
+
     /// Validate that every CI target has at least one owner.
     /// Reads a pre-computed drvmap file (from pipeline-gen) rather than
     /// re-running nix eval.
@@ -111,6 +118,9 @@ fn main() -> Result<()> {
 
         Commands::PostBuild => cmd_post_build(repo_root, default_branch),
         Commands::ValidateOwners { drvmap_file } => cmd_validate_owners(repo_root, &drvmap_file),
+        Commands::CacheClean { retain } => cache::clean(retain).map(|removed| {
+            tracing::info!("removed {} old cache entries", removed);
+        }),
     }
 }
 
