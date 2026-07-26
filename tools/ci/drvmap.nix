@@ -23,18 +23,24 @@ let
     (t: (t.system or currentSystem) == currentSystem)
     dev.ci.targets;
 
+  # System configs (nixos/darwin/home-manager) are toplevel derivations
+  # with huge closures.  Exclude them from the dependency graph — their
+  # deps aren't useful for CI skip-on-failure and evaluating drvPath
+  # forces deep module evaluation that can trigger infinite recursion.
+  depTargets = builtins.filter (t: !(t ? __devAttrType)) targets;
+
   # Build a drvPath -> treePath reverse lookup
   drvToTreePath =
     let
       pairs = map (t: {
         drv = unsafeDiscardStringContext t.drvPath;
         tree = mkLabel t;
-      }) targets;
+      }) depTargets;
     in
     builtins.listToAttrs (map (p: { name = p.drv; value = p.tree; }) pairs);
 
   # Compute the forward dependency graph and resolve drvPaths to treePaths
-  depMap = dev.nix.dependency-analyzer (drvsToPaths targets);
+  depMap = dev.nix.dependency-analyzer (drvsToPaths depTargets);
 
   # For a given target, return the list of treePaths it depends on
   getDeps = target:
