@@ -12,6 +12,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
 mod annotation;
+mod cache;
 mod drvmap;
 mod git;
 mod instantiate;
@@ -163,17 +164,35 @@ fn cmd_pipeline_gen(
     let base_commit = git::merge_base(repo_root, trunk_branch)?;
     tracing::info!("base commit: {}", base_commit);
 
-    // Create a worktree at the base commit
-    tracing::info!("creating worktree at base commit");
-    let worktree = git::create_worktree(repo_root, &base_commit, "base")?;
+    // The parent drvmap depends on the base commit's Nix code AND the
+    // current checkout's drvmap.nix (copied into the worktree).  Cache
+    // it by commit + drvmap.nix content so repeated branch pushes
+    // against the same merge-base skip the worktree + nix eval.
+    let drvmap_nix_path = repo_root.join("tools/ci/drvmap.nix");
+    let drvmap_nix_content = std::fs::read_to_string(&drvmap_nix_path)
+        .with_context(|| format!("reading {}", drvmap_nix_path.display()))?;
 
-    // Instantiate drvmap at base commit
-    tracing::info!("instantiating drvmap at base commit");
-    let parent_drvmap = instantiate::instantiate_drvmap(repo_root, Some(&worktree))?;
+    let parent_drvmap =
+        if let Some(cached) = cache::load_cached_parent(&base_commit, &drvmap_nix_content)? {
+            tracing::info!("using cached parent drvmap ({} targets)", cached.len());
+            cached
+        } else {
+            tracing::info!("cache miss, creating worktree at base commit");
+            let worktree = git::create_worktree(repo_root, &base_commit, "base")?;
 
-    // Clean up the worktree
-    git::remove_worktree(&worktree, repo_root)?;
-    tracing::info!("parent drvmap has {} targets", parent_drvmap.len());
+            tracing::info!("instantiating drvmap at base commit");
+            let parent = instantiate::instantiate_drvmap(repo_root, Some(&worktree))?;
+
+            git::remove_worktree(&worktree, repo_root)?;
+            tracing::info!("parent drvmap has {} targets", parent.len());
+
+            // Cache for subsequent pushes sharing the same merge-base.
+            if let Err(e) = cache::store_cached_parent(&base_commit, &drvmap_nix_content, &parent) {
+                tracing::warn!("failed to cache parent drvmap: {e:#}");
+            }
+
+            parent
+        };
 
     // Instantiate drvmap at HEAD
     tracing::info!("instantiating drvmap at HEAD");

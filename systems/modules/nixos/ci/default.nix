@@ -46,6 +46,10 @@ let
   };
 in
 {
+  imports = [
+    ./cache.nix
+  ];
+
   options.services.dev.ci =
     let
       inherit (lib)
@@ -104,5 +108,9 @@ in
       ];
 
       services.buildkite-agents = mkIf cfg.enable (listToAttrs (map mkAgent (range 0 count)));
+
+      # If the cache module is enabled, default the cache group to the
+      # CI agent group so machine configs don't need to set it twice.
+      services.dev.ci.cache.group = lib.mkDefault cfg.groupName;
     };
 }

@@ -86,6 +86,11 @@ dev.nix.nixos.eval {
           tokenPath = config.age.secrets.buildkite-agent-token.path;
           privateSshKeyPath = config.age.secrets.buildkite-ssh-private-key.path;
           groupName = ciGroupName;
+
+          cache = {
+            enable = true;
+            group = ciGroupName;
+          };
         };
 
         # ── Secrets ───────────────────────────────────────────────────
