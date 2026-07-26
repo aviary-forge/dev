@@ -1,6 +1,7 @@
-{ dev, ... }:
+{ dev, members, ... }:
 
-dev.nix.darwin.eval (
+dev.nix.darwin.eval {
+  configuration =
   { pkgs, ... }:
 
   {
@@ -27,5 +28,7 @@ dev.nix.darwin.eval (
       system.primaryUser = "denbeigh.stevens";
       system.stateVersion = 5;
     };
-  }
-)
+  };
+
+  meta.owners = with members; [ denbeigh ];
+}

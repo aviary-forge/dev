@@ -30,10 +30,20 @@ in
 
 {
   inherit baseModule;
+
+  # eval: produce a NixOS system target.
+  #
+  # Accepts either a configuration function directly (legacy) or an
+  # attrset with `configuration` and optional `meta` (preferred).
+  # `meta.owners` is threaded through to the drvmap for CI ownership.
   eval = (
-    configuration:
+    arg:
     let
-      system = (
+      configuration =
+        if builtins.isFunction arg then arg else arg.configuration;
+      meta = if builtins.isFunction arg then { } else arg.meta or { };
+
+      nixosEval = (
         dev.third_party.nixos {
           configuration =
             { ... }:
@@ -45,15 +55,18 @@ in
             };
 
           specialArgs = {
-            inherit dev;
+            inherit dev pkgs;
           };
         }
       );
 
     in
     {
-      inherit (system) system vm;
-      activate = activateSystem system.system;
+      inherit (nixosEval) vm;
+      system = nixosEval.system.system;
+      inherit (nixosEval.system) outPath drvPath;
+      inherit meta;
+      activate = activateSystem nixosEval.system;
       __devAttrType = "nixos-system";
     }
   );

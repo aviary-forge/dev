@@ -1,6 +1,7 @@
-{ dev, ... }:
+{ dev, members, ... }:
 
-dev.nix.nixos.eval (
+dev.nix.nixos.eval {
+  configuration =
   { pkgs, ... }:
   {
     imports = [
@@ -10,5 +11,7 @@ dev.nix.nixos.eval (
     config = {
       services.openssh.enable = true;
     };
-  }
-)
+  };
+
+  meta.owners = with members; [ denbeigh ];
+}

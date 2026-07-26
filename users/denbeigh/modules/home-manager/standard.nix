@@ -91,7 +91,7 @@ in
     # paths it should manage.
     home = {
       inherit username;
-      homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
+      homeDirectory = lib.mkDefault (if isDarwin then "/Users/${username}" else "/home/${username}");
 
       packages = with pkgs; [ ripgrep ];
 

@@ -17,6 +17,7 @@ let
     in
     {
       inherit (eval) system;
+      inherit (eval.config.system.build) toplevel;
     };
 
 in
