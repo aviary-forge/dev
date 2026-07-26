@@ -11,30 +11,22 @@ let
     readFile
     listToAttrs
     map
-    attrNames
     ;
 
   repoRoot = ../.;
 
-  # --- Import pinned niv sources ---
-  uv2nixSrc = dev.third_party.nix.uv2nix;
-  pyprojectNixSrc = dev.third_party.nix."pyproject-nix";
-  buildSystemPkgsSrc = dev.third_party.nix."pyproject-build-systems";
-
-  # --- Import nix libraries ---
-  pyproject-nix = import pyprojectNixSrc { inherit lib; };
-  uv2nix = import uv2nixSrc { inherit lib pyproject-nix; };
-  pyproject-build-systems = import buildSystemPkgsSrc { inherit lib uv2nix pyproject-nix; };
+  # --- Initialized third-party libraries ---
+  pyproject-nix = dev.third_party."pyproject-nix";
+  uv2nix = dev.third_party.uv2nix;
+  pyproject-build-systems = dev.third_party."pyproject-build-systems";
 
   # --- Load workspace ---
   workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = repoRoot; };
 
   # --- Python package set ---
-  python = pkgs.python313;
-
   pythonSet =
     (pkgs.callPackage pyproject-nix.build.packages {
-      inherit python;
+      python = pkgs.python313;
     }).overrideScope
       (
         lib.composeManyExtensions [
@@ -86,7 +78,5 @@ in
 members
 // {
   __readTreeChildrenOverride = members;
-
-  # Expose the full python set and workspace for downstream consumers
   inherit pythonSet workspace;
 }
