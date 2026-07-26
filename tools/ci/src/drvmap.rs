@@ -32,6 +32,14 @@ pub struct TargetInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
 
+    /// Config type tag ("nixos-system", "darwin-system", "home-manager-system").
+    #[serde(
+        rename = "devAttrType",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub dev_attr_type: Option<String>,
+
     /// Owners for notification dispatch.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub owners: Vec<Owner>,
@@ -155,6 +163,7 @@ mod tests {
             owners: vec![],
             deps: vec![],
             outputs: BTreeMap::new(),
+            dev_attr_type: None,
         }
     }
 
