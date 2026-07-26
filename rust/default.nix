@@ -73,22 +73,55 @@ let
     }) memberPaths
   );
 
-  # Script to regenerate Cargo.nix when deps change
+  # Script to regenerate Cargo.nix when deps change.
+  #
+  # Without --check: runs crate2nix and prepends a Cargo.lock checksum header
+  # so future --check runs can skip redundant regeneration.
+  #
+  # With --check: compares the embedded checksum against the current Cargo.lock
+  # and exits non-zero if they differ — no generation, just verification.
   regenerate = pkgs.writeShellApplication {
     name = "generate-cargo-nix";
     runtimeInputs = with pkgs; [
+      coreutils
       crate2nix
       git
     ];
     text = ''
       set -euo pipefail
       working_dir="$(git rev-parse --show-toplevel)"
-      cargo_toml="$working_dir/Cargo.toml"
+      cargo_lock="$working_dir/Cargo.lock"
       output_path="$working_dir/rust/Cargo.nix"
 
+      if [ "''${1:-}" = "--check" ]; then
+        expected=$(sed -n 's/^# Cargo\.lock sha256: //p' "$output_path" | head -1)
+        if [ -z "$expected" ]; then
+          echo "error: Cargo.nix is missing the Cargo.lock checksum header — regenerate with: nix run .#rust.regenerate" >&2
+          exit 1
+        fi
+        actual=$(sha256sum "$cargo_lock" | cut -d' ' -f1)
+        if [ "$expected" != "$actual" ]; then
+          echo "Cargo.nix is out of date (Cargo.lock changed). Run: nix run .#rust.regenerate" >&2
+          exit 1
+        fi
+        echo "Cargo.nix is up-to-date" >&2
+        exit 0
+      fi
+
+      cd "$working_dir"
       crate2nix generate \
-        --cargo-toml "$cargo_toml" \
-        --output "$output_path"
+        --cargo-toml Cargo.toml \
+        --output rust/Cargo.nix
+
+      checksum=$(sha256sum "$cargo_lock" | cut -d' ' -f1)
+      tmp="$(mktemp)"
+      {
+        echo "# Cargo.lock sha256: $checksum"
+        cat "$output_path"
+      } > "$tmp"
+      mv "$tmp" "$output_path"
+
+      echo "Cargo.nix regenerated (Cargo.lock sha256: $checksum)" >&2
     '';
 
     meta.owners = with members; [ denbeigh ];

@@ -14,6 +14,8 @@ pkgs.mkShell {
     fenix.latest.rustfmt
     pre-commit
     uv
+    ty
+    ruff
   ];
 
   shellHook = ''

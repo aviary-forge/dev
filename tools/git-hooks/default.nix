@@ -1,15 +1,23 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  dev,
+  ...
+}:
 
 let
   inherit (pkgs)
-    runCommand
+    git
     nixfmt
     pre-commit
     ruff
+    runCommand
+    statix
+    taplo
     ty
+    typos
     uv
     writeShellApplication
-    git
     ;
   rustfmt = pkgs.fenix.latest.rustfmt;
 
@@ -34,6 +42,24 @@ let
             language: system
             files: \.rs$
             types: [file]
+          - id: statix-check
+            name: statix
+            entry: ${statix}/bin/statix check
+            language: system
+            files: \.nix$
+            exclude: '^rust/Cargo\.nix$'
+            types: [file]
+          - id: taplo-check
+            name: taplo format --check
+            entry: ${taplo}/bin/taplo format --check
+            language: system
+            files: \.toml$
+            types: [file]
+          - id: typos-check
+            name: typos
+            entry: ${typos}/bin/typos
+            language: system
+            types: [file]
           - id: ruff-check
             name: ruff
             entry: ${ruff}/bin/ruff check
@@ -57,6 +83,12 @@ let
             entry: ${uv}/bin/uv lock --check
             language: system
             files: pyproject\.toml$|uv\.lock$
+            pass_filenames: false
+          - id: cargo-nix-check
+            name: Cargo.nix up-to-date
+            entry: ${dev.rust.regenerate}/bin/generate-cargo-nix --check
+            language: system
+            files: Cargo\.(toml|lock)$
             pass_filenames: false
     EOF
   '';
