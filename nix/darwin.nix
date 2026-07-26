@@ -44,7 +44,7 @@ rec {
           imports = [ baseModule configuration ];
         };
 
-        specialArgs = { inherit dev; };
+        specialArgs = { inherit dev pkgs; };
       });
      in
      {

@@ -55,7 +55,7 @@ in
             };
 
           specialArgs = {
-            inherit dev;
+            inherit dev pkgs;
           };
         }
       );
