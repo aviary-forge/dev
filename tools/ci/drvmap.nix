@@ -45,6 +45,7 @@ let
       drvPath = unsafeDiscardStringContext target.drvPath;
       attrPath = targetAttrPath target;
       system = target.system or dev.third_party.nixpkgs.system;
+      devAttrType = target.__devAttrType or null;
       outputs =
         if target ? outputs then
           builtins.listToAttrs (map (o: { name = o; value = target.${o}.outPath; }) target.outputs)

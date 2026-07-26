@@ -342,6 +342,7 @@ fn build_results_json(
         targets.push(serde_json::json!({
             "tree_path": tree_path,
             "drv_path": status.drv_path,
+            "dev_attr_type": status.dev_attr_type,
             "status": match &status.state {
                 annotation::BuildState::Succeeded => "succeeded",
                 annotation::BuildState::Failed => "failed",

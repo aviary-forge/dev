@@ -20,6 +20,7 @@ pub struct TargetStatus {
     pub state: BuildState,
     pub owners: Vec<Owner>,
     pub deps: Vec<String>,
+    pub dev_attr_type: Option<String>,
     /// Wall-clock start time (set on first Start event).
     pub started_at: Option<Instant>,
     /// Accumulated duration in milliseconds.
@@ -64,6 +65,7 @@ impl AnnotationTracker {
                         state: BuildState::Pending,
                         owners: info.owners.clone(),
                         deps: info.deps.clone(),
+                        dev_attr_type: info.dev_attr_type.clone(),
                         started_at: None,
                         duration_ms: 0,
                         exit_code: None,
@@ -227,8 +229,8 @@ impl AnnotationTracker {
         ));
 
         // Table header
-        out.push_str("| Status | Target | Duration | Owners |\n");
-        out.push_str("|--------|--------|----------|--------|\n");
+        out.push_str("| Status | Type | Target | Duration | Owners |\n");
+        out.push_str("|--------|------|--------|----------|--------|\n");
 
         // Sort: failed → building → pending → skipped → succeeded
         let mut sorted: Vec<&TargetStatus> = self.targets.values().collect();
@@ -287,9 +289,15 @@ impl AnnotationTracker {
                     .join(", ")
             };
 
+            let type_badge = match t.dev_attr_type.as_deref() {
+                Some("nixos-system") => "🖥",
+                Some("darwin-system") => "🍏",
+                Some("home-manager-system") => "🏠",
+                _ => "📦",
+            };
             out.push_str(&format!(
-                "| {} | `{}` | {} | {} |\n",
-                status_icon, t.tree_path, duration_str, owners_str
+                "| {} | {} | `{}` | {} | {} |\n",
+                status_icon, type_badge, t.tree_path, duration_str, owners_str
             ));
         }
 
@@ -336,9 +344,15 @@ impl AnnotationTracker {
                 None => "unknown exit".to_string(),
             };
 
+            let type_badge = match t.dev_attr_type.as_deref() {
+                Some("nixos-system") => "🖥 NixOS",
+                Some("darwin-system") => "🍏 darwin",
+                Some("home-manager-system") => "🏠 home-manager",
+                _ => "📦",
+            };
             out.push_str(&format!(
-                "**`{}`** — {}  \nOwners: {}\n\n",
-                t.tree_path, exit_str, owners_str
+                "**`{}`** ({}) — {}  \nOwners: {}\n\n",
+                t.tree_path, type_badge, exit_str, owners_str
             ));
 
             if let Some(ref log_tail) = t.log_tail {
