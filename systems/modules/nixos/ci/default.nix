@@ -13,6 +13,14 @@ let
       inherit (cfg) enable package tokenPath privateSshKeyPath;
       extraGroups = [ cfg.groupName ];
 
+      tags = {
+        arch = pkgs.stdenvNoCC.hostPlatform.parsed.cpu.name;
+        os = pkgs.stdenvNoCC.hostPlatform.parsed.kernel.name;
+        hostname = config.networking.hostName;
+        # Convenience: maps to "true" on the default queue
+        queue = "default";
+      };
+
       runtimePackages = [
         # included by default
         pkgs.bash
