@@ -77,6 +77,5 @@ let
 in
 members
 // {
-  __readTreeChildrenOverride = members;
   inherit pythonSet workspace;
 }
