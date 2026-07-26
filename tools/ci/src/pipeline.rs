@@ -47,22 +47,18 @@ fn build_step_command(drv_paths: &[String]) -> String {
 /// Generate pipeline YAML (as a JSON string, since Buildkite accepts
 /// JSON as a YAML subset) for the given set of changed targets,
 /// grouped by system.
+///
+/// The static pipeline (`pipelines/default.yaml`) already handles
+/// pipeline generation and orchestration. This function only emits
+/// the per-system build steps and a post-build step — no duplicate
+/// pipeline-gen key.
 pub fn generate_pipeline(
     by_system: &std::collections::BTreeMap<String, Drvmap>,
 ) -> serde_json::Value {
     let mut steps: Vec<BuildkiteStep> = Vec::new();
 
-    // Pipeline-gen step that runs first
-    steps.push(BuildkiteStep {
-        label: ":thinking_face: pipeline-gen".to_string(),
-        key: "pipeline-gen".to_string(),
-        command: "ci-orchestrator pipeline-gen".to_string(),
-        depends_on: vec![],
-        agents: None,
-        env: None,
-    });
-
-    // One build step per system
+    // One build step per system.
+    // These depend on the static pipeline's "pipeline-gen" step.
     for (system, targets) in by_system {
         if targets.is_empty() {
             continue;
@@ -87,19 +83,18 @@ pub fn generate_pipeline(
         });
     }
 
-    // Post-build step (gcroot, notifications)
-    steps.push(BuildkiteStep {
-        label: ":point_up: post-build".to_string(),
-        key: "post-build".to_string(),
-        command: "ci-orchestrator post-build".to_string(),
-        depends_on: steps
-            .iter()
-            .filter(|s| s.key.starts_with("build-"))
-            .map(|s| s.key.clone())
-            .collect(),
-        agents: None,
-        env: None,
-    });
+    // Post-build step (gcroot, notifications).
+    // Only emitted if there are build steps to depend on.
+    if !steps.is_empty() {
+        steps.push(BuildkiteStep {
+            label: ":point_up: post-build".to_string(),
+            key: "ci-post-build".to_string(),
+            command: "ci-orchestrator post-build".to_string(),
+            depends_on: steps.iter().map(|s| s.key.clone()).collect(),
+            agents: None,
+            env: None,
+        });
+    }
 
     serde_json::json!({
         "steps": steps,
@@ -115,7 +110,7 @@ mod tests {
         let by_system = std::collections::BTreeMap::new();
         let pipeline = generate_pipeline(&by_system);
         let steps = pipeline["steps"].as_array().unwrap();
-        // Even with no targets, we have pipeline-gen and post-build
-        assert!(steps.len() >= 2);
+        // No targets → no build steps → no post-build step
+        assert!(steps.is_empty());
     }
 }
