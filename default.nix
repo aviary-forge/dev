@@ -27,7 +27,9 @@ let
     # filter so we only build things that actually _build things_
     (target ? outPath)
     # filter so we do not build broken things
-    && !(target.meta.broken or false);
+    && !(target.meta.broken or false)
+    # filter so we skip targets explicitly opted out of CI
+    && !(target.meta.ci.skip or false);
 in
 
 readTree.fix (
