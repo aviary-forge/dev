@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-commit hook: auto-formats staged .nix and .rs files.
+#
+# Install:  ln -sf ../../tools/git-hooks/pre-commit .git/hooks/pre-commit
+# Or, to use a shared hooks directory:
+#   git config core.hooksPath tools/git-hooks
+#
+# nixfmt and rustfmt are injected via the Nix wrapper — build with:
+#   nix-build -A tools.git-hooks
+# Or use the result/bin/pre-commit symlink directly.
+
+set -euo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACM || true)
+
+format_files() {
+  local ext="$1" cmd="$2"
+  local files
+  files=$(echo "$staged" | grep "\\.${ext}$" || true)
+  if [ -n "$files" ]; then
+    echo "⟳  Formatting ${ext} files…"
+    echo "$files" | xargs $cmd
+    echo "$files" | xargs git add
+  fi
+}
+
+format_files "nix" "nixfmt"
+format_files "rs"  "rustfmt"
