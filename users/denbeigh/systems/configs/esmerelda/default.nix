@@ -50,13 +50,6 @@ dev.nix.nixos.eval (
       };
       programs.zsh.enable = true;
 
-      services.ollama = {
-        enable = true;
-        openFirewall = true;
-        host = "0.0.0.0";
-        acceleration = "cuda";
-      };
-
       # Experimenting with llama-cpp before committing
       networking.firewall.allowedTCPPorts = [ 8001 ];
 
