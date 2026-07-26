@@ -1,0 +1,19 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[manifest]
+members = [
+    "dev-workspace",
+    "mono-switch",
+]
+
+[[package]]
+name = "dev-workspace"
+version = "0.1.0"
+source = { virtual = "." }
+
+[[package]]
+name = "mono-switch"
+version = "0.1.0"
+source = { editable = "tools/mono-switch" }

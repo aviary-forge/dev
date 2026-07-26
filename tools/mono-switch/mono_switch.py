@@ -86,7 +86,7 @@ def main() -> None:
         sys.exit(f"activation binary not found: {activate_bin}")
 
     print("[mono-switch] activating...")
-    os.execv(str(activate_bin), [str(activate_bin)] + sys.argv[1:])
+    os.execv(str(activate_bin), [str(activate_bin), *sys.argv[1:]])
 
 
 if __name__ == "__main__":
