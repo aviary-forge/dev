@@ -1,4 +1,4 @@
-{ pkgs, ... }@args:
+{ pkgs, members, ... }@args:
 
 let
   inherit (builtins)
@@ -90,6 +90,8 @@ let
         --cargo-toml "$cargo_toml" \
         --output "$output_path"
     '';
+
+    meta.owners = with members; [ denbeigh ];
   };
 in
 crates
