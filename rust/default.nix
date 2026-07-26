@@ -2,37 +2,48 @@
 
 let
   inherit (builtins)
-    mapAttrs
+    baseNameOf
+    fromTOML
+    listToAttrs
+    map
     pathExists
-    readDir
+    readFile
     ;
   inherit (lib)
-    filterAttrs
+    concatMap
+    unique
     ;
 
   craneLib = pkgs.craneLib;
 
-  # Source filtered to just cargo-relevant files
-  src = craneLib.cleanCargoSource ./.;
+  # Workspace lives at repo root — crates can live anywhere under it
+  repoRoot = ../.;
+  src = craneLib.cleanCargoSource repoRoot;
 
-  # Load a crate's optional overrides.nix
-  loadOverride = crateName:
+  # Parse members from the root workspace Cargo.toml
+  workspaceToml = fromTOML (readFile (repoRoot + "/Cargo.toml"));
+  memberPaths = workspaceToml.workspace.members or [ ];
+
+  # Short crate name from a member path (e.g. "rust/gcroot-manager" -> "gcroot-manager")
+  crateName = memberPath: baseNameOf memberPath;
+
+  # Load a crate's optional overrides.nix (lives next to its Cargo.toml)
+  loadOverride = memberPath:
     let
-      p = ./${crateName}/overrides.nix;
+      p = repoRoot + "/${memberPath}/overrides.nix";
     in
     if pathExists p then import p args else { };
 
-  # Discover workspace members: directories containing a Cargo.toml
-  memberDirs = filterAttrs
-    (name: type: type == "directory" && pathExists ./${name}/Cargo.toml)
-    (readDir ./.);
+  # All overrides keyed by crate name, used to merge build inputs for deps
+  allOverrides = listToAttrs (map (mp: {
+    name = crateName mp;
+    value = loadOverride mp;
+  }) memberPaths);
 
-  # Collect build inputs from all overrides for the shared deps build
-  allOverrides = mapAttrs (name: _: loadOverride name) memberDirs;
-  mergedBuildInputs = lib.unique (lib.concatMap (o: o.buildInputs or [ ]) (builtins.attrValues allOverrides));
-  mergedNativeBuildInputs = lib.unique (lib.concatMap (o: o.nativeBuildInputs or [ ]) (builtins.attrValues allOverrides));
+  mergedBuildInputs = unique (concatMap (o: o.buildInputs or [ ]) (builtins.attrValues allOverrides));
+  mergedNativeBuildInputs = unique (concatMap (o: o.nativeBuildInputs or [ ]) (builtins.attrValues allOverrides));
 
-  # Shared: all workspace dependencies compiled once, with deps from all overrides
+  # Shared: all workspace dependencies, with per-crate build inputs merged in
   cargoArtifacts = craneLib.buildDepsOnly {
     inherit src;
     pname = "rust-workspace-deps";
@@ -42,16 +53,17 @@ let
     nativeBuildInputs = mergedNativeBuildInputs;
   };
 
-  # Build a single workspace member, inheriting shared cargoArtifacts
-  mkMember = crateName:
+  # Build a single member, inheriting shared cargoArtifacts
+  mkMember = memberPath:
     let
-      override = loadOverride crateName;
+      name = crateName memberPath;
+      override = loadOverride memberPath;
     in
     craneLib.buildPackage ({
       inherit cargoArtifacts src;
-      pname = crateName;
+      pname = name;
       version = override.version or "0.1.0";
-      cargoBuildArgs = "-p ${crateName}";
+      cargoBuildArgs = "-p ${name}";
       strictDeps = true;
       buildInputs = override.buildInputs or [ ];
       nativeBuildInputs = override.nativeBuildInputs or [ ];
@@ -63,7 +75,10 @@ let
       "meta"
     ]);
 
-  members = mapAttrs (name: _: mkMember name) memberDirs;
+  members = listToAttrs (map (mp: {
+    name = crateName mp;
+    value = mkMember mp;
+  }) memberPaths);
 in
 members
 // {
