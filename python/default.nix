@@ -36,7 +36,7 @@ let
       );
 
   # --- Per-member builder ---
-  inherit (import ../nix/buildPythonProject { inherit pkgs lib pyproject-nix; })
+  inherit (import ../nix/buildPythonProject { inherit dev pkgs lib; })
     buildPythonProject
     ;
 

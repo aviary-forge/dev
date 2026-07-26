@@ -1,11 +1,12 @@
 {
+  dev,
   pkgs,
   lib,
-  pyproject-nix,
   ...
 }:
 
 let
+  pyproject-nix = dev.third_party."pyproject-nix";
   inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
 in
 rec {
