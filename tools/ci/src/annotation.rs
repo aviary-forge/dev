@@ -7,10 +7,14 @@
 //! 2. A failure summary (context `build-{system}-failures`, only when failures
 //!    exist) listing failed targets with owners and log tails.
 
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::io::Write;
+use std::time::Instant;
+
+use anyhow::Context;
+
 use crate::drvmap::Owner;
 use crate::realise::BuildEvent;
-use std::collections::{BTreeMap, HashMap, HashSet};
-use std::time::Instant;
 
 fn type_badge(attr_type: &Option<String>) -> &'static str {
     match attr_type.as_deref() {
@@ -378,30 +382,28 @@ impl AnnotationTracker {
 }
 
 /// Post an annotation to Buildkite via `buildkite-agent annotate`.
-pub fn post_annotation(context: &str, style: &str, content: &str) -> Result<(), String> {
+pub fn post_annotation(context: &str, style: &str, content: &str) -> anyhow::Result<()> {
     let mut result = std::process::Command::new("buildkite-agent")
         .args(["annotate", "--context", context, "--style", style])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .spawn()
-        .map_err(|e| format!("spawning buildkite-agent annotate: {e}"))?;
+        .context("spawning buildkite-agent annotate")?;
 
-    // Write content to stdin
-    use std::io::Write;
     if let Some(ref mut stdin) = result.stdin {
         stdin
             .write_all(content.as_bytes())
-            .map_err(|e| format!("writing annotation: {e}"))?;
+            .context("writing annotation to stdin")?;
     }
 
     let output = result
         .wait_with_output()
-        .map_err(|e| format!("waiting for buildkite-agent: {e}"))?;
+        .context("waiting for buildkite-agent")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("buildkite-agent annotate failed: {stderr}"));
+        anyhow::bail!("buildkite-agent annotate failed: {stderr}");
     }
 
     Ok(())

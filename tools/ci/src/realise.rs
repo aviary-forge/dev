@@ -4,12 +4,13 @@
 //! Supports `--keep-going` (build everything possible), transient failure
 //! retry with backoff, and log tail extraction for failed builds.
 
-use anyhow::{Context, Result};
-use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
+
+use anyhow::{Context, Result};
+use serde::Deserialize;
 
 /// A parsed `@nix {...}` log line.
 #[derive(Debug, Deserialize)]

@@ -3,10 +3,11 @@
 //! A drvmap maps `treePath → TargetInfo` and is the interface between
 //! Nix (discovery) and Rust (orchestration).
 
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
+
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 
 /// Owner information for a target (Discord/GitHub).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

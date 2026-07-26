@@ -1,8 +1,9 @@
 //! Git operations: worktree creation, merge-base computation, cleanup.
 
-use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+use anyhow::{Context, Result};
 
 /// Create a temporary git worktree at the given commit and return its path.
 ///

@@ -1,8 +1,9 @@
 //! Run `nix eval` to produce a drvmap from Nix expressions.
 
-use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::Command;
+
+use anyhow::{Context, Result};
 
 use crate::drvmap::Drvmap;
 

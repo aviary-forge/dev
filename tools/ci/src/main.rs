@@ -108,6 +108,17 @@ fn main() -> Result<()> {
 
 // --- Shared types for results deserialization ---
 
+/// Deserialized status for a target in the results file.
+#[derive(Debug, serde::Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+enum TargetResultStatus {
+    Succeeded,
+    Failed,
+    Skipped,
+    #[serde(other)]
+    Unknown,
+}
+
 #[derive(serde::Deserialize)]
 struct ResultsFile {
     system: String,
@@ -123,10 +134,11 @@ struct ResultsFile {
 #[derive(serde::Deserialize)]
 struct TargetEntry {
     tree_path: String,
-    status: String,
+    status: TargetResultStatus,
     #[serde(default)]
     exit_code: Option<i64>,
     #[serde(default)]
+    #[allow(dead_code)]
     log_tail: Option<String>,
     #[serde(default)]
     owners: Vec<drvmap::Owner>,
@@ -256,7 +268,9 @@ fn cmd_build(
 
     // Post initial annotation
     let initial = tracker.render_main();
-    let _ = annotation::post_annotation(&tracker.main_context(), "info", &initial);
+    if let Err(e) = annotation::post_annotation(&tracker.main_context(), "info", &initial) {
+        tracing::warn!("failed to post initial annotation: {e:#}");
+    }
 
     // Throttle state for annotation updates
     let mut last_annotation = std::time::Instant::now();
@@ -280,22 +294,32 @@ fn cmd_build(
             if now.duration_since(last_annotation) >= throttle {
                 last_annotation = now;
                 let annotation = tracker.render_main();
-                let _ = annotation::post_annotation(&tracker.main_context(), "info", &annotation);
+                if let Err(e) =
+                    annotation::post_annotation(&tracker.main_context(), "info", &annotation)
+                {
+                    tracing::warn!("failed to post annotation update: {e:#}");
+                }
             }
         },
     )?;
 
     // Final annotation update (always post)
     let final_annotation = tracker.render_main();
-    let _ = annotation::post_annotation(
+    if let Err(e) = annotation::post_annotation(
         &tracker.main_context(),
         if all_succeeded { "success" } else { "error" },
         &final_annotation,
-    );
+    ) {
+        tracing::warn!("failed to post final annotation: {e:#}");
+    }
 
     // Post failure summary if any failures exist
     if let Some(failure_summary) = tracker.render_failure_summary() {
-        let _ = annotation::post_annotation(&tracker.failure_context(), "error", &failure_summary);
+        if let Err(e) =
+            annotation::post_annotation(&tracker.failure_context(), "error", &failure_summary)
+        {
+            tracing::warn!("failed to post failure annotation: {e:#}");
+        }
     }
 
     // Write results file for post-build consumption
@@ -395,14 +419,16 @@ fn cmd_validate_owners(repo_root: &std::path::Path, drvmap_file: &str) -> Result
         tracing::info!("all {} targets have valid owners", current_drvmap.len());
 
         // Post a green annotation for visibility.
-        let _ = annotation::post_annotation(
+        if let Err(e) = annotation::post_annotation(
             "validate-owners",
             "success",
             &format!(
                 "### :white_check_mark: Owner validation passed\n\nAll {} targets have at least one owner.",
                 current_drvmap.len()
             ),
-        );
+        ) {
+            tracing::warn!("failed to post owner validation annotation: {e:#}");
+        }
 
         return Ok(());
     }
@@ -420,7 +446,9 @@ fn cmd_validate_owners(repo_root: &std::path::Path, drvmap_file: &str) -> Result
     }
     md.push_str("\nEach target must declare `meta.owners` in its Nix expression.\n");
 
-    let _ = annotation::post_annotation("validate-owners", "error", &md);
+    if let Err(e) = annotation::post_annotation("validate-owners", "error", &md) {
+        tracing::warn!("failed to post owner validation failure annotation: {e:#}");
+    }
 
     anyhow::bail!(
         "{} unowned target(s): {}",
@@ -510,7 +538,7 @@ fn dispatch_notifications(all_results: &[ResultsFile]) -> Result<()> {
 
     for rf in all_results {
         for target in &rf.targets {
-            if target.status == "failed" {
+            if target.status == TargetResultStatus::Failed {
                 any_failure = true;
 
                 if target.owners.is_empty() {
@@ -572,7 +600,7 @@ fn dispatch_notifications(all_results: &[ResultsFile]) -> Result<()> {
         let _ = send_discord_webhook(&webhook_url, &content, 0xFF0000);
 
         // Try to base64-decode the discord snowflake and ping the user
-        if let Ok(decoded) = decode_discord_snowflake(owner_key) {
+        if let Some(decoded) = decode_discord_snowflake(owner_key) {
             let ping_content = format!(
                 "<@{}> your changes broke {} target(s) in `{}`:\n",
                 decoded,
@@ -587,57 +615,22 @@ fn dispatch_notifications(all_results: &[ResultsFile]) -> Result<()> {
 }
 
 /// Base64-decode a Discord snowflake (user ID).
-fn decode_discord_snowflake(encoded: &str) -> Result<String, String> {
-    let decoded = base64_decode(encoded)?;
+/// Discord snowflakes are u64 integers stored as base64-encoded strings
+/// in the drvmap to avoid exposing raw IDs in the repo.
+fn decode_discord_snowflake(encoded: &str) -> Option<String> {
+    use base64::Engine;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .ok()?;
+    let decoded = String::from_utf8(bytes).ok()?;
     if decoded.chars().all(|c| c.is_ascii_digit()) {
-        Ok(decoded)
+        Some(decoded)
     } else {
-        Err("not a numeric snowflake".to_string())
+        None
     }
 }
 
-/// Minimal base64 decode (standard alphabet).
-fn base64_decode(input: &str) -> Result<String, String> {
-    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut chars: Vec<u8> = Vec::new();
-
-    for c in input.chars() {
-        if c == '=' {
-            break;
-        }
-        if let Some(pos) = alphabet.find(c) {
-            chars.push(pos as u8);
-        } else {
-            return Err(format!("invalid base64 char: {c}"));
-        }
-    }
-
-    if chars.is_empty() {
-        return Ok(String::new());
-    }
-
-    let mut result = Vec::new();
-    for chunk in chars.chunks(4) {
-        let b0 = u32::from(chunk.first().copied().unwrap_or(0));
-        let b1 = u32::from(chunk.get(1).copied().unwrap_or(0));
-        let b2 = u32::from(chunk.get(2).copied().unwrap_or(0));
-        let b3 = u32::from(chunk.get(3).copied().unwrap_or(0));
-
-        let combined = (b0 << 18) | (b1 << 12) | (b2 << 6) | b3;
-
-        result.push(((combined >> 16) & 0xFF) as u8);
-        if chunk.len() > 2 {
-            result.push(((combined >> 8) & 0xFF) as u8);
-        }
-        if chunk.len() > 3 {
-            result.push((combined & 0xFF) as u8);
-        }
-    }
-
-    String::from_utf8(result).map_err(|e| format!("invalid UTF-8: {e}"))
-}
-
-/// Send a message to a Discord webhook via curl.
+/// Send a message to a Discord webhook.
 fn send_discord_webhook(webhook_url: &str, content: &str, color: u32) -> Result<()> {
     let payload = serde_json::json!({
         "embeds": [{
@@ -646,27 +639,19 @@ fn send_discord_webhook(webhook_url: &str, content: &str, color: u32) -> Result<
         }]
     });
 
-    let payload_str = serde_json::to_string(&payload)?;
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(webhook_url)
+        .json(&payload)
+        .send()
+        .context("sending Discord webhook")?;
 
-    let output = std::process::Command::new("curl")
-        .args([
-            "-s",
-            "-X",
-            "POST",
-            "-H",
-            "Content-Type: application/json",
-            "-d",
-            &payload_str,
-            webhook_url,
-        ])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::piped())
-        .output()
-        .context("sending Discord webhook via curl")?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        tracing::warn!("Discord webhook failed: {stderr}");
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response
+            .text()
+            .unwrap_or_else(|_| "<unreadable>".to_string());
+        tracing::warn!("Discord webhook failed (HTTP {status}): {body}");
     } else {
         tracing::info!("Discord notification sent");
     }
