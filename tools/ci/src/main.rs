@@ -84,7 +84,11 @@ fn main() -> Result<()> {
 }
 
 /// Pipeline generation: double instantiate, diff, emit YAML.
-fn cmd_pipeline_gen(repo_root: &std::path::Path, trunk_branch: &str, output: Option<&str>) -> Result<()> {
+fn cmd_pipeline_gen(
+    repo_root: &std::path::Path,
+    trunk_branch: &str,
+    output: Option<&str>,
+) -> Result<()> {
     tracing::info!("computing merge-base with {}", trunk_branch);
     let base_commit = git::merge_base(repo_root, trunk_branch)?;
     tracing::info!("base commit: {}", base_commit);
@@ -146,7 +150,11 @@ fn cmd_pipeline_gen(repo_root: &std::path::Path, trunk_branch: &str, output: Opt
 }
 
 /// Build: run nix-store --realise on changed targets.
-fn cmd_build(_repo_root: &std::path::Path, drvmap_file: &str, annotation_file: Option<&str>) -> Result<()> {
+fn cmd_build(
+    _repo_root: &std::path::Path,
+    drvmap_file: &str,
+    annotation_file: Option<&str>,
+) -> Result<()> {
     // Load the full current drvmap (contains all targets)
     let full_drvmap = drvmap::load(std::path::Path::new(drvmap_file))?;
 
@@ -160,9 +168,7 @@ fn cmd_build(_repo_root: &std::path::Path, drvmap_file: &str, annotation_file: O
     } else {
         full_drvmap
             .iter()
-            .filter(|(_, info)| {
-                info.system.as_deref().unwrap_or_default() == target_system
-            })
+            .filter(|(_, info)| info.system.as_deref().unwrap_or_default() == target_system)
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect()
     };
@@ -178,19 +184,14 @@ fn cmd_build(_repo_root: &std::path::Path, drvmap_file: &str, annotation_file: O
 
     let mut tracker = annotation::AnnotationTracker::new(&to_build);
 
-    let success = realise::realise(
-        &drv_paths,
-        &drv_to_tree,
-        &drv_to_system,
-        &mut |event| {
-            tracker.on_event(event);
-            // Emit annotation periodically
-            let annotation = tracker.render();
-            if let Some(ref path) = annotation_file {
-                let _ = std::fs::write(path, &annotation);
-            }
-        },
-    )?;
+    let success = realise::realise(&drv_paths, &drv_to_tree, &drv_to_system, &mut |event| {
+        tracker.on_event(event);
+        // Emit annotation periodically
+        let annotation = tracker.render();
+        if let Some(ref path) = annotation_file {
+            let _ = std::fs::write(path, &annotation);
+        }
+    })?;
 
     // Final annotation
     let final_annotation = tracker.render();

@@ -29,7 +29,9 @@ pub struct NixLogLine {
 pub enum BuildStatus {
     Started,
     Succeeded,
-    Failed { exit_code: Option<i64> },
+    Failed {
+        exit_code: Option<i64>,
+    },
     /// Built via substitution (downloaded from a binary cache).
     #[allow(dead_code)]
     Substitution,

@@ -19,13 +19,7 @@ pub fn instantiate_drvmap(repo_root: &Path, worktree: Option<&Path>) -> Result<D
     let cwd = worktree.unwrap_or(repo_root);
 
     let output = Command::new("nix")
-        .args([
-            "eval",
-            "--json",
-            "-f",
-            DRVMAP_EXPR,
-            "drvmap",
-        ])
+        .args(["eval", "--json", "-f", DRVMAP_EXPR, "drvmap"])
         .current_dir(cwd)
         .output()
         .with_context(|| {

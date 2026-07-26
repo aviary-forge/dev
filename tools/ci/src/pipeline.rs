@@ -37,10 +37,7 @@ fn nix_system_to_os(system: &str) -> &str {
 /// Build the `nix-store --realise` command for a set of drvPaths.
 /// The binary invokes itself in `build` mode, passing the drvPaths.
 fn build_step_command(drv_paths: &[String]) -> String {
-    let paths_quoted: Vec<String> = drv_paths
-        .iter()
-        .map(|p| format!("'{}'", p))
-        .collect();
+    let paths_quoted: Vec<String> = drv_paths.iter().map(|p| format!("'{}'", p)).collect();
     format!(
         "nix-store --realise --log-format internal-json {}",
         paths_quoted.join(" ")

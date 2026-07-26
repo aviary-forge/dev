@@ -75,8 +75,7 @@ impl DrvmapDiff {
 pub fn load(path: &Path) -> Result<Drvmap> {
     let data = std::fs::read_to_string(path)
         .with_context(|| format!("reading drvmap from {}", path.display()))?;
-    serde_json::from_str(&data)
-        .with_context(|| format!("parsing drvmap from {}", path.display()))
+    serde_json::from_str(&data).with_context(|| format!("parsing drvmap from {}", path.display()))
 }
 
 /// Parse a drvmap from a JSON string (e.g. stdout of nix-instantiate).
