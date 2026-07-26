@@ -1,5 +1,5 @@
 {
-  dev ? import ../. { },
+  dev ? import ./. { },
 }:
 
 let
@@ -8,8 +8,5 @@ in
 pkgs.mkShell {
   packages = [
     pkgs.fenix.complete.toolchain
-    pkgs.crate2nix
-
-    dev.rust.regenerate
   ];
 }

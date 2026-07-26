@@ -1,21 +1,19 @@
-{ pkgs, members, ... }:
+{ pkgs, lib, members, ... }:
 
 let
-  inherit (pkgs.stdenvNoCC.targetPlatform) isLinux;
-  inherit (pkgs.lib) optional;
+  inherit (pkgs.stdenvNoCC.hostPlatform) isLinux;
 in
+{
+  buildInputs = [ pkgs.openssl ] ++ lib.optional isLinux pkgs.makeWrapper;
 
-attrs: {
-  buildInputs = optional isLinux pkgs.makeWrapper;
-  postInstall =
-    let
-      inherit (pkgs.lib) optionalString makeLibraryPath;
-      libPath = makeLibraryPath [ pkgs.openssl ];
-    in
-    optionalString isLinux ''
-      wrapProgram $out/bin/gcroot-manager --prefix LD_LIBRARY_PATH : ${libPath}
-    '';
-  runtimeInputs = [ pkgs.openssl.dev ];
+  nativeBuildInputs = with pkgs; [
+    pkg-config
+  ];
+
+  postInstall = lib.optionalString isLinux ''
+    wrapProgram $out/bin/gcroot-manager \
+      --prefix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath [ pkgs.openssl ]}
+  '';
 
   meta.owners = with members; [ denbeigh ];
 }

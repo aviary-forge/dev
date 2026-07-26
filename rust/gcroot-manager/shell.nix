@@ -4,8 +4,7 @@
 
 let
   pkgs = dev.third_party.nixpkgs;
-  inherit (pkgs.stdenvNoCC.targetPlatform) isDarwin;
-  inherit (pkgs.lib) optional;
+  inherit (pkgs.stdenvNoCC.hostPlatform) isDarwin;
 
   rustPkgs = with pkgs.fenix.complete; [
     toolchain
@@ -13,22 +12,15 @@ let
     rustfmt-preview
   ];
 
-  macosPkgs = optional isDarwin (
-    with pkgs;
-    [
+  macosPkgs = pkgs.lib.optionals isDarwin (
+    with pkgs; [
       pkg-config
       openssl.dev
-      # for symbolbs in clippy check
-      pkgs.stdenv.cc
+      stdenv.cc
     ]
   );
 in
 pkgs.mkShell {
-  packages =
-    rustPkgs
-    ++ [
-      dev.users.denbeigh.neovim
-      pkgs.crate2nix
-    ]
-    ++ macosPkgs;
+  inputsFrom = [ dev.rust.gcroot-manager ];
+  packages = rustPkgs ++ macosPkgs;
 }
