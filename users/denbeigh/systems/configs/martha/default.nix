@@ -14,7 +14,6 @@ dev.nix.nixos.eval {
         ../../../modules/nixos/standard.nix
         ../../../modules/nixos/development.nix
         ../../../modules/nixos/tailscale.nix
-        ../../../modules/nixos/gaming.nix
       ];
 
       config = {
