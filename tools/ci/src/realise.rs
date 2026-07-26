@@ -23,8 +23,14 @@ pub struct NixLogLine {
     pub level: Option<i32>,
     #[allow(dead_code)]
     pub parent: Option<i64>,
+    /// Used by action="start" for the activity description.
     #[allow(dead_code)]
     pub text: Option<String>,
+    /// Used by action="msg" for the formatted message (may contain ANSI).
+    pub msg: Option<String>,
+    /// Used by action="msg" for the raw, unformatted message.
+    #[allow(dead_code)]
+    pub raw_msg: Option<String>,
     #[serde(rename = "type")]
     pub type_: Option<i64>,
 }
@@ -112,6 +118,22 @@ fn last_n_lines(s: &str, n: usize) -> String {
     lines[start..].join("\n")
 }
 
+/// Look up log lines buffered from the live `@nix` stream for a derivation.
+/// Returns `None` if no lines were captured (e.g. the target was substituted).
+fn buffered_log(
+    log_buffers: &HashMap<String, Vec<String>>,
+    drv_path: &str,
+    drv_to_tree: &HashMap<String, String>,
+) -> Option<String> {
+    let tree_path = drv_to_tree.get(drv_path)?;
+    let lines = log_buffers.get(tree_path)?;
+    if lines.is_empty() {
+        None
+    } else {
+        Some(lines.join("\n"))
+    }
+}
+
 /// Get the build log for a derivation via `nix log`.
 fn nix_log(drv_path: &str) -> Result<String> {
     let output = Command::new("nix")
@@ -190,6 +212,8 @@ pub fn realise<F: FnMut(&BuildEvent)>(
 
     // Map from nix log action id → drvPath (populated on "start")
     let mut id_to_drv: HashMap<i64, String> = HashMap::new();
+    // Per-target ring buffer of build output lines, for log_tail extraction.
+    let mut log_buffers: HashMap<String, Vec<String>> = HashMap::new();
     let mut any_failed = false;
 
     for line in reader.lines() {
@@ -244,9 +268,40 @@ pub fn realise<F: FnMut(&BuildEvent)>(
                 });
             }
 
+            "msg" => {
+                // Nix-level diagnostic messages (warnings, errors, info).
+                // These carry no activity id — they're global build status.
+                let msg_text = log_line.msg.as_deref().unwrap_or("");
+                eprintln!("[nix] {}", msg_text);
+            }
+
             "result" => {
                 if let (Some(id), Some(type_)) = (log_line.id, log_line.type_) {
-                    if let Some(drv_path) = id_to_drv.get(&id).cloned() {
+                    // type 101 = builder stdout/stderr line — log it, don't
+                    // treat it as a build lifecycle event.
+                    if type_ == 101 {
+                        let log_text = log_line
+                            .fields
+                            .as_ref()
+                            .and_then(|f| f.first())
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+
+                        let tree_path = id_to_drv
+                            .get(&id)
+                            .and_then(|drv| drv_to_tree.get(drv))
+                            .cloned()
+                            .unwrap_or_else(|| "build".to_string());
+
+                        eprintln!("[{}] {}", tree_path, log_text);
+
+                        // Buffer last 200 lines per target for log_tail.
+                        let buf = log_buffers.entry(tree_path.clone()).or_default();
+                        if buf.len() >= 200 {
+                            buf.remove(0);
+                        }
+                        buf.push(log_text.to_string());
+                    } else if let Some(drv_path) = id_to_drv.get(&id).cloned() {
                         let tree_path = drv_to_tree
                             .get(&drv_path)
                             .cloned()
@@ -327,14 +382,15 @@ pub fn realise<F: FnMut(&BuildEvent)>(
                 .cloned()
                 .unwrap_or_else(|| drv_path.clone());
 
-            // Fetch the build log to check if this is transient
-            let log_output = match nix_log(drv_path) {
-                Ok(log) => log,
-                Err(e) => {
-                    tracing::warn!("could not fetch log for {drv_path}: {e}");
-                    continue;
-                }
-            };
+            // Prefer buffered log lines from the stream; fall back to nix log.
+            let log_output = buffered_log(&log_buffers, drv_path, drv_to_tree)
+                .or_else(|| nix_log(drv_path).ok())
+                .unwrap_or_default();
+
+            if log_output.is_empty() {
+                tracing::warn!("no log available for {drv_path}, not retrying");
+                continue;
+            }
 
             if !is_transient_failure(&log_output) {
                 tracing::info!("{tree_path}: non-transient failure, not retrying");
@@ -416,8 +472,10 @@ pub fn realise<F: FnMut(&BuildEvent)>(
             }
 
             if !retry_success {
-                // Persist log tail after all retries exhausted
-                let final_log = nix_log(drv_path).unwrap_or_else(|_| "log unavailable".to_string());
+                // Persist log tail after all retries exhausted.
+                let final_log = buffered_log(&log_buffers, drv_path, drv_to_tree)
+                    .or_else(|| nix_log(drv_path).ok())
+                    .unwrap_or_else(|| "log unavailable".to_string());
                 if let Some(entry) = results.get_mut(&tree_path) {
                     entry.log_tail = Some(last_n_lines(&final_log, 20));
                     entry.retry_count = Some(max_retries);
