@@ -68,7 +68,9 @@ let
     in
     buildPythonProject {
       package = pythonSet.${name};
-      venv = pythonSet.mkVirtualEnv "${name}-env" workspace.deps.default;
+      venv = pythonSet.mkVirtualEnv "${name}-env" {
+        ${name} = workspace.deps.default.${name} or [ ];
+      };
       src = repoRoot + "/${memberPath}";
     };
 
