@@ -23,14 +23,16 @@ struct BuildkiteStep {
 #[derive(Debug, serde::Serialize)]
 struct BuildkiteAgents {
     os: String,
+    arch: String,
 }
 
-/// Architecture mapping — Nix systems to Buildkite-compatible OS labels.
-fn nix_system_to_os(system: &str) -> &str {
-    if system.contains("darwin") {
-        "macos"
+/// Parse a Nix system triple (e.g. "x86_64-linux") into (arch, os).
+fn parse_nix_system(system: &str) -> (&str, &str) {
+    if let Some((arch, os)) = system.split_once('-') {
+        (arch, os)
     } else {
-        "linux"
+        // Fallback: treat the whole string as system, unknown arch
+        ("unknown", system)
     }
 }
 
@@ -67,13 +69,16 @@ pub fn generate_pipeline(
         let drv_paths: Vec<String> = crate::realise::drv_paths(targets);
         let target_count = drv_paths.len();
 
+        let (arch, os) = parse_nix_system(system);
+
         steps.push(BuildkiteStep {
             label: format!(":nix: build {} ({})", system, target_count),
             key: format!("build-{}", system.replace('.', "-")),
             command: build_step_command(&drv_paths),
             depends_on: vec!["pipeline-gen".to_string()],
             agents: Some(BuildkiteAgents {
-                os: nix_system_to_os(system).to_string(),
+                arch: arch.to_string(),
+                os: os.to_string(),
             }),
             env: {
                 let mut env = std::collections::BTreeMap::new();
