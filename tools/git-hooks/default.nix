@@ -23,6 +23,7 @@ let
             entry: ${nixfmt}/bin/nixfmt --check
             language: system
             files: \.nix$
+            exclude: '^rust/Cargo\.nix$'
             types: [file]
           - id: rustfmt-check
             name: rustfmt

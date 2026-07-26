@@ -8,17 +8,20 @@
 let
   inherit (pkgs.stdenvNoCC.hostPlatform) isLinux;
 in
-{
-  buildInputs = [ pkgs.openssl ] ++ lib.optional isLinux pkgs.makeWrapper;
+attrs: {
+  buildInputs =
+    (attrs.buildInputs or [ ]) ++ [ pkgs.openssl ] ++ lib.optional isLinux pkgs.makeWrapper;
 
-  nativeBuildInputs = with pkgs; [
-    pkg-config
-  ];
+  nativeBuildInputs = (attrs.nativeBuildInputs or [ ]) ++ [ pkgs.pkg-config ];
 
-  postInstall = lib.optionalString isLinux ''
-    wrapProgram $out/bin/gcroot-manager \
-      --prefix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath [ pkgs.openssl ]}
-  '';
+  postInstall =
+    (attrs.postInstall or "")
+    + lib.optionalString isLinux ''
+      wrapProgram $out/bin/gcroot-manager \
+        --prefix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath [ pkgs.openssl ]}
+    '';
 
-  meta.owners = with members; [ denbeigh ];
+  meta = (attrs.meta or { }) // {
+    owners = with members; [ denbeigh ];
+  };
 }
