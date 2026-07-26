@@ -232,20 +232,9 @@ impl AnnotationTracker {
         out.push_str("| Status | Type | Target | Duration | Owners |\n");
         out.push_str("|--------|------|--------|----------|--------|\n");
 
-        // Sort: failed → building → pending → skipped → succeeded
+        // Sort by target name
         let mut sorted: Vec<&TargetStatus> = self.targets.values().collect();
-        sorted.sort_by(|a, b| {
-            let prio = |s: &BuildState| match s {
-                BuildState::Failed => 0,
-                BuildState::Building => 1,
-                BuildState::Pending => 2,
-                BuildState::Skipped => 3,
-                BuildState::Succeeded => 4,
-            };
-            prio(&a.state)
-                .cmp(&prio(&b.state))
-                .then_with(|| a.tree_path.cmp(&b.tree_path))
-        });
+        sorted.sort_by(|a, b| a.tree_path.cmp(&b.tree_path));
 
         for t in &sorted {
             let status_icon = match t.state {
