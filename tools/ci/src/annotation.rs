@@ -12,6 +12,16 @@ use crate::realise::BuildEvent;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::time::Instant;
 
+fn type_badge(attr_type: &Option<String>) -> &'static str {
+    match attr_type.as_deref() {
+        Some("nixos-system") => ":nix:",
+        Some("darwin-system") => ":mac:",
+        Some("home-manager-system") => ":house_with_garden:",
+        Some("formatting-check") => ":mag:",
+        _ => ":package:",
+    }
+}
+
 /// Accumulated status for a single target.
 #[derive(Debug, Clone)]
 pub struct TargetStatus {
@@ -278,12 +288,7 @@ impl AnnotationTracker {
                     .join(", ")
             };
 
-            let type_badge = match t.dev_attr_type.as_deref() {
-                Some("nixos-system") => ":nix:",
-                Some("darwin-system") => ":mac:",
-                Some("home-manager-system") => ":house_with_garden:",
-                _ => ":package:",
-            };
+            let type_badge = type_badge(&t.dev_attr_type);
             out.push_str(&format!(
                 "| {} | {} | `{}` | {} | {} |\n",
                 status_icon, type_badge, t.tree_path, duration_str, owners_str
@@ -333,12 +338,7 @@ impl AnnotationTracker {
                 None => "unknown exit".to_string(),
             };
 
-            let type_badge = match t.dev_attr_type.as_deref() {
-                Some("nixos-system") => "🖥 NixOS",
-                Some("darwin-system") => "🍏 darwin",
-                Some("home-manager-system") => "🏠 home-manager",
-                _ => "📦",
-            };
+            let type_badge = type_badge(&t.dev_attr_type);
             out.push_str(&format!(
                 "**`{}`** ({}) — {}  \nOwners: {}\n\n",
                 t.tree_path, type_badge, exit_str, owners_str

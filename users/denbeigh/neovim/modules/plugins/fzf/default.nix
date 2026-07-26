@@ -1,8 +1,18 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 
 let
   inherit (pkgs) vimPlugins;
-  inherit (lib) mkEnableOption mkIf mkOption types;
+  inherit (lib)
+    mkEnableOption
+    mkIf
+    mkOption
+    types
+    ;
 
   cfg = config.plugins.fzf;
 in
@@ -20,12 +30,32 @@ in
     extraPlugins = [ vimPlugins.fzf-vim ];
 
     keymaps = [
-      { mode = "n"; key = "<leader>q"; action = ":Rg<CR>"; }
+      {
+        mode = "n";
+        key = "<leader>q";
+        action = ":Rg<CR>";
+      }
       # { mode = "n"; key = "<leader>w";  action = ":GFiles<CR>"; }
-      { mode = "n"; key = "<leader>w"; action = ":Files<CR>"; }
-      { mode = "n"; key = "<leader>e"; action = ":Buffers<CR>"; }
-      { mode = "n"; key = "<leader>s"; action = ":Lines<CR>"; }
-      { mode = "n"; key = "<leader>d"; action = ":BLines<CR>"; }
+      {
+        mode = "n";
+        key = "<leader>w";
+        action = ":Files<CR>";
+      }
+      {
+        mode = "n";
+        key = "<leader>e";
+        action = ":Buffers<CR>";
+      }
+      {
+        mode = "n";
+        key = "<leader>s";
+        action = ":Lines<CR>";
+      }
+      {
+        mode = "n";
+        key = "<leader>d";
+        action = ":BLines<CR>";
+      }
     ];
   };
 }

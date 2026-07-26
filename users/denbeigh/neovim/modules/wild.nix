@@ -24,7 +24,10 @@
 
       # Enable tab completion
       wildmenu = true;
-      wildmode = [ "longest:full" "list:full" ];
+      wildmode = [
+        "longest:full"
+        "list:full"
+      ];
     };
   };
 }

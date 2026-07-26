@@ -57,7 +57,9 @@ in
             };
           };
         };
-        default = { timezone = defaultTimezone; };
+        default = {
+          timezone = defaultTimezone;
+        };
       };
 
   };

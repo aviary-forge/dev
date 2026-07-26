@@ -3,7 +3,10 @@ let
 
   darwin-tools = pkgs.callPackage (dev.third_party.nix.darwin + "/pkgs/nix-tools") { };
   eval =
-    { configuration, specialArgs ? { } }:
+    {
+      configuration,
+      specialArgs ? { },
+    }:
     let
       eval = import (dev.third_party.nix.darwin + "/eval-config.nix") {
         inherit (pkgs) lib;

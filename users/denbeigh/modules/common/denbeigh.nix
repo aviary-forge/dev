@@ -1,11 +1,16 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (lib) mkIf mkOption types;
   cfg = config.dev.denbeigh;
 in
 {
-  imports = [./variables.nix];
+  imports = [ ./variables.nix ];
   options.dev.denbeigh = {
     user = {
       enable = mkOption {
@@ -59,12 +64,17 @@ in
       users.${cfg.user.username} = {
         imports = [ ../home-manager/standard.nix ];
 
-          dev.denbeigh = {
-            machine = {
-              # work = false;
-              inherit (cfg.machine) work isNixOS graphical hostname;
-              inherit (cfg.user) username;
-            };
+        dev.denbeigh = {
+          machine = {
+            # work = false;
+            inherit (cfg.machine)
+              work
+              isNixOS
+              graphical
+              hostname
+              ;
+            inherit (cfg.user) username;
+          };
           inherit (cfg.user) keys;
         };
       };

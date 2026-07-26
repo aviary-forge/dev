@@ -13,7 +13,8 @@ let
   ];
 
   macosPkgs = pkgs.lib.optionals isDarwin (
-    with pkgs; [
+    with pkgs;
+    [
       pkg-config
       openssl.dev
       stdenv.cc

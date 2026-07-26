@@ -39,8 +39,7 @@ in
   eval = (
     arg:
     let
-      configuration =
-        if builtins.isFunction arg then arg else arg.configuration;
+      configuration = if builtins.isFunction arg then arg else arg.configuration;
       meta = if builtins.isFunction arg then { } else arg.meta or { };
 
       nixosEval = (

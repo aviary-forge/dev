@@ -19,9 +19,7 @@ let
   # Cross-platform targets (e.g. darwin configs on a Linux agent)
   # are excluded until a matching Buildkite agent is available.
   currentSystem = dev.third_party.nixpkgs.system;
-  targets = builtins.filter
-    (t: (t.system or currentSystem) == currentSystem)
-    dev.ci.targets;
+  targets = builtins.filter (t: (t.system or currentSystem) == currentSystem) dev.ci.targets;
 
   # System configs (nixos/darwin/home-manager) are toplevel derivations
   # with huge closures.  Exclude them from the dependency graph — their
@@ -37,13 +35,19 @@ let
         tree = mkLabel t;
       }) depTargets;
     in
-    builtins.listToAttrs (map (p: { name = p.drv; value = p.tree; }) pairs);
+    builtins.listToAttrs (
+      map (p: {
+        name = p.drv;
+        value = p.tree;
+      }) pairs
+    );
 
   # Compute the forward dependency graph and resolve drvPaths to treePaths
   depMap = dev.nix.dependency-analyzer (drvsToPaths depTargets);
 
   # For a given target, return the list of treePaths it depends on
-  getDeps = target:
+  getDeps =
+    target:
     let
       drv = unsafeDiscardStringContext target.drvPath;
       knownDeps = depMap.${drv}.knownDeps or [ ];
@@ -59,7 +63,12 @@ let
       devAttrType = target.__devAttrType or null;
       outputs =
         if target ? outputs then
-          builtins.listToAttrs (map (o: { name = o; value = target.${o}.outPath; }) target.outputs)
+          builtins.listToAttrs (
+            map (o: {
+              name = o;
+              value = target.${o}.outPath;
+            }) target.outputs
+          )
         else
           { };
       owners = target.meta.owners or [ ];

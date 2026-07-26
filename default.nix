@@ -128,6 +128,15 @@ readTree.fix (
             target: target ? __devAttrType && target.__devAttrType == "home-manager-system"
           );
         };
+
+        # Static-analysis / meta checks (formatting, linting, etc.).
+        # Use `ci.checks.formatting.targets` to get all formatting-check targets.
+        # These are lightweight checks that gate merges but aren't real builds.
+        checks = {
+          formatting = mkSystemDiscovery (
+            target: target ? __devAttrType && target.__devAttrType == "formatting-check"
+          );
+        };
       };
   }
 )

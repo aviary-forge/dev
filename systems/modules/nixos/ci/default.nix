@@ -1,7 +1,12 @@
 # NOTE: we add the default for `config` in here because this still ends up
 # getting evaluated by readTree during cases of pipeline evaluation and such.
 # TODO maybe we take some more reasoned stance with skipTree in future?
-{ config ? { }, pkgs, lib, ... }:
+{
+  config ? { },
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   inherit (builtins) toString;
@@ -10,7 +15,12 @@ let
   mkAgent = n: {
     name = "aviary-worker-${toString n}";
     value = {
-      inherit (cfg) enable package tokenPath privateSshKeyPath;
+      inherit (cfg)
+        enable
+        package
+        tokenPath
+        privateSshKeyPath
+        ;
       extraGroups = [ cfg.groupName ];
 
       tags = {
@@ -38,7 +48,12 @@ in
 {
   options.services.dev.ci =
     let
-      inherit (lib) mkEnableOption mkPackageOption mkOption types;
+      inherit (lib)
+        mkEnableOption
+        mkPackageOption
+        mkOption
+        types
+        ;
     in
     {
       enable = mkEnableOption "CI agent for aviary forge";
@@ -76,9 +91,10 @@ in
       inherit (lib.modules) mkIf;
 
       count =
-        if cfg.agentCount < 1
-        then throw "agent count must be > 0, found ${toString cfg.agentCount}"
-        else cfg.agentCount - 1;
+        if cfg.agentCount < 1 then
+          throw "agent count must be > 0, found ${toString cfg.agentCount}"
+        else
+          cfg.agentCount - 1;
     in
     {
       users.groups."${cfg.groupName}" = { };
@@ -87,7 +103,6 @@ in
         "d /nix/var/nix/gcroots/dev 0775 root ${cfg.groupName}"
       ];
 
-      services.buildkite-agents = mkIf cfg.enable
-        (listToAttrs (map mkAgent (range 0 count)));
+      services.buildkite-agents = mkIf cfg.enable (listToAttrs (map mkAgent (range 0 count)));
     };
 }

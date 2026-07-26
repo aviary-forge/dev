@@ -27,7 +27,11 @@ in
         };
       };
 
-      rooter.patterns = [ "pyproject.toml" "setup.py" "requirements.txt" ];
+      rooter.patterns = [
+        "pyproject.toml"
+        "setup.py"
+        "requirements.txt"
+      ];
       treesitter.settings.ensure_installed = [ "python" ];
     };
   };

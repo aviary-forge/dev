@@ -1,8 +1,23 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  inherit (lib) mkEnableOption mkIf mkOption types;
-  inherit (pkgs) ffmpeg gphoto2 webcamoid writeShellScriptBin;
+  inherit (lib)
+    mkEnableOption
+    mkIf
+    mkOption
+    types
+    ;
+  inherit (pkgs)
+    ffmpeg
+    gphoto2
+    webcamoid
+    writeShellScriptBin
+    ;
 
   capture-webcam = writeShellScriptBin "capture-webcam" ''
     ${pkgs.gphoto2}/bin/gphoto2 \
@@ -38,6 +53,9 @@ in
       Service.ExecStart = "${capture-webcam}/bin/capture-webcam";
     };
 
-    home.packages = [ webcamoid capture-webcam ];
+    home.packages = [
+      webcamoid
+      capture-webcam
+    ];
   };
 }

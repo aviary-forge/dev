@@ -1,4 +1,10 @@
-{ dev, config, pkgs, lib, ... }:
+{
+  dev,
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 # NOTE: This module is currently non-functional pending terraform config migration.
 # TODO(denbeigh): migrate terraform configs from ~/.dotfiles/terraform/ into

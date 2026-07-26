@@ -9,8 +9,7 @@ let
     aviary = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqsSG1f2odzVng/PAtN2Mz9j8a6igIL371gMyuMf+3b";
   };
 
-  key = keys:
-    { publicKeys = keys; };
+  key = keys: { publicKeys = keys; };
 in
 {
   "buildkite-agent-token.age" = key [ systems.aviary ];

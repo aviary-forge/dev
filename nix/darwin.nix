@@ -1,7 +1,8 @@
 { dev, pkgs, ... }:
 
 let
-  activateSystem = (system:
+  activateSystem = (
+    system:
     pkgs.writeShellApplication {
       name = "activate";
 
@@ -15,7 +16,8 @@ let
         nix-env -p /nix/var/nix/profiles/system --set ${system}
         ${system}/sw/bin/darwin-rebuild activate
       '';
-    });
+    }
+  );
 
 in
 rec {
@@ -35,24 +37,28 @@ rec {
   eval = (
     arg:
     let
-      configuration =
-        if builtins.isFunction arg then arg else arg.configuration;
+      configuration = if builtins.isFunction arg then arg else arg.configuration;
       meta = if builtins.isFunction arg then { } else arg.meta or { };
 
-      darwinEval = (dev.third_party.darwin.eval {
-        configuration = { ... }: {
-          imports = [ baseModule configuration ];
-        };
+      darwinEval = (
+        dev.third_party.darwin.eval {
+          configuration = { ... }: {
+            imports = [
+              baseModule
+              configuration
+            ];
+          };
 
-        specialArgs = { inherit dev pkgs; };
-      });
-     in
-     {
-       inherit (darwinEval) system;
-       inherit (darwinEval.toplevel) outPath drvPath;
-       inherit meta;
-       activate = (activateSystem darwinEval.toplevel);
-       __devAttrType = "darwin-system";
-     }
+          specialArgs = { inherit dev pkgs; };
+        }
+      );
+    in
+    {
+      inherit (darwinEval) system;
+      inherit (darwinEval.toplevel) outPath drvPath;
+      inherit meta;
+      activate = (activateSystem darwinEval.toplevel);
+      __devAttrType = "darwin-system";
+    }
   );
 }
