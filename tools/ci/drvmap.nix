@@ -6,6 +6,7 @@
 # in a worktree to get the drvmap for a given commit.
 {
   dev ? import ../.. { },
+  ...
 }:
 
 let
