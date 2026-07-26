@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["rust/gcroot-manager"]
+members = ["rust/gcroot-manager", "tools/ci"]
