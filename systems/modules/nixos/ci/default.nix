@@ -86,6 +86,17 @@ in
         description = "Group name to create for CI agents";
         default = "ci-agents";
       };
+
+      defaultBranch = mkOption {
+        type = types.str;
+        default = "trunk";
+        description = ''
+          Name of the default branch (e.g. "trunk", "main").
+          Injected as CI_DEFAULT_BRANCH into Buildkite agent jobs
+          so the orchestrator can detect trunk builds for caching,
+          gcroot management, and Discord notifications.
+        '';
+      };
     };
 
   config =

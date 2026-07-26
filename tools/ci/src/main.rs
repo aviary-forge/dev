@@ -29,6 +29,12 @@ struct Cli {
     /// Path to the repository root.
     #[arg(long, default_value = ".")]
     repo_root: String,
+
+    /// Name of the default branch (e.g. "trunk", "main").
+    /// Used to detect trunk builds for caching, gcroot, and
+    /// Discord notifications.  Set via CI_DEFAULT_BRANCH env var.
+    #[arg(long, env = "CI_DEFAULT_BRANCH", default_value = "trunk")]
+    default_branch: String,
 }
 
 #[derive(Subcommand)]
@@ -84,12 +90,13 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     let repo_root = &cli.repo_root;
     let repo_root = std::path::Path::new(repo_root);
+    let default_branch = &cli.default_branch;
 
     match cli.command {
         Commands::PipelineGen {
             trunk_branch,
             output,
-        } => cmd_pipeline_gen(repo_root, &trunk_branch, output.as_deref()),
+        } => cmd_pipeline_gen(repo_root, &trunk_branch, default_branch, output.as_deref()),
 
         Commands::Build {
             drvmap_file,
@@ -102,7 +109,7 @@ fn main() -> Result<()> {
             annotation_throttle_secs,
         ),
 
-        Commands::PostBuild => cmd_post_build(repo_root),
+        Commands::PostBuild => cmd_post_build(repo_root, default_branch),
         Commands::ValidateOwners { drvmap_file } => cmd_validate_owners(repo_root, &drvmap_file),
     }
 }
@@ -151,6 +158,7 @@ struct TargetEntry {
 fn cmd_pipeline_gen(
     repo_root: &std::path::Path,
     trunk_branch: &str,
+    default_branch: &str,
     output: Option<&str>,
 ) -> Result<()> {
     tracing::info!("computing merge-base with {}", trunk_branch);
@@ -198,6 +206,24 @@ fn cmd_pipeline_gen(
     tracing::info!("instantiating drvmap at HEAD");
     let current_drvmap = instantiate::instantiate_drvmap(repo_root, None)?;
     tracing::info!("current drvmap has {} targets", current_drvmap.len());
+
+    // When running on trunk, cache the HEAD drvmap so that future
+    // feature branches hitting this commit as their merge-base can
+    // skip the worktree + nix eval.
+    let buildkite_branch = std::env::var("BUILDKITE_BRANCH").unwrap_or_default();
+    if buildkite_branch == default_branch {
+        let head_commit = git::rev_parse(repo_root, "HEAD")?;
+        tracing::info!(
+            "on trunk, caching HEAD drvmap for commit {} ({} targets)",
+            head_commit,
+            current_drvmap.len(),
+        );
+        if let Err(e) =
+            cache::store_cached_parent(&head_commit, &drvmap_nix_content, &current_drvmap)
+        {
+            tracing::warn!("failed to cache trunk drvmap: {e:#}");
+        }
+    }
 
     // Diff
     let diff = drvmap::diff(&parent_drvmap, &current_drvmap);
@@ -478,7 +504,7 @@ fn cmd_validate_owners(repo_root: &std::path::Path, drvmap_file: &str) -> Result
 
 /// Post-build: download per-system results artifacts, aggregate, dispatch
 /// Discord notifications, and create gcroots for trunk builds.
-fn cmd_post_build(repo_root: &std::path::Path) -> Result<()> {
+fn cmd_post_build(repo_root: &std::path::Path, default_branch: &str) -> Result<()> {
     tracing::info!("post-build: downloading results artifacts");
 
     // Download per-system results artifacts
@@ -527,11 +553,11 @@ fn cmd_post_build(repo_root: &std::path::Path) -> Result<()> {
     }
 
     // Dispatch Discord notifications
-    dispatch_notifications(&all_results)?;
+    dispatch_notifications(&all_results, default_branch)?;
 
     // Gcroot management for trunk builds
     let branch = std::env::var("BUILDKITE_BRANCH").unwrap_or_default();
-    if branch == "trunk" {
+    if branch == default_branch {
         create_gcroots(repo_root)?;
     }
 
@@ -539,7 +565,7 @@ fn cmd_post_build(repo_root: &std::path::Path) -> Result<()> {
 }
 
 /// Dispatch Discord webhook notifications for build failures.
-fn dispatch_notifications(all_results: &[ResultsFile]) -> Result<()> {
+fn dispatch_notifications(all_results: &[ResultsFile], default_branch: &str) -> Result<()> {
     let webhook_url = std::env::var("DISCORD_WEBHOOK_URL").unwrap_or_default();
     if webhook_url.is_empty() {
         tracing::info!("DISCORD_WEBHOOK_URL not set, skipping Discord notifications");
@@ -548,7 +574,7 @@ fn dispatch_notifications(all_results: &[ResultsFile]) -> Result<()> {
 
     let branch = std::env::var("BUILDKITE_BRANCH").unwrap_or_default();
     let build_url = std::env::var("BUILDKITE_BUILD_URL").unwrap_or_default();
-    let is_trunk = branch == "trunk";
+    let is_trunk = branch == default_branch;
 
     // Collect all failed targets, grouped by owner
     let mut failures_by_owner: std::collections::HashMap<String, Vec<&TargetEntry>> =

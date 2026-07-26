@@ -91,6 +91,29 @@ pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<()> {
     Ok(())
 }
 
+/// Run `git rev-parse <ref>` and return the commit SHA.
+pub fn rev_parse(repo_root: &Path, rev: &str) -> Result<String> {
+    let output = Command::new("git")
+        .args(["rev-parse", rev])
+        .current_dir(repo_root)
+        .output()
+        .with_context(|| format!("git rev-parse {rev}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("git rev-parse failed: {stderr}");
+    }
+
+    String::from_utf8(output.stdout)
+        .context("invalid UTF-8 from git rev-parse")?
+        .trim()
+        .to_string()
+        .lines()
+        .next()
+        .map(|s| s.to_string())
+        .ok_or_else(|| anyhow::anyhow!("empty output from git rev-parse"))
+}
+
 /// Run `git merge-base HEAD <branch>` and return the commit SHA.
 pub fn merge_base(repo_root: &Path, branch: &str) -> Result<String> {
     let output = Command::new("git")

@@ -19,6 +19,7 @@
 }:
 
 let
+  ciCfg = config.services.dev.ci;
   cfg = config.services.dev.ci.cache;
 in
 {
@@ -49,12 +50,15 @@ in
       "d ${cfg.dir} 2775 root ${cfg.group} -"
     ];
 
-    # Inject CI_DRVMAP_CACHE_DIR into every enabled buildkite agent
-    # service so the env var is inherited by all job processes
-    # (pipeline-gen, build, post-build).
+    # Inject CI_DRVMAP_CACHE_DIR and CI_DEFAULT_BRANCH into every
+    # enabled buildkite agent service so the env vars are inherited
+    # by all job processes (pipeline-gen, build, post-build).
     systemd.services = lib.mkMerge (
       lib.mapAttrsToList (name: _agentCfg: {
-        "buildkite-agent-${name}".environment.CI_DRVMAP_CACHE_DIR = cfg.dir;
+        "buildkite-agent-${name}".environment = {
+          CI_DRVMAP_CACHE_DIR = cfg.dir;
+          CI_DEFAULT_BRANCH = ciCfg.defaultBranch;
+        };
       }) (lib.filterAttrs (_: a: a.enable) config.services.buildkite-agents)
     );
   };
