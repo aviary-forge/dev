@@ -46,7 +46,7 @@ in
         src = nixSource;
       }
       ''
-        nix_files=$(find "$src" -name '*.nix' -type f | sort)
+        nix_files=$(find "$src" -name '*.nix' -type f -not -path '*/rust/Cargo.nix' | sort)
         if [ -z "$nix_files" ]; then
           touch "$out"
           exit 0

@@ -1,5 +1,6 @@
 { members, ... }:
-
-{
-  meta.owners = with members; [ denbeigh ];
+attrs: {
+  meta = (attrs.meta or { }) // {
+    owners = with members; [ denbeigh ];
+  };
 }
