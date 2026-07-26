@@ -98,7 +98,12 @@ mod tests {
 
     #[test]
     fn test_merge_base_self() {
-        // HEAD and HEAD should give HEAD
+        // This test requires a real git repository. In Nix sandboxes
+        // (e.g. crane builds) there is no .git directory.
+        if !Path::new(".git").exists() {
+            eprintln!("skipping: not in a git repository");
+            return;
+        }
         let repo = Path::new(".");
         let result = merge_base(repo, "HEAD");
         assert!(result.is_ok());
