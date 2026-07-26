@@ -1,7 +1,7 @@
 { dev, ... }:
 
 with dev.pipelines.tasks; [
-  fetch-parent-targets
+  ci-orchestrator
   pre-build
   post-build
   build

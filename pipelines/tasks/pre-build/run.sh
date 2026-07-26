@@ -1,27 +1,20 @@
-set -ue
+#!/usr/bin/env bash
+set -ueo pipefail
 
-# Attempt to fetch a target map from a parent commit on trunk,
-# except on builds of trunk itself.
-if [ "${BUILDKITE_BRANCH}" != "trunk" ]; then
-  fetch-parent-targets
+# Generate the pipeline using the Rust orchestrator.
+# This replaces the old fetch-parent-targets + nix-build pattern with
+# double nix-instantiate + drvPath diffing.
+
+echo "--- Generating pipeline with ci-orchestrator"
+mkdir -p pipeline
+ci-orchestrator pipeline-gen --output pipeline/pipeline.json
+
+# Upload the generated pipeline to Buildkite.
+if [[ -f pipeline/pipeline.json ]]; then
+	buildkite-agent pipeline upload pipeline/pipeline.json
 fi
 
-PIPELINE_ARGS=()
-if [[ -f tmp/parent-target-map.json ]]; then
-  PIPELINE_ARGS=("--arg" "parentTargetMap" "tmp/parent-target-map.json")
+# Upload drvmap as an artifact for future builds to diff against.
+if [[ -f pipeline/drvmap.json ]]; then
+	buildkite-agent artifact upload pipeline/drvmap.json
 fi
-
-nix-build --option restrict-eval true\
-  --include "dev=${PWD}" \
-  --include "store=/nix/store" \
-  --allowed-uris 'https://' \
-  -A pipelines.tasks.build \
-  -o pipeline --show-trace "${PIPELINE_ARGS[@]}"
-
-# Steps need to be uploaded in reverse order because pipeline
-# upload prepends instead of appending.
-find pipeline/ -name "build-chunk-*.json" | sort -r | while read -r chunk; do
-  buildkite-agent pipeline upload "$chunk"
-done
-
-buildkite-agent artifact upload "pipeline/*"

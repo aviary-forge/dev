@@ -7,8 +7,8 @@ pkgs.writeShellApplication {
   runtimeInputs = [
     pkgs.buildkite-agent
     pkgs.nix
-    pkgs.findutils
+    pkgs.git
 
-    dev.pipelines.tasks.fetch-parent-targets
+    dev.pipelines.tasks.ci-orchestrator
   ];
 }
