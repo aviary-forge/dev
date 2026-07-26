@@ -69,6 +69,27 @@ pub fn remove_worktree(worktree_path: &Path, repo_root: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Fetch a remote tracking branch before computing the merge-base.
+/// Buildkite agents only fetch the PR branch by default, so `trunk` is
+/// often stale. This ensures we have the latest ref before diffing.
+pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<()> {
+    tracing::info!("fetching origin/{branch}");
+
+    let output = Command::new("git")
+        .args(["fetch", "origin", branch])
+        .current_dir(repo_root)
+        .output()
+        .with_context(|| format!("git fetch origin {branch}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // Not fatal — the local ref might be fresh enough.
+        tracing::warn!("git fetch origin {branch} failed (continuing with local ref): {stderr}");
+    }
+
+    Ok(())
+}
+
 /// Run `git merge-base HEAD <branch>` and return the commit SHA.
 pub fn merge_base(repo_root: &Path, branch: &str) -> Result<String> {
     let output = Command::new("git")

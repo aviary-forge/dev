@@ -11,6 +11,9 @@ let
     ;
   inherit (lib)
     concatMap
+    hasPrefix
+    hasSuffix
+    removePrefix
     unique
     ;
 
@@ -18,7 +21,11 @@ let
 
   # Workspace lives at repo root — crates can live anywhere under it
   repoRoot = ../.;
-  src = craneLib.cleanCargoSource repoRoot;
+  repoRootStr = toString repoRoot;
+
+  # Full workspace source — used for buildPackage where cargo needs every
+  # member's real files for workspace resolution.
+  workspaceSrc = craneLib.cleanCargoSource repoRoot;
 
   # Parse members from the root workspace Cargo.toml
   workspaceToml = fromTOML (readFile (repoRoot + "/Cargo.toml"));
@@ -43,24 +50,57 @@ let
   mergedBuildInputs = unique (concatMap (o: o.buildInputs or [ ]) (builtins.attrValues allOverrides));
   mergedNativeBuildInputs = unique (concatMap (o: o.nativeBuildInputs or [ ]) (builtins.attrValues allOverrides));
 
-  # Shared: all workspace dependencies, with per-crate build inputs merged in
-  cargoArtifacts = craneLib.buildDepsOnly {
-    inherit src;
-    pname = "rust-workspace-deps";
-    version = "0.1.0";
-    strictDeps = true;
-    buildInputs = mergedBuildInputs;
-    nativeBuildInputs = mergedNativeBuildInputs;
-  };
+  # Per-crate filtered source for cargoArtifacts (dep cache) only.
+  # Includes all workspace Cargo.toml/Cargo.lock files for dep resolution,
+  # plus this crate's source tree.  Directories from other workspace
+  # members are kept (empty) so findCargoFiles can recurse through them
+  # to discover their Cargo.toml files.
+  mkCrateDepsSrc = memberPath:
+    let
+      crateRel = memberPath;
+    in
+    lib.cleanSourceWith {
+      filter = path: type:
+        let
+          rel = removePrefix repoRootStr (toString path);
+          norm = if hasPrefix "/" rel then removePrefix "/" rel else rel;
+        in
+        # Always allow directories so findCargoFiles can recurse
+        (type == "directory")
+        # Workspace toml/lock/config files
+        || (hasSuffix "Cargo.toml" norm || hasSuffix "Cargo.lock" norm)
+        || (hasSuffix ".cargo/config.toml" norm)
+        # This crate's own source
+        || (hasPrefix crateRel norm);
+      src = repoRoot;
+    };
 
-  # Build a single member, inheriting shared cargoArtifacts
+  # Per-crate dependency cache.  The filtered source ensures that
+  # unrelated source changes don't churn the dep compilation cache.
+  # cargoArtifacts not churning means deps stay cached across pushes
+  # that only touch other crates.
+  mkCargoArtifacts = memberPath:
+    craneLib.buildDepsOnly {
+      src = mkCrateDepsSrc memberPath;
+      pname = "${crateName memberPath}-deps";
+      version = "0.1.0";
+      strictDeps = true;
+      buildInputs = mergedBuildInputs;
+      nativeBuildInputs = mergedNativeBuildInputs;
+    };
+
+  # Build a single member.  cargoArtifacts is per-crate (doesn't churn
+  # on unrelated changes).  src is the full workspace because cargo
+  # needs all members' real files for workspace resolution when
+  # building with -p.
   mkMember = memberPath:
     let
       name = crateName memberPath;
       override = loadOverride memberPath;
     in
     craneLib.buildPackage ({
-      inherit cargoArtifacts src;
+      cargoArtifacts = mkCargoArtifacts memberPath;
+      src = workspaceSrc;
       pname = name;
       version = override.version or "0.1.0";
       # NB: crane ignores `cargoBuildArgs`; use cargoBuildExtraArgs / cargoTestExtraArgs
@@ -85,6 +125,5 @@ let
 in
 members
 // {
-  inherit cargoArtifacts;
   __readTreeChildrenOverride = members;
 }

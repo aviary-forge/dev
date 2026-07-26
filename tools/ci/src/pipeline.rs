@@ -36,13 +36,13 @@ fn parse_nix_system(system: &str) -> (&str, &str) {
     }
 }
 
-/// Build the `nix-store --realise` command for a set of drvPaths.
-fn build_step_command(drv_paths: &[String]) -> String {
-    let paths_quoted: Vec<String> = drv_paths.iter().map(|p| format!("'{}'", p)).collect();
-    // Note: --log-format internal-json is omitted until ci-orchestrator
-    // build mode is wired in to parse it. Currently it just floods
-    // the Buildkite log with @nix JSON lines.
-    format!("nix-store --realise {}", paths_quoted.join(" "))
+/// Build the command for a per-system build step.
+///
+/// Invokes the nix-built build-step script which downloads the changed
+/// drvmap, runs ci-orchestrator build, and uploads results.
+fn build_step_command(target_count: usize) -> String {
+    tracing::info!("build step will build {} targets", target_count);
+    "\"$(nix-build -A pipelines.tasks.build-step)/bin/build-step\"".to_string()
 }
 
 /// Generate pipeline YAML (as a JSON string, since Buildkite accepts
@@ -65,15 +65,14 @@ pub fn generate_pipeline(
             continue;
         }
 
-        let drv_paths: Vec<String> = crate::realise::drv_paths(targets);
-        let target_count = drv_paths.len();
+        let target_count = targets.len();
 
         let (arch, os) = parse_nix_system(system);
 
         steps.push(BuildkiteStep {
             label: format!(":nix: build {} ({})", system, target_count),
             key: format!("build-{}", system.replace('.', "-")),
-            command: build_step_command(&drv_paths),
+            command: build_step_command(target_count),
             depends_on: vec!["pipeline-gen".to_string()],
             agents: Some(BuildkiteAgents {
                 arch: arch.to_string(),

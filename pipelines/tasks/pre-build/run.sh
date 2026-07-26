@@ -14,7 +14,12 @@ if [[ -f pipeline/pipeline.json ]]; then
 	buildkite-agent pipeline upload pipeline/pipeline.json
 fi
 
-# Upload drvmap as an artifact for future builds to diff against.
+# Upload drvmap artifacts.
+# drvmap.json is the full snapshot (for future diffs).
+# drvmap-changed.json is the changed subset (consumed by build steps).
 if [[ -f pipeline/drvmap.json ]]; then
 	buildkite-agent artifact upload pipeline/drvmap.json
+fi
+if [[ -f pipeline/drvmap-changed.json ]]; then
+	buildkite-agent artifact upload pipeline/drvmap-changed.json
 fi

@@ -36,6 +36,11 @@ pub struct TargetInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub owners: Vec<Owner>,
 
+    /// Tree paths this target depends on (forward deps).
+    /// Used for reverse-dependency computation when marking skipped targets.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub deps: Vec<String>,
+
     /// Per-output store paths, keyed by output name.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub outputs: BTreeMap<String, String>,
@@ -148,6 +153,7 @@ mod tests {
             attr_path: vec![],
             system: Some(system.to_string()),
             owners: vec![],
+            deps: vec![],
             outputs: BTreeMap::new(),
         }
     }
