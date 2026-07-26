@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (lib) mkIf mkOption types;
@@ -23,20 +28,30 @@ in
       enable = true;
       settings =
         let
-          inherit (config.lib.htop) leftMeters rightMeters bar text;
+          inherit (config.lib.htop)
+            leftMeters
+            rightMeters
+            bar
+            text
+            ;
         in
         {
           # fields = htopFields;
-        } // (leftMeters [
+        }
+        // (leftMeters [
           (bar "AllCPUs2")
           (bar "Memory")
           (bar "Swap")
           (text "Zram")
-        ]) // (rightMeters ([
-          (text "Tasks")
-          (text "LoadAverage")
-          (text "Uptime")
-        ] ++ (if !isDarwin then [ (text "Systemd") ] else [ ])));
+        ])
+        // (rightMeters (
+          [
+            (text "Tasks")
+            (text "LoadAverage")
+            (text "Uptime")
+          ]
+          ++ (if !isDarwin then [ (text "Systemd") ] else [ ])
+        ));
     };
   };
 }

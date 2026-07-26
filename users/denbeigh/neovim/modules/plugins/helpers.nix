@@ -1,21 +1,28 @@
 { lib, config, ... }:
 
 {
-  mkPlugin = {
-    name,
-    package,
-    extraPlugins ? []
-  }:
+  mkPlugin =
+    {
+      name,
+      package,
+      extraPlugins ? [ ],
+    }:
 
     let
       cfg = config.plugins.${name};
 
-      inherit (lib) mkIf mkEnableOption mkPackageOption mkOption types;
+      inherit (lib)
+        mkIf
+        mkEnableOption
+        mkPackageOption
+        mkOption
+        types
+        ;
     in
     {
       options.plugins.${name} = {
         enable = mkEnableOption "${name} plugin";
-        package = mkPackageOption "${name}" package {};
+        package = mkPackageOption "${name}" package { };
       };
 
       config = mkIf cfg.enable {

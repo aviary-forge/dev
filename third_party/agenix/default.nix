@@ -12,4 +12,3 @@ in
   inherit src;
   cli = agenix.agenix;
 }
-

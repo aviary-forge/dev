@@ -1,4 +1,9 @@
-{ dev, pkgs, members, ... }:
+{
+  dev,
+  pkgs,
+  members,
+  ...
+}:
 
 let
   inherit (pkgs.stdenvNoCC.hostPlatform) system;
@@ -8,7 +13,9 @@ let
     module = import ./modules;
   };
 
-  meta = { owners = [ members.denbeigh ]; };
+  meta = {
+    owners = [ members.denbeigh ];
+  };
 in
 vim.overrideAttrs (old: {
   meta = (old.meta or { }) // meta;

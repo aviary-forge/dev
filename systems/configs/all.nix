@@ -1,3 +1,6 @@
 { ... }:
 
-[ import ./aviary.nix ]
+[
+  import
+  ./aviary.nix
+]

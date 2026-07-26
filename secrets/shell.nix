@@ -1,4 +1,7 @@
-{ dev ? import ../. { }, ... }:
+{
+  dev ? import ../. { },
+  ...
+}:
 
 let
   pkgs = dev.third_party.nixpkgs;

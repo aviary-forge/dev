@@ -6,31 +6,30 @@
 { dev, pkgs, ... }:
 
 let
-  buildSecret = path: name: value:
+  buildSecret =
+    path: name: value:
     let
-      formatInvalidMsg = keys:
+      formatInvalidMsg =
+        keys:
         let
           keyList = [ "" ] ++ keys;
           keyMsg = pkgs.lib.concatStringsSep "\n - " keyList;
         in
         "The following public keys are invalid:\n${keyMsg}";
 
-      invalidPublicKeys =
-        builtins.filter (key: (!pkgs.lib.hasPrefix "ssh-" key))
-          value.publicKeys;
+      invalidPublicKeys = builtins.filter (key: (!pkgs.lib.hasPrefix "ssh-" key)) value.publicKeys;
 
       path_ =
-        if (builtins.length invalidPublicKeys > 0)
-        then throw (formatInvalidMsg invalidPublicKeys)
-        else path;
+        if (builtins.length invalidPublicKeys > 0) then
+          throw (formatInvalidMsg invalidPublicKeys)
+        else
+          path;
 
     in
     # NOTE: everything above is only for validation of the public keys given
-      # in the value, which aren't actually used otherwise (they're only used at
-      # encryption and decryption time, and pasting the wrong value here could
-      # be a sad time in future.
+    # in the value, which aren't actually used otherwise (they're only used at
+    # encryption and decryption time, and pasting the wrong value here could
+    # be a sad time in future.
     "${path_}/${name}";
 in
-path: secrets:
-dev.nix.readTree.drvTargets
-  (builtins.mapAttrs (buildSecret path) secrets)
+path: secrets: dev.nix.readTree.drvTargets (builtins.mapAttrs (buildSecret path) secrets)

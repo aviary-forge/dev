@@ -1,7 +1,14 @@
 { pkgs, ... }:
 
 let
-  inherit (pkgs) writeShellApplication curl gnused ripgrep scowl coreutils;
+  inherit (pkgs)
+    writeShellApplication
+    curl
+    gnused
+    ripgrep
+    scowl
+    coreutils
+    ;
   inherit (builtins) readFile;
 in
 {
@@ -14,14 +21,20 @@ in
   gitignore = writeShellApplication {
     name = "gitignore";
 
-    runtimeInputs = [ gnused curl ];
+    runtimeInputs = [
+      gnused
+      curl
+    ];
     text = readFile ./gitignore.sh;
   };
 
   grid = writeShellApplication {
     name = "grid";
 
-    runtimeInputs = [ ripgrep coreutils ];
+    runtimeInputs = [
+      ripgrep
+      coreutils
+    ];
     text = ''
       WORDLIST_DIR="${scowl}/share/dict"
 

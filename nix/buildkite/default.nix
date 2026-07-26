@@ -24,7 +24,8 @@ let
     listToAttrs
     mapAttrs
     toJSON
-    unsafeDiscardStringContext;
+    unsafeDiscardStringContext
+    ;
 
   inherit (pkgs) lib runCommand writeText;
   inherit (dev.nix.readTree) mkLabel;
@@ -35,24 +36,27 @@ rec {
   # Create a unique key for the buildkite pipeline based on the given derivation
   # or drvPath. A consequence of using such keys is that every derivation may
   # only be exposed as a single, unique step in the pipeline.
-  keyForDrv = drvOrPath:
+  keyForDrv =
+    drvOrPath:
     let
       drvPath =
-        if lib.isDerivation drvOrPath then drvOrPath.drvPath
-        else if lib.isString drvOrPath then drvOrPath
-        else builtins.throw "keyForDrv: expected string or derivation";
+        if lib.isDerivation drvOrPath then
+          drvOrPath.drvPath
+        else if lib.isString drvOrPath then
+          drvOrPath
+        else
+          builtins.throw "keyForDrv: expected string or derivation";
 
       # Only use the drv hash to prevent escaping problems. Buildkite also has a
       # limit of 100 characters on keys.
     in
-    "drv-" + (builtins.substring 0 32
-      (builtins.baseNameOf (unsafeDiscardStringContext drvPath))
-    );
+    "drv-" + (builtins.substring 0 32 (builtins.baseNameOf (unsafeDiscardStringContext drvPath)));
 
   # Given an arbitrary attribute path generate a Nix expression which obtains
   # this from the root of the repo (assumed to be ./.). Attributes may be any
   # Nix strings suitable as attribute names, not just Nix literal-safe strings.
-  mkBuildExpr = attrPath:
+  mkBuildExpr =
+    attrPath:
     let
       descend = expr: attr: "builtins.getAttr \"${attr}\" (${expr})";
     in
@@ -60,38 +64,49 @@ rec {
 
   # Determine whether to skip a target if it has not diverged from the
   # HEAD branch.
-  shouldSkip = { parentTargetMap ? { }, label, drvPath }:
-    if (hasAttr label parentTargetMap) && parentTargetMap."${label}".drvPath == drvPath
-    then "Target has not changed."
-    else false;
+  shouldSkip =
+    {
+      parentTargetMap ? { },
+      label,
+      drvPath,
+    }:
+    if (hasAttr label parentTargetMap) && parentTargetMap."${label}".drvPath == drvPath then
+      "Target has not changed."
+    else
+      false;
 
   # Create build command for an attribute path pointing to a derivation.
-  mkBuildCommand = { attrPath, drvPath, outLink ? "result" }: concatStringsSep " " [
-    # If the nix build fails, the Nix command's exit status should be used.
-    "set -o pipefail;"
+  mkBuildCommand =
+    {
+      attrPath,
+      drvPath,
+      outLink ? "result",
+    }:
+    concatStringsSep " " [
+      # If the nix build fails, the Nix command's exit status should be used.
+      "set -o pipefail;"
 
-    # First try to realise the drvPath of the target so we don't evaluate twice.
-    # Nix has no concept of depending on a derivation file without depending on
-    # at least one of its `outPath`s, so we need to discard the string context
-    # if we don't want to build everything during pipeline construction.
-    #
-    # To make this more uniform with how nix-build(1) works, we call realpath(1)
-    # on nix-store(1)'s output since it has the habit of printing the path of the
-    # out link, not the store path.
-    "(nix-store --realise '${drvPath}' --add-root '${outLink}' --indirect | xargs -r realpath)"
+      # First try to realise the drvPath of the target so we don't evaluate twice.
+      # Nix has no concept of depending on a derivation file without depending on
+      # at least one of its `outPath`s, so we need to discard the string context
+      # if we don't want to build everything during pipeline construction.
+      #
+      # To make this more uniform with how nix-build(1) works, we call realpath(1)
+      # on nix-store(1)'s output since it has the habit of printing the path of the
+      # out link, not the store path.
+      "(nix-store --realise '${drvPath}' --add-root '${outLink}' --indirect | xargs -r realpath)"
 
-    # Since we don't gcroot the derivation files, they may be deleted by the
-    # garbage collector. In that case we can reevaluate and build the attribute
-    # using nix-build.
-    "|| (test ! -f '${drvPath}' && nix-build -E '${mkBuildExpr attrPath}' --show-trace --out-link '${outLink}')"
-  ];
+      # Since we don't gcroot the derivation files, they may be deleted by the
+      # garbage collector. In that case we can reevaluate and build the attribute
+      # using nix-build.
+      "|| (test ! -f '${drvPath}' && nix-build -E '${mkBuildExpr attrPath}' --show-trace --out-link '${outLink}')"
+    ];
 
   # Attribute path of a target relative to the repo root. Needs to take into
   # account whether the target is a physical target (which corresponds to a path
   # in the filesystem) or the subtarget of a physical target.
-  targetAttrPath = target:
-    target.__readTree
-    ++ lib.optionals (target ? __subtarget) [ target.__subtarget ];
+  targetAttrPath =
+    target: target.__readTree ++ lib.optionals (target ? __subtarget) [ target.__subtarget ];
 
   # Given a derivation (identified by drvPath) that is part of the list of
   # targets passed to mkPipeline, determine all derivations that it depends on
@@ -99,11 +114,18 @@ rec {
   # that build them. This is used to populate `depends_on` in `mkStep`.
   #
   # See //nix/dependency-analyzer for documentation on the structure of `targetDepMap`.
-  getTargetPipelineDeps = targetDepMap: drvPath:
-    builtins.map keyForDrv (targetDepMap.${drvPath}.knownDeps or [ ]);
+  getTargetPipelineDeps =
+    targetDepMap: drvPath: builtins.map keyForDrv (targetDepMap.${drvPath}.knownDeps or [ ]);
 
   # Create a pipeline step from a single target.
-  mkStep = { headBranch, parentTargetMap, targetDepMap, target, cancelOnBuildFailing }:
+  mkStep =
+    {
+      headBranch,
+      parentTargetMap,
+      targetDepMap,
+      target,
+      cancelOnBuildFailing,
+    }:
     let
       label = mkLabel target;
       drvPath = unsafeDiscardStringContext target.drvPath;
@@ -122,24 +144,34 @@ rec {
       # Add a dependency on the initial static pipeline step which
       # always runs. This allows build steps uploaded in batches to
       # start running before all batches have been uploaded.
-      depends_on = [ "pipeline-gen" ]
+      depends_on = [
+        "pipeline-gen"
+      ]
       ++ getTargetPipelineDeps targetDepMap drvPath
       ++ lib.optionals (target ? meta.ci.buildkiteExtraDeps) target.meta.ci.buildkiteExtraDeps;
-    } // lib.optionalAttrs (target ? meta.timeout) {
+    }
+    // lib.optionalAttrs (target ? meta.timeout) {
       timeout_in_minutes = target.meta.timeout / 60;
       # Additional arguments to set on the step.
       # Keep in mind these *overwrite* existing step args, not extend. Use with caution.
-    } // lib.optionalAttrs (target ? meta.ci.buildkiteExtraStepArgs) target.meta.ci.buildkiteExtraStepArgs;
+    }
+    // lib.optionalAttrs (
+      target ? meta.ci.buildkiteExtraStepArgs
+    ) target.meta.ci.buildkiteExtraStepArgs;
 
   # Helper function to inelegantly divide a list into chunks of at
   # most n elements.
   #
   # This works by assigning each element a chunk ID based on its
   # index, and then grouping all elements by their chunk ID.
-  chunksOf = n: list:
+  chunksOf =
+    n: list:
     let
       chunkId = idx: toString (idx / n + 1);
-      assigned = lib.imap1 (idx: value: { inherit value; chunk = chunkId idx; }) list;
+      assigned = lib.imap1 (idx: value: {
+        inherit value;
+        chunk = chunkId idx;
+      }) list;
       unchunk = mapAttrs (_: elements: map (e: e.value) elements);
     in
     unchunk (lib.groupBy (e: e.chunk) assigned);
@@ -158,36 +190,35 @@ rec {
   # are uploaded sequentially. This is because of a limitation in the
   # Buildkite backend which struggles to process more than a specific
   # number of chunks at once.
-  pipelineChunks = name: steps:
-    attrValues (mapAttrs (makePipelineChunk name) (chunksOf 192 steps));
+  pipelineChunks = name: steps: attrValues (mapAttrs (makePipelineChunk name) (chunksOf 192 steps));
 
   # Create a pipeline structure for the given targets.
   mkPipeline =
     {
       # HEAD branch of the repository on which release steps, GC
       # anchoring and other "mainline only" steps should run.
-      headBranch
-    , # List of derivations as read by readTree (in most cases just the
+      headBranch,
+      # List of derivations as read by readTree (in most cases just the
       # output of readTree.gather) that should be built in Buildkite.
       #
       # These are scheduled as the first build steps and run as fast as
       # possible, in order, without any concurrency restrictions.
-      drvTargets
-    , # Derivation map of a parent commit. Only targets which no longer
+      drvTargets,
+      # Derivation map of a parent commit. Only targets which no longer
       # correspond to the content of this map will be built. Passing an
       # empty map will always build all targets.
-      parentTargetMap ? { }
-    , # A list of plain Buildkite step structures to run alongside the
+      parentTargetMap ? { },
+      # A list of plain Buildkite step structures to run alongside the
       # build for all drvTargets, but before proceeding with any
       # post-build actions such as status reporting.
       #
       # Can be used for things like code formatting checks.
-      additionalSteps ? [ ]
-    , # A list of plain Buildkite step structures to run after all
+      additionalSteps ? [ ],
+      # A list of plain Buildkite step structures to run after all
       # previous steps succeeded.
       #
       # Can be used for status reporting steps and the like.
-      postBuildSteps ? [ ]
+      postBuildSteps ? [ ],
       # The list of phases known by the current Buildkite
       # pipeline. Dynamic pipeline chunks for each phase are uploaded
       # to Buildkite on execution of static part of the
@@ -201,7 +232,10 @@ rec {
       #   - "build" - main phase for building all Nix targets
       #   - "release" - pushing artifacts to external repositories
       #   - "deploy" - updating external deployment configurations
-    , phases ? [ "build" "release" ]
+      phases ? [
+        "build"
+        "release"
+      ],
       # Build phases that are active for this invocation (i.e. their
       # steps should be generated).
       #
@@ -210,13 +244,13 @@ rec {
       # eval contexts.
       #
       # TODO(tazjin): Fail/warn if unknown phase is requested.
-    , activePhases ? phases
+      activePhases ? phases,
       # Setting this attribute to true cancels dynamic pipeline steps
       # as soon as the build is marked as failing.
       #
       # To enable this feature one should enable "Fail Fast" setting
       # at Buildkite pipeline or on organization level.
-    , cancelOnBuildFailing ? false
+      cancelOnBuildFailing ? false,
     }:
     let
       # List of phases to include.
@@ -234,20 +268,25 @@ rec {
           # the previous pipeline (per parentTargetMap). Unchanged targets will
           # be skipped (assumed already built), so it's useless to emit deps
           # on their steps.
-          changedDrvTargets = builtins.filter
-            (target:
-              parentTargetMap.${mkLabel target}.drvPath or null != target.drvPath
-            )
-            drvTargets;
+          changedDrvTargets = builtins.filter (
+            target: parentTargetMap.${mkLabel target}.drvPath or null != target.drvPath
+          ) drvTargets;
         in
         dependency-analyzer (dependency-analyzer.drvsToPaths changedDrvTargets);
 
       # Convert a target into all of its steps, separated by build
       # phase (as phases end up in different chunks).
-      targetToSteps = target:
+      targetToSteps =
+        target:
         let
           mkStepArgs = {
-            inherit headBranch parentTargetMap targetDepMap target cancelOnBuildFailing;
+            inherit
+              headBranch
+              parentTargetMap
+              targetDepMap
+              target
+              cancelOnBuildFailing
+              ;
           };
           step = mkStep mkStepArgs;
 
@@ -259,19 +298,21 @@ rec {
           overridable = f: mkStep (mkStepArgs // { target = (f target); });
 
           # Split extra steps by phase.
-          splitExtraSteps = lib.groupBy ({ phase, ... }: phase)
-            (attrValues (mapAttrs (normaliseExtraStep phases overridable)
-              (target.meta.ci.extraSteps or { })));
+          splitExtraSteps = lib.groupBy ({ phase, ... }: phase) (
+            attrValues (mapAttrs (normaliseExtraStep phases overridable) (target.meta.ci.extraSteps or { }))
+          );
 
-          extraSteps = mapAttrs
-            (_: steps:
-              map (mkExtraStep (targetAttrPath target) buildEnabled) steps)
-            splitExtraSteps;
+          extraSteps = mapAttrs (
+            _: steps: map (mkExtraStep (targetAttrPath target) buildEnabled) steps
+          ) splitExtraSteps;
         in
-        if !buildEnabled then extraSteps
-        else extraSteps // {
-          build = [ step ] ++ (extraSteps.build or [ ]);
-        };
+        if !buildEnabled then
+          extraSteps
+        else
+          extraSteps
+          // {
+            build = [ step ] ++ (extraSteps.build or [ ]);
+          };
 
       # Combine all target steps into step lists per phase.
       #
@@ -281,44 +322,47 @@ rec {
         release = postBuildSteps;
       };
 
-      phasesWithSteps = lib.zipAttrsWithNames enabledPhases (_: concatLists)
-        ((map targetToSteps drvTargets) ++ [ globalSteps ]);
+      phasesWithSteps = lib.zipAttrsWithNames enabledPhases (_: concatLists) (
+        (map targetToSteps drvTargets) ++ [ globalSteps ]
+      );
 
       # Generate pipeline chunks for each phase.
-      chunks = foldl'
-        (acc: phase:
-          let phaseSteps = phasesWithSteps.${phase} or [ ]; in
-          if phaseSteps == [ ]
-          then acc
-          else acc ++ (pipelineChunks phase phaseSteps))
-        [ ]
-        enabledPhases;
+      chunks = foldl' (
+        acc: phase:
+        let
+          phaseSteps = phasesWithSteps.${phase} or [ ];
+        in
+        if phaseSteps == [ ] then acc else acc ++ (pipelineChunks phase phaseSteps)
+      ) [ ] enabledPhases;
 
     in
     runCommand "buildkite-pipeline" { } ''
       mkdir $out
       echo "Generated ${toString (length chunks)} pipeline chunks"
-      ${
-        lib.concatMapStringsSep "\n"
-          (chunk: "cp ${chunk.path} $out/${chunk.filename}") chunks
-      }
+      ${lib.concatMapStringsSep "\n" (chunk: "cp ${chunk.path} $out/${chunk.filename}") chunks}
     '';
 
   # Create a drvmap structure for the given targets, containing the
   # mapping of all target paths to their derivations. The mapping can
   # be persisted for future use.
-  mkDrvmap = drvTargets: writeText "drvmap.json" (toJSON (listToAttrs (map
-    (target: {
-      name = mkLabel target;
-      value = {
-        drvPath = unsafeDiscardStringContext target.drvPath;
+  mkDrvmap =
+    drvTargets:
+    writeText "drvmap.json" (
+      toJSON (
+        listToAttrs (
+          map (target: {
+            name = mkLabel target;
+            value = {
+              drvPath = unsafeDiscardStringContext target.drvPath;
 
-        # Include the attrPath in the output to reconstruct the drv
-        # without parsing the human-readable label.
-        attrPath = targetAttrPath target;
-      };
-    })
-    drvTargets)));
+              # Include the attrPath in the output to reconstruct the drv
+              # without parsing the human-readable label.
+              attrPath = targetAttrPath target;
+            };
+          }) drvTargets
+        )
+      )
+    );
 
   # Implementation of extra step logic.
   #
@@ -358,40 +402,49 @@ rec {
 
   # Create a gated step in a step group, independent from any other
   # steps.
-  mkGatedStep = { step, label, parent, prompt }: {
-    inherit (step) depends_on;
-    group = label;
-    skip = parent.skip or false;
+  mkGatedStep =
+    {
+      step,
+      label,
+      parent,
+      prompt,
+    }:
+    {
+      inherit (step) depends_on;
+      group = label;
+      skip = parent.skip or false;
 
-    steps = [
-      {
-        inherit prompt;
-        branches = step.branches or [ ];
-        block = ":radio_button: Run ${label}? (from ${parent.env.READTREE_TARGET})";
-      }
+      steps = [
+        {
+          inherit prompt;
+          branches = step.branches or [ ];
+          block = ":radio_button: Run ${label}? (from ${parent.env.READTREE_TARGET})";
+        }
 
-      # The explicit depends_on of the wrapped step must be removed,
-      # otherwise its dependency relationship with the gate step will
-      # break.
-      (builtins.removeAttrs step [ "depends_on" ])
-    ];
-  };
+        # The explicit depends_on of the wrapped step must be removed,
+        # otherwise its dependency relationship with the gate step will
+        # break.
+        (builtins.removeAttrs step [ "depends_on" ])
+      ];
+    };
 
   # Validate and normalise extra step configuration before actually
   # generating build steps, in order to use user-provided metadata
   # during the pipeline generation.
-  normaliseExtraStep = phases: overridableParent: key:
-    { command
-    , label ? key
-    , needsOutput ? false
-    , parentOverride ? (x: x)
-    , branches ? null
-    , alwaysRun ? false
-    , prompt ? false
-    , softFail ? false
-    , phase ? "build"
-    , skip ? false
-    , agents ? null
+  normaliseExtraStep =
+    phases: overridableParent: key:
+    {
+      command,
+      label ? key,
+      needsOutput ? false,
+      parentOverride ? (x: x),
+      branches ? null,
+      alwaysRun ? false,
+      prompt ? false,
+      softFail ? false,
+      phase ? "build",
+      skip ? false,
+      agents ? null,
     }:
     let
       parent = overridableParent parentOverride;
@@ -403,8 +456,7 @@ rec {
         Phase '${phase}' is not valid.
 
         Known phases: ${concatStringsSep ", " phases}
-      ''
-        phase;
+      '' phase;
     in
     {
       inherit
@@ -418,7 +470,8 @@ rec {
         parentLabel
         softFail
         skip
-        agents;
+        agents
+        ;
 
       phase = validPhase;
 
@@ -428,13 +481,13 @@ rec {
         The 'prompt' feature can not be used by steps in the "build"
         phase, because CI builds should not be gated on manual human
         approvals.
-      ''
-        prompt;
+      '' prompt;
     };
 
   # Create the Buildkite configuration for an extra step, optionally
   # wrapping it in a gate group.
-  mkExtraStep = parentAttrPath: buildEnabled: cfg:
+  mkExtraStep =
+    parentAttrPath: buildEnabled: cfg:
     let
       # ATTN: needs to match an entry in .gitignore so that the tree won't get dirty
       commandScriptLink = "nix-buildkite-extra-step-command-script";
@@ -455,15 +508,11 @@ rec {
           in
           if cfg.alwaysRun then false else skip';
 
-        depends_on = lib.optional
-          (buildEnabled && !cfg.alwaysRun && !cfg.needsOutput)
-          cfg.parent.key;
+        depends_on = lib.optional (buildEnabled && !cfg.alwaysRun && !cfg.needsOutput) cfg.parent.key;
 
         command = ''
           set -ueo pipefail
-          ${lib.optionalString cfg.needsOutput
-            "echo '~~~ Preparing build output of ${cfg.parentLabel}'"
-          }
+          ${lib.optionalString cfg.needsOutput "echo '~~~ Preparing build output of ${cfg.parentLabel}'"}
           ${lib.optionalString cfg.needsOutput cfg.parent.command}
           echo '--- Building extra step script'
           command_script="$(${
@@ -471,9 +520,13 @@ rec {
             assert builtins.length cfg.command.outputs == 1;
             mkBuildCommand {
               # script is exposed at <parent>.meta.ci.extraSteps.<key>.command
-              attrPath =
-                parentAttrPath
-                ++ [ "meta" "ci" "extraSteps" cfg.key "command" ];
+              attrPath = parentAttrPath ++ [
+                "meta"
+                "ci"
+                "extraSteps"
+                cfg.key
+                "command"
+              ];
               drvPath = unsafeDiscardStringContext cfg.command.drvPath;
               # make sure it doesn't conflict with result (from needsOutput)
               outLink = commandScriptLink;
@@ -485,17 +538,17 @@ rec {
         '';
 
         soft_fail = cfg.softFail;
-      } // (lib.optionalAttrs (cfg.agents != null) { inherit (cfg) agents; })
+      }
+      // (lib.optionalAttrs (cfg.agents != null) { inherit (cfg) agents; })
       // (lib.optionalAttrs (cfg.branches != null) {
         branches = lib.concatStringsSep " " cfg.branches;
       });
     in
-    if (isString cfg.prompt)
-    then
-      mkGatedStep
-        {
-          inherit step;
-          inherit (cfg) label parent prompt;
-        }
-    else step;
+    if (isString cfg.prompt) then
+      mkGatedStep {
+        inherit step;
+        inherit (cfg) label parent prompt;
+      }
+    else
+      step;
 }

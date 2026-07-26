@@ -21,4 +21,3 @@ in
     extraPlugins = [ pkgs.vimPlugins.vim-go ];
   };
 }
-

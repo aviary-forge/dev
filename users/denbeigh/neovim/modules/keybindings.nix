@@ -7,17 +7,26 @@
     # Discourage use of arrow navigation
     keymaps =
       let
-        arrowKeys = [ "Up" "Down" "Left" "Right" ];
+        arrowKeys = [
+          "Up"
+          "Down"
+          "Left"
+          "Right"
+        ];
       in
-      builtins.map
-        (key: {
-          # disable everywhere except command mode, because
-          # vim keybindings aren't supported there (advice: use q: more)
-          mode = [ "n" "i" "v" "o" "t" ];
-          key = "<${key}>";
-          action = "<NOP>";
-        })
-        arrowKeys;
+      builtins.map (key: {
+        # disable everywhere except command mode, because
+        # vim keybindings aren't supported there (advice: use q: more)
+        mode = [
+          "n"
+          "i"
+          "v"
+          "o"
+          "t"
+        ];
+        key = "<${key}>";
+        action = "<NOP>";
+      }) arrowKeys;
 
     opts.mouse = "";
   };

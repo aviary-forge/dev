@@ -22,6 +22,9 @@ in
       ];
     };
 
-    extraPackages = with pkgs; [ beam28Packages.erlang stdenv.cc ];
+    extraPackages = with pkgs; [
+      beam28Packages.erlang
+      stdenv.cc
+    ];
   };
 }

@@ -2,7 +2,7 @@
 # cache
 
 # { self, pkgs, lib, config, ... }:
-# 
+#
 # let
 #   inherit (config.denbeigh) machine;
 # in
@@ -12,7 +12,7 @@
 #     self.inputs.nix-upload-daemon.darwinModules.default
 #     ../common/upload-daemon.nix
 #   ];
-# 
+#
 #   options = {
 #     denbeigh.nix-upload-daemon.enable = lib.mkOption {
 #       type = lib.types.bool;
@@ -35,3 +35,4 @@
 #         builtins.map (key: "/Users/${username}/.ssh/${key}") keys;
 #     };
 # }
+{ }

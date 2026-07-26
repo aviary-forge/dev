@@ -33,8 +33,7 @@ in
   eval = (
     arg:
     let
-      configuration =
-        if builtins.isFunction arg then arg else arg.configuration;
+      configuration = if builtins.isFunction arg then arg else arg.configuration;
       meta = if builtins.isFunction arg then { } else arg.meta or { };
 
       # We need to know the target system to select the right pkgs/hm-cli

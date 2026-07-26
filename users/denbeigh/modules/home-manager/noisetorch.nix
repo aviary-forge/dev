@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (lib) mkOption types;
@@ -43,7 +48,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ noisetorch add-noisetorch-setcap ];
+    home.packages = [
+      noisetorch
+      add-noisetorch-setcap
+    ];
 
     systemd.user.services.noisetorch = {
       Unit = {

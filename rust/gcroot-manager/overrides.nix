@@ -1,4 +1,9 @@
-{ pkgs, lib, members, ... }:
+{
+  pkgs,
+  lib,
+  members,
+  ...
+}:
 
 let
   inherit (pkgs.stdenvNoCC.hostPlatform) isLinux;

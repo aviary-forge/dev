@@ -1,6 +1,9 @@
 { dev, ... }:
 
 {
-  home.packages =
-    with dev.users.denbeigh.scripts; [ gitignore roulette grid ];
+  home.packages = with dev.users.denbeigh.scripts; [
+    gitignore
+    roulette
+    grid
+  ];
 }

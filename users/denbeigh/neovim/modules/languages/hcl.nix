@@ -12,8 +12,15 @@ in
         extraOptions.path = "${opentofu}";
       };
 
-      rooter.patterns = [ "base.tf" ".terraform.lock.hcl" ".terraform" ];
-      treesitter.settings.ensure_installed = [ "hcl" "terraform" ];
+      rooter.patterns = [
+        "base.tf"
+        ".terraform.lock.hcl"
+        ".terraform"
+      ];
+      treesitter.settings.ensure_installed = [
+        "hcl"
+        "terraform"
+      ];
     };
 
     extraPlugins = [ pkgs.vimPlugins.vim-terraform ];

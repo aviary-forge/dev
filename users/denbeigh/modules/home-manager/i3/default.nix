@@ -24,11 +24,7 @@
         let
           inherit (config.dev.denbeigh) hostname;
           inherit (builtins) readFile pathExists;
-          extra_config = (
-            if pathExists ./${hostname}
-            then readFile ./${hostname}
-            else ""
-          );
+          extra_config = (if pathExists ./${hostname} then readFile ./${hostname} else "");
         in
         {
           target = ".config/i3/config";

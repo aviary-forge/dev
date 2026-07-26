@@ -28,7 +28,7 @@
       };
 
       cmp-treesitter.enable = true;
-      cmp.settings.sources = [{ name = "treesitter"; }];
+      cmp.settings.sources = [ { name = "treesitter"; } ];
 
       treesitter = {
         enable = true;
@@ -70,6 +70,9 @@
       laststatus = 2;
     };
 
-    extraPlugins = [ pkgs.vimPlugins.indentLine pkgs.vimPlugins.vim-airline-themes ];
+    extraPlugins = [
+      pkgs.vimPlugins.indentLine
+      pkgs.vimPlugins.vim-airline-themes
+    ];
   };
 }

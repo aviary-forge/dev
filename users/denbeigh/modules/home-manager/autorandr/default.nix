@@ -1,15 +1,29 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
-  inherit (builtins) path readDir stringLength substring;
+  inherit (builtins)
+    path
+    readDir
+    stringLength
+    substring
+    ;
   inherit (lib) mapAttrs' mkIf;
   inherit (config.dev.denbeigh) hostname;
 
-  fileToConfig = filename: _:
+  fileToConfig =
+    filename: _:
     let
       name = substring 0 ((stringLength filename) - 4) filename;
     in
-    { inherit name; value = import ./${filename}; };
+    {
+      inherit name;
+      value = import ./${filename};
+    };
 
   configFiles = readDir ./configs;
   configs = mapAttrs' fileToConfig configFiles;
@@ -18,7 +32,10 @@ let
 in
 {
   # TODO: Define these in host-level configuration directly
-  programs.autorandr = mkIf exists ({
-    enable = true;
-  } // config);
+  programs.autorandr = mkIf exists (
+    {
+      enable = true;
+    }
+    // config
+  );
 }
