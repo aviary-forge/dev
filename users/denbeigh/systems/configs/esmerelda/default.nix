@@ -1,6 +1,7 @@
-{ dev, ... }:
+{ dev, members, ... }:
 
-dev.nix.nixos.eval (
+dev.nix.nixos.eval {
+  configuration =
   {
     pkgs,
     config,
@@ -138,5 +139,7 @@ dev.nix.nixos.eval (
 
       hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
     };
-  }
-)
+  };
+
+  meta.owners = with members; [ denbeigh ];
+}

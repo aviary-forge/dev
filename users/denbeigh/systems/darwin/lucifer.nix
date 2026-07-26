@@ -1,6 +1,7 @@
-{ dev, ... }:
+{ dev, members, ... }:
 
-dev.nix.darwin.eval (
+dev.nix.darwin.eval {
+  configuration =
   { pkgs, ... }:
   {
     imports = [
@@ -31,5 +32,7 @@ dev.nix.darwin.eval (
 
       ids.gids.nixbld = 30000;
     };
-  }
-)
+  };
+
+  meta.owners = with members; [ denbeigh ];
+}

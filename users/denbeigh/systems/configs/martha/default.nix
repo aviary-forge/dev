@@ -1,6 +1,7 @@
-{ dev, ... }:
+{ dev, members, ... }:
 
-dev.nix.nixos.eval (
+dev.nix.nixos.eval {
+  configuration =
   { pkgs, config, lib, ... }:
 
   {
@@ -58,5 +59,7 @@ dev.nix.nixos.eval (
 
       system.stateVersion = "23.05";
     };
-  }
-)
+  };
+
+  meta.owners = with members; [ denbeigh ];
+}
