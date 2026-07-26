@@ -61,6 +61,15 @@ enum Commands {
 
     /// Post-build: aggregate results, dispatch Discord notifications, gcroot.
     PostBuild,
+
+    /// Validate that every CI target has at least one owner.
+    /// Reads a pre-computed drvmap file (from pipeline-gen) rather than
+    /// re-running nix eval.
+    ValidateOwners {
+        /// Path to the drvmap JSON file.
+        #[arg(long, default_value = "pipeline/drvmap.json")]
+        drvmap_file: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -93,6 +102,7 @@ fn main() -> Result<()> {
         ),
 
         Commands::PostBuild => cmd_post_build(repo_root),
+        Commands::ValidateOwners { drvmap_file } => cmd_validate_owners(repo_root, &drvmap_file),
     }
 }
 
@@ -355,6 +365,67 @@ fn build_results_json(
     });
 
     serde_json::to_string_pretty(&json).context("serializing results JSON")
+}
+
+/// Validate that every CI target has at least one owner with a GitHub
+/// or Discord identity.  Posts a Buildkite annotation and fails if any
+/// targets are unowned.
+fn cmd_validate_owners(repo_root: &std::path::Path, drvmap_file: &str) -> Result<()> {
+    tracing::info!("validating owners from {drvmap_file}");
+
+    // Load the pre-computed drvmap (pipeline-gen already ran nix eval).
+    let current_drvmap = drvmap::load(std::path::Path::new(drvmap_file))?;
+
+    let _ = repo_root; // unused now, kept for consistency
+
+    let unowned: Vec<&str> = current_drvmap
+        .iter()
+        .filter(|(_, info)| {
+            info.owners.is_empty()
+                || info.owners.iter().all(|o| {
+                    o.github.as_deref().is_none_or(|s| s.is_empty())
+                        && o.discord.as_deref().is_none_or(|s| s.is_empty())
+                })
+        })
+        .map(|(tree_path, _)| tree_path.as_str())
+        .collect();
+
+    if unowned.is_empty() {
+        tracing::info!("all {} targets have valid owners", current_drvmap.len());
+
+        // Post a green annotation for visibility.
+        let _ = annotation::post_annotation(
+            "validate-owners",
+            "success",
+            &format!(
+                "### :white_check_mark: Owner validation passed\n\nAll {} targets have at least one owner.",
+                current_drvmap.len()
+            ),
+        );
+
+        return Ok(());
+    }
+
+    // Build a failure annotation listing unowned targets.
+    let mut md = format!(
+        "### :no_entry: Owner validation failed\n\n{} of {} targets have **no owners** assigned.\n\n",
+        unowned.len(),
+        current_drvmap.len(),
+    );
+    md.push_str("| Target |\n");
+    md.push_str("|--------|\n");
+    for path in &unowned {
+        md.push_str(&format!("| `{path}` |\n"));
+    }
+    md.push_str("\nEach target must declare `meta.owners` in its Nix expression.\n");
+
+    let _ = annotation::post_annotation("validate-owners", "error", &md);
+
+    anyhow::bail!(
+        "{} unowned target(s): {}",
+        unowned.len(),
+        unowned.join(", ")
+    );
 }
 
 /// Post-build: download per-system results artifacts, aggregate, dispatch

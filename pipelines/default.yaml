@@ -4,7 +4,8 @@
 # 1. build-tools: compile ci-orchestrator and other CI tools
 # 2. pipeline-gen: discover targets, diff against trunk, upload dynamic steps
 #    (one build step per system + one ci-post-build step)
-# 3. wait: let all dynamic steps (build + post-build) complete
+# 3. validate-owners: check every CI target has a CODEOWNERS entry
+# 4. wait: let all dynamic steps (build + post-build) complete
 ---
 steps:
   - label: ":hammer_and_wrench:"
@@ -23,6 +24,17 @@ steps:
     priority: 1
     command: |
       "$(nix-build -A pipelines.tasks.pre-build)/bin/pre-build-pipeline-step"
+
+  # Validate that every CI target has an owner (CODEOWNERS entry).
+  # Reads drvmap.json from pipeline-gen's artifact rather than
+  # re-running nix eval.
+  - label: ":cop:"
+    depends_on:
+      - "pipeline-gen"
+    key: "validate-owners"
+    command: |
+      buildkite-agent artifact download 'pipeline/drvmap.json' .
+      "$(nix-build -A pipelines.tasks.ci-orchestrator)/bin/ci-orchestrator" validate-owners --drvmap-file pipeline/drvmap.json
 
   # Wait for all dynamic steps to complete (build + post-build).
   - wait: null

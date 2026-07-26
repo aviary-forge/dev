@@ -127,14 +127,5 @@ readTree.fix (
           );
         };
       };
-
-    ownership =
-      let
-        targetList = builtins.map (t: {
-          path = t.__readTree;
-          deriv = t;
-        }) ci.targets;
-      in
-      self.nix.owners.buildReport targetList;
   }
 )

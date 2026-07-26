@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, members, ... }:
 
 pkgs.python3.pkgs.buildPythonApplication {
   name = "mono-switch";
@@ -6,10 +6,22 @@ pkgs.python3.pkgs.buildPythonApplication {
 
   src = ./.;
 
-  nativeBuildInputs = [ pkgs.makeWrapper pkgs.python3Packages.setuptools ];
+  nativeBuildInputs = [
+    pkgs.makeWrapper
+    pkgs.python3Packages.setuptools
+  ];
 
   postInstall = ''
     wrapProgram $out/bin/mono-switch \
-      --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.git pkgs.nix ]}
+      --prefix PATH : ${
+        pkgs.lib.makeBinPath [
+          pkgs.git
+          pkgs.nix
+        ]
+      }
   '';
+
+  meta = {
+    owners = [ members.denbeigh ];
+  };
 }

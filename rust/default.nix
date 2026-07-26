@@ -97,14 +97,15 @@ let
     let
       name = crateName memberPath;
       override = loadOverride memberPath;
+      # builtins.split returns empty lists for regex matches — filter
+      # them out with builtins.isString to get just the path parts.
+      parts = builtins.filter builtins.isString (builtins.split "/" memberPath);
     in
     craneLib.buildPackage ({
       cargoArtifacts = mkCargoArtifacts memberPath;
       src = workspaceSrc;
       pname = name;
       version = override.version or "0.1.0";
-      # NB: crane ignores `cargoBuildArgs`; use cargoBuildExtraArgs / cargoTestExtraArgs
-      # which are appended to the build and test commands respectively.
       cargoBuildExtraArgs = "-p ${name}";
       cargoTestExtraArgs = "-p ${name}";
       strictDeps = true;
@@ -116,7 +117,9 @@ let
       "nativeBuildInputs"
       "version"
       "meta"
-    ]);
+    ] // {
+      __readTree = parts;
+    });
 
   members = listToAttrs (map (mp: {
     name = crateName mp;
