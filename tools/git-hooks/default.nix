@@ -49,6 +49,7 @@ let
             files: \.nix$
             exclude: '^rust/Cargo\.nix$'
             types: [file]
+            pass_filenames: false
           - id: taplo-check
             name: taplo format --check
             entry: ${taplo}/bin/taplo format --check
@@ -58,6 +59,7 @@ let
           - id: typos-check
             name: typos
             entry: ${typos}/bin/typos
+            exclude: '^rust/Cargo\.nix$'
             language: system
             types: [file]
           - id: ruff-check

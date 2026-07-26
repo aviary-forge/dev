@@ -16,6 +16,7 @@ pkgs.mkShell {
     uv
     ty
     ruff
+    dev.tools.try
   ];
 
   shellHook = ''
