@@ -11,10 +11,10 @@ ci-orchestrator pipeline-gen --output pipeline/pipeline.json
 
 # Upload the generated pipeline to Buildkite.
 if [[ -f pipeline/pipeline.json ]]; then
-  buildkite-agent pipeline upload pipeline/pipeline.json
+	buildkite-agent pipeline upload pipeline/pipeline.json
 fi
 
 # Upload drvmap as an artifact for future builds to diff against.
 if [[ -f pipeline/drvmap.json ]]; then
-  buildkite-agent artifact upload pipeline/drvmap.json
+	buildkite-agent artifact upload pipeline/drvmap.json
 fi
