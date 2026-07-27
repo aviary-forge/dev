@@ -58,6 +58,7 @@ let
           - id: typos-check
             name: typos
             entry: ${typos}/bin/typos
+            exclude: '^rust/Cargo\.nix$|/_build/|^third_party/nix/sources\.json$'
             language: system
             types: [file]
           - id: ruff-check
