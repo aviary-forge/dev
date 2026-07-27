@@ -192,5 +192,17 @@
         "type": "tarball",
         "url": "https://github.com/pyproject-nix/uv2nix/archive/49dac8d206c42175b069b7c6050ba27060a21106.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "pnpm2nix-nzbr": {
+        "branch": "master",
+        "description": "Build pnpm packages with Nix",
+        "homepage": "https://github.com/FliegendeWurst/pnpm2nix-nzbr",
+        "owner": "FliegendeWurst",
+        "repo": "pnpm2nix-nzbr",
+        "rev": "9b15300b711a50bb96e553b66aad5cad94df9c7e",
+        "sha256": "137gkrpivrnk8v90lblwnfzz6bxan3s6m95yysjd0h1lkv5cmx9l",
+        "type": "tarball",
+        "url": "https://github.com/FliegendeWurst/pnpm2nix-nzbr/archive/9b15300b711a50bb96e553b66aad5cad94df9c7e.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
