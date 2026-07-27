@@ -1,0 +1,5 @@
+/secrets.env
+/.terraform
+/result*
+# Prefer managing the lockfile with Nix over tofu's generated file
+/.terraform.lock.hcl

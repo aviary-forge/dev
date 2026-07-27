@@ -94,6 +94,7 @@ let
     # Pull these from unstable to get newer versions than the stable channel
     inherit (nixpkgsUnstable)
       llama-cpp
+      opentofu
       pi-coding-agent
       radarr
       sonarr

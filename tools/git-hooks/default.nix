@@ -9,11 +9,13 @@ let
   inherit (pkgs)
     git
     nixfmt
+    opentofu
     pre-commit
     ruff
     runCommand
     statix
     taplo
+    tflint
     ty
     typos
     uv
@@ -90,6 +92,19 @@ let
             entry: ${dev.rust.regenerate}/bin/generate-cargo-nix --check
             language: system
             files: Cargo\.(toml|lock)$
+            pass_filenames: false
+          - id: tofu-fmt-check
+            name: tofu fmt --check
+            entry: ${opentofu}/bin/tofu fmt -check -diff
+            language: system
+            files: \.tf$
+            types: [file]
+          - id: tflint-check
+            name: tflint
+            entry: ${tflint}/bin/tflint --chdir infra/terraform
+            language: system
+            files: \.tf$
+            types: [file]
             pass_filenames: false
     EOF
   '';
