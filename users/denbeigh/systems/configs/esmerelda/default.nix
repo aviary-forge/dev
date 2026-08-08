@@ -35,6 +35,7 @@ dev.nix.nixos.eval {
           zsh
           llama-cpp-server
           pi-coding-agent
+          python3Packages.huggingface-hub
         ];
 
         services.openssh = {
