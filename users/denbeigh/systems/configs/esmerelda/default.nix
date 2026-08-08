@@ -34,7 +34,7 @@ dev.nix.nixos.eval {
           curl
           zsh
           llama-cpp-server
-          opencode
+          pi-coding-agent
         ];
 
         services.openssh = {
