@@ -154,7 +154,7 @@ impl AnnotationTracker {
                         target.started_at = Some(Instant::now());
                     }
                     target.state = BuildState::Building;
-                }
+                },
                 crate::realise::BuildStatus::Succeeded
                 | crate::realise::BuildStatus::Substitution => {
                     // Capture elapsed time since last start
@@ -162,7 +162,7 @@ impl AnnotationTracker {
                         target.duration_ms += start.elapsed().as_millis() as u64;
                     }
                     target.state = BuildState::Succeeded;
-                }
+                },
                 crate::realise::BuildStatus::Failed { exit_code } => {
                     if let Some(start) = target.started_at.take() {
                         target.duration_ms += start.elapsed().as_millis() as u64;
@@ -179,10 +179,10 @@ impl AnnotationTracker {
                             }
                         }
                     }
-                }
+                },
                 crate::realise::BuildStatus::Skipped => {
                     target.state = BuildState::Skipped;
-                }
+                },
             }
         }
     }
@@ -267,7 +267,7 @@ impl AnnotationTracker {
                     } else {
                         "—".to_string()
                     }
-                }
+                },
                 BuildState::Pending | BuildState::Skipped => "—".to_string(),
                 _ => {
                     if t.duration_ms > 0 {
@@ -275,7 +275,7 @@ impl AnnotationTracker {
                     } else {
                         "—".to_string()
                     }
-                }
+                },
             };
 
             let owners_str = if t.owners.is_empty() {

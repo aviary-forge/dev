@@ -113,14 +113,14 @@ pub fn diff(parent: &Drvmap, current: &Drvmap) -> DrvmapDiff {
         match parent.get(tree_path) {
             None => {
                 added.insert(tree_path.clone(), current_info.clone());
-            }
+            },
             Some(parent_info) => {
                 if parent_info.drv_path == current_info.drv_path {
                     unchanged.insert(tree_path.clone(), current_info.clone());
                 } else {
                     changed.insert(tree_path.clone(), current_info.clone());
                 }
-            }
+            },
         }
     }
 

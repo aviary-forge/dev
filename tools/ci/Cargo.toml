@@ -1,7 +1,7 @@
 [package]
 name = "ci"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "CI orchestrator: replaces the shell-script pipeline-gen with a Rust binary"
 
 [[bin]]

@@ -266,14 +266,14 @@ pub fn realise<F: FnMut(&BuildEvent)>(
                     exit_code: None,
                     log_tail: None,
                 });
-            }
+            },
 
             "msg" => {
                 // Nix-level diagnostic messages (warnings, errors, info).
                 // These carry no activity id — they're global build status.
                 let msg_text = log_line.msg.as_deref().unwrap_or("");
                 eprintln!("[nix] {}", msg_text);
-            }
+            },
 
             "result" => {
                 if let (Some(id), Some(type_)) = (log_line.id, log_line.type_) {
@@ -349,9 +349,9 @@ pub fn realise<F: FnMut(&BuildEvent)>(
                         });
                     }
                 }
-            }
+            },
 
-            _ => {}
+            _ => {},
         }
     }
 
