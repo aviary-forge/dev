@@ -3,3 +3,4 @@ imports_granularity = "Module"
 group_imports = "StdExternalCrate"
 
 match_block_trailing_comma = true
+edition = "2024"

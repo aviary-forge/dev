@@ -40,7 +40,10 @@ let
             types: [file]
           - id: rustfmt-check
             name: rustfmt
-            entry: ${rustfmt}/bin/rustfmt --check --edition 2021
+            # Config file is store-pinned like the tool paths; edition and all
+            # other formatting options come from rust/rustfmt.toml. Don't pass
+            # --edition here — CLI flags override config-file values.
+            entry: ${rustfmt}/bin/rustfmt --check --config-path ${../../rust/rustfmt.toml}
             language: system
             files: \.rs$
             types: [file]
