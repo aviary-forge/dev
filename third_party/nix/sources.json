@@ -101,10 +101,10 @@
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "597283ad8aa0b331c788e97c4c262d58877074ef",
-        "sha256": "102vwf86cjx5c4bki98f7as62j69189qbh892vv8hylfkvap3q17",
+        "rev": "b18a4b905f8d028dc4476412e6d6891728695379",
+        "sha256": "10v8j96rh6fgzbxkyijkc071k3fkv6q9apx57p3kib7zaxqcy2l3",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/597283ad8aa0b331c788e97c4c262d58877074ef.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/b18a4b905f8d028dc4476412e6d6891728695379.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "e9183409c2be80e2cd9d633582fdab543bb8d084"
     },
@@ -127,10 +127,10 @@
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "e2587caef70cea85dd97d7daab492899902dbf5d",
-        "sha256": "14jrgz4z2m8n1c8qwcla44kdy9kd7x0xnwfyrajnyvnhkxbnnqf1",
+        "rev": "ffb3c9b700e759be2ef13237c9d8f953b32a1e46",
+        "sha256": "0h1nqp7vdqqivfc8fimdc6rmjyrnjlsmd28zxbl1iy46c0ss8ga4",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/e2587caef70cea85dd97d7daab492899902dbf5d.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/ffb3c9b700e759be2ef13237c9d8f953b32a1e46.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixvim": {
@@ -155,6 +155,18 @@
         "sha256": "15ns8ikjb28dsd3f98k28gfpbc80v0z6d9dfkbbb6id273xlnl4x",
         "type": "tarball",
         "url": "https://github.com/timbertson/opam2nix/archive/d6823b9428515654157d2cbe59a808caaba08726.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "pnpm2nix-nzbr": {
+        "branch": "master",
+        "description": "Build pnpm packages with Nix",
+        "homepage": "https://github.com/FliegendeWurst/pnpm2nix-nzbr",
+        "owner": "FliegendeWurst",
+        "repo": "pnpm2nix-nzbr",
+        "rev": "9b15300b711a50bb96e553b66aad5cad94df9c7e",
+        "sha256": "137gkrpivrnk8v90lblwnfzz6bxan3s6m95yysjd0h1lkv5cmx9l",
+        "type": "tarball",
+        "url": "https://github.com/FliegendeWurst/pnpm2nix-nzbr/archive/9b15300b711a50bb96e553b66aad5cad94df9c7e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "pyproject-build-systems": {
@@ -191,18 +203,6 @@
         "sha256": "19y6hgc60vix6s0607vbzhvjjqi9i5w7gbj842yqsfwqshaaxxxq",
         "type": "tarball",
         "url": "https://github.com/pyproject-nix/uv2nix/archive/49dac8d206c42175b069b7c6050ba27060a21106.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "pnpm2nix-nzbr": {
-        "branch": "master",
-        "description": "Build pnpm packages with Nix",
-        "homepage": "https://github.com/FliegendeWurst/pnpm2nix-nzbr",
-        "owner": "FliegendeWurst",
-        "repo": "pnpm2nix-nzbr",
-        "rev": "9b15300b711a50bb96e553b66aad5cad94df9c7e",
-        "sha256": "137gkrpivrnk8v90lblwnfzz6bxan3s6m95yysjd0h1lkv5cmx9l",
-        "type": "tarball",
-        "url": "https://github.com/FliegendeWurst/pnpm2nix-nzbr/archive/9b15300b711a50bb96e553b66aad5cad94df9c7e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
