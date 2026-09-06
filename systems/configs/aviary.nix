@@ -54,8 +54,10 @@ dev.nix.nixos.eval {
             # cfdyndns = {
             #   enable = true;
             #   records = [ "aviary.denbeigh.cloud" ];
-            #   secretKeyPath = config.age.secrets.cfdyndnsApiToken.path;
+            #   secretKeyPath = config.age.secrets.cloudflareApiToken.path;
             # };
+            # Note: cfdyndns remains disabled pending the owner re-enabling it —
+            # explicitly out of scope for the DO-to-Cloudflare migration.
           };
         };
 
@@ -73,9 +75,9 @@ dev.nix.nixos.eval {
           acme = {
             enable = true;
             email = "denbeigh+letsencrypt@denbeighstevens.com";
-            dnsProvider = "digitalocean";
+            dnsProvider = "cloudflare";
             credentialFiles = {
-              "DO_AUTH_TOKEN_FILE" = config.age.secrets.digitalOceanKey.path;
+              "CF_DNS_API_TOKEN_FILE" = config.age.secrets.cloudflareApiToken.path;
             };
           };
         };
@@ -110,10 +112,10 @@ dev.nix.nixos.eval {
                 "buildkite-ssh-private-key"
               ]
             )
-            # DigitalOcean API token for ACME DNS-01 challenge
+            # Cloudflare API token for ACME DNS-01 challenge
             // {
-              digitalOceanKey = {
-                file = dev.secrets."digitalOceanAPIKey.age";
+              cloudflareApiToken = {
+                file = dev.secrets."cloudflareApiToken.age";
               };
             };
         };
