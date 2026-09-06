@@ -22,7 +22,7 @@ terraform {
 
   backend "s3" {
     bucket = "denbeigh-terraform"
-    key    = "terraform"
+    key    = "aviary"
     region = "us-east-1"
   }
 }

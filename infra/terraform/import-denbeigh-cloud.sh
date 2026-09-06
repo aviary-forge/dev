@@ -51,8 +51,8 @@ jq -r '.[] | "\(.type)\t\(.name)\t\(.content)\t\(.id)"' <<<"$records"
 # terraform resource address <- (type, fqdn) matchers.
 match() { # $1=type $2=name(fqdn) ; echoes resource address or empty
   case "$1:$2" in
-    A:bruce.denbeigh.cloud)                          echo "cloudflare_dns_record.bruce_denbeigh_cloud" ;;
-    A:bruce.tailscale.denbeigh.cloud)                echo "cloudflare_dns_record.bruce_tailscale_denbeigh_cloud" ;;
+    # A:aviary.denbeigh.cloud)                          echo "cloudflare_dns_record.aviary_denbeigh_cloud" ;;
+    # A:aviary.tailscale.denbeigh.cloud)                echo "cloudflare_dns_record.aviary_tailscale_denbeigh_cloud" ;;
     CNAME:*.denbeigh.cloud)                          echo "cloudflare_dns_record.tailscale_denbeigh_cloud[\"${2%.denbeigh.cloud}\"]" ;;
     *)                                               echo "" ;;
   esac
@@ -70,7 +70,7 @@ while IFS=$'\t' read -r rtype rname rcontent rid; do
   fi
   matched_ids+=("$rid")
   cmds+=("$addr $zone_id:$rid")
-done < <(jq -rt '.[] | "\(.type)\t\(.name)\t\(.content)\t\(.id)"' <<<"$records")
+done < <(jq -r '.[] | [.type, .name, .content, .id] | @tsv' <<<"$records")
 
 if [[ ${#cmds[@]} -eq 0 ]]; then
   echo "nothing to import" >&2
