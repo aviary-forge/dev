@@ -16,8 +16,7 @@ in
   "buildkite-graphql-token.age" = key [ systems.aviary ];
   "buildkite-ssh-private-key.age" = key [ systems.aviary ];
   "tailscaleAuthKey.age" = key [ systems.aviary ];
-  "digitalOceanAPIKey.age" = key [ systems.aviary ];
-  # "cfdyndnsApiToken.age" = key [ systems.aviary ];  # disabled: key rotation
+  "cloudflareApiToken.age" = key [ systems.aviary ];
   "terraform.age" = key [ systems.aviary ];
   "fontDeployKey.age" = key [ systems.aviary ];
   "gridderServiceAccount.age" = key [ systems.aviary ];

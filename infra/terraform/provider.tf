@@ -4,11 +4,6 @@ terraform {
   required_version = ">= 1.6.0"
 
   required_providers {
-    digitalocean = {
-      source  = "digitalocean/digitalocean"
-      version = "~> 2.0"
-    }
-
     aws = {
       source  = "hashicorp/aws"
       version = "~> 6.0"
@@ -27,13 +22,9 @@ terraform {
 
   backend "s3" {
     bucket = "denbeigh-terraform"
-    key    = "terraform"
+    key    = "aviary"
     region = "us-east-1"
   }
-}
-
-provider "digitalocean" {
-  token = var.digitalocean_api_key
 }
 
 provider "aws" {

@@ -9,7 +9,7 @@
 # NOTE: This module is currently non-functional pending terraform config migration.
 # TODO(denbeigh): migrate terraform configs from ~/.dotfiles/terraform/ into
 # this monorepo, update third_party/terraform to include needed providers
-# (cloudflare, digitalocean, aws, tailscale), and fix the apply-terraform script.
+# (cloudflare, aws, tailscale), and fix the apply-terraform script.
 let
   # tf-providers = dev.third_party.terraform.providers-src;
   # tf-packages = dev.third_party.terraform;

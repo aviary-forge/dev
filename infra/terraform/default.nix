@@ -18,7 +18,6 @@ let
     p.hashicorp_null
     # Providers from the daily snapshot
     providers.providers.cloudflare.cloudflare
-    providers.providers.digitalocean.digitalocean
     providers.providers.hashicorp.aws
     providers.providers.tailscale.tailscale
   ]);
@@ -89,7 +88,7 @@ in
 
     shellHook = ''
       echo "OpenTofu $(tofu version -json | ${pkgs.jq}/bin/jq -r .opentofu_version)"
-      echo "Providers: cloudflare, digitalocean, aws, tailscale"
+      echo "Providers: cloudflare, aws, tailscale"
       echo ""
       echo "Run 'tofu plan' to check changes, 'tofu apply' to apply."
     '';
