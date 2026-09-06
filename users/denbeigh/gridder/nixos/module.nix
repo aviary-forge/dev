@@ -66,7 +66,7 @@ in
   config = mkIf cfg.enable {
     users.users.gridder = {
       name = cfg.username;
-      group = cfg.group;
+      inherit (cfg) group;
       isSystemUser = true;
     };
 

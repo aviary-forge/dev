@@ -20,4 +20,5 @@ in
   # "cfdyndnsApiToken.age" = key [ systems.aviary ];  # disabled: key rotation
   "terraform.age" = key [ systems.aviary ];
   "fontDeployKey.age" = key [ systems.aviary ];
+  "gridderServiceAccount.age" = key [ systems.aviary ];
 }

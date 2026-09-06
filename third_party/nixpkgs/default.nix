@@ -95,6 +95,7 @@ let
   unstableOverlay = final: prev: {
     # Pull these from unstable to get newer versions than the stable channel
     inherit (nixpkgsUnstable)
+      curl-impersonate
       llama-cpp
       opentofu
       pi-coding-agent
