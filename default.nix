@@ -46,25 +46,22 @@ readTree.fix (
   })
   // rec {
 
-    path = self.third_party.nixpkgs.lib.cleanSourceWith {
-      name = "dev";
-      src = ./.;
-      # cleanSourceFilter handles .git/result/hidden files; this additionally
-      # keeps build artifacts and tool state out of the store copy. Without
-      # this, any system referencing dev.path (nixos activation copies, the
-      # NIX_PATH <nixpkgs> shim) drags gigabytes of _build/ and target/ into
-      # the store. secrets/ handling is delegated to its .gitignore.
-      filter =
-        name: type:
-        self.third_party.nixpkgs.lib.cleanSourceFilter name type
-        && !builtins.elem (baseNameOf name) [
-          "_build"
-          "target"
-          "node_modules"
-          ".opencode"
-          ".claude"
-        ];
-    };
+    # Only git-tracked files. Any system referencing dev.path (nixos
+    # activation copies, the NIX_PATH <nixpkgs> shim) copies this into the
+    # store, so a directory-tree filter here is whack-a-mole: local datasets,
+    # .venvs, model weights etc. live under users/ and would otherwise be
+    # dragged in wholesale. gitTracked requires uncommitted changes to be
+    # committed before they appear in builds; tracked files are all that
+    # matters (secrets/*.age are tracked). NB: fetchGit internally adds the
+    # tracked files to the store — fine, they're a few MB.
+    path =
+      let
+        fs = self.third_party.nixpkgs.lib.fileset;
+      in
+      fs.toSource {
+        root = ./.;
+        fileset = fs.gitTracked ./.;
+      };
 
     ci =
       let
