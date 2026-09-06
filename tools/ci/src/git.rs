@@ -70,10 +70,16 @@ pub fn remove_worktree(worktree_path: &Path, repo_root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Fetch a remote tracking branch before computing the merge-base.
-/// Buildkite agents only fetch the PR branch by default, so `trunk` is
-/// often stale. This ensures we have the latest ref before diffing.
-pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<()> {
+/// Fetch a branch from origin and return the fetched tip as a SHA.
+///
+/// Buildkite agents only fetch the PR commit by default (`git fetch
+/// origin <sha>`), leaving no usable fetch refspec — so
+/// `refs/remotes/origin/<branch>` may be missing or stale (trunk is
+/// force-pushed), and `git fetch origin <branch>` only records the
+/// fetched tip in FETCH_HEAD. Resolve the tip from FETCH_HEAD rather
+/// than trusting any tracking ref. Returns None if the fetch failed;
+/// the caller falls back to the symbolic ref.
+pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<Option<String>> {
     tracing::info!("fetching origin/{branch}");
 
     let output = Command::new("git")
@@ -84,11 +90,35 @@ pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        // Not fatal — the local ref might be fresh enough.
+        // Not fatal — the caller falls back to the symbolic ref.
         tracing::warn!("git fetch origin {branch} failed (continuing with local ref): {stderr}");
+        return Ok(None);
     }
 
-    Ok(())
+    rev_parse(repo_root, "FETCH_HEAD").map(Some)
+}
+
+/// Resolve a revision to a commit SHA via `git rev-parse`.
+pub fn rev_parse(repo_root: &Path, rev: &str) -> Result<String> {
+    let output = Command::new("git")
+        .args(["rev-parse", rev])
+        .current_dir(repo_root)
+        .output()
+        .with_context(|| format!("git rev-parse {rev}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("git rev-parse {rev} failed: {stderr}");
+    }
+
+    String::from_utf8(output.stdout)
+        .context("invalid UTF-8 from git rev-parse")?
+        .trim()
+        .to_string()
+        .lines()
+        .next()
+        .map(|s| s.to_string())
+        .ok_or_else(|| anyhow::anyhow!("empty output from git rev-parse"))
 }
 
 /// Run `git merge-base HEAD <branch>` and return the commit SHA.

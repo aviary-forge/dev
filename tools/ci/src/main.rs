@@ -154,13 +154,18 @@ fn cmd_pipeline_gen(
 ) -> Result<()> {
     tracing::info!("computing merge-base with {}", trunk_branch);
 
-    // Buildkite agents only fetch the PR branch by default.
-    // Ensure we have the latest trunk ref before diffing.
-    if let Some(branch) = trunk_branch.strip_prefix("origin/") {
-        git::fetch_branch(repo_root, branch)?;
-    }
+    // Fetch the trunk tip explicitly: Buildkite SHA-checkouts have no
+    // fetch refspec, so refs/remotes/origin/<branch> can be missing or
+    // stale (trunk gets force-pushed). Prefer the fetched tip; fall
+    // back to the symbolic ref only if the fetch failed.
+    let fetched_tip = if let Some(branch) = trunk_branch.strip_prefix("origin/") {
+        git::fetch_branch(repo_root, branch)?
+    } else {
+        None
+    };
+    let trunk_tip = fetched_tip.as_deref().unwrap_or(trunk_branch);
 
-    let base_commit = git::merge_base(repo_root, trunk_branch)?;
+    let base_commit = git::merge_base(repo_root, trunk_tip)?;
     tracing::info!("base commit: {}", base_commit);
 
     // Create a worktree at the base commit
