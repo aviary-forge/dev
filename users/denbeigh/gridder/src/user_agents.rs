@@ -1,4 +1,5 @@
-use base64::{prelude::BASE64_STANDARD, Engine};
+use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
 use rand::seq::SliceRandom;
 
 const BROWSER_UA_SRC_URL: &str = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL21pY3JvbGlua2hxL3RvcC11c2VyLWFnZW50cy9yZWZzL2hlYWRzL21hc3Rlci9zcmMvZGVza3RvcC5qc29u";
@@ -35,10 +36,13 @@ pub enum UserAgentConstructionError {
     EmptyListReturned,
 }
 
-pub async fn get_user_agent() -> Result<String, UserAgentConstructionError> {
-    let mut releases = fetch_user_agents().await?;
-    releases.shuffle(&mut rand::rng());
-    releases
-        .pop()
-        .ok_or(UserAgentConstructionError::EmptyListReturned)
+/// Returns a shuffled list of user agents, so each request pattern looks a
+/// little different.
+pub async fn get_user_agents() -> Result<Vec<String>, UserAgentConstructionError> {
+    let mut agents = fetch_user_agents().await?;
+    if agents.is_empty() {
+        return Err(UserAgentConstructionError::EmptyListReturned);
+    }
+    agents.shuffle(&mut rand::rng());
+    Ok(agents)
 }

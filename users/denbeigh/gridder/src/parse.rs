@@ -15,15 +15,34 @@ lazy_static::lazy_static! {
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum SiteParseError {}
+pub enum SiteParseError {
+    #[error("no data table found on page")]
+    MissingTable,
+}
+
+/// Detects the captcha/block interstitial page, so callers can react to being
+/// blocked instead of just failing to parse.
+///
+/// The page is a DataDome challenge; it identifies itself via its
+/// `captcha-delivery.com` script hosts, so look for those rather than the
+/// (changeable) user-facing message.
+pub fn is_captcha(body: &str) -> bool {
+    body.contains("captcha-delivery.com")
+}
+
+/// Whether the expected data table is present on the page.
+pub fn has_table(body: &str) -> bool {
+    let page = Html::parse_document(body);
+    page.select(&TABLE_SELECTOR).next().is_some()
+}
 
 pub fn parse_content(body: &str) -> Result<(PairInfo, LengthInfo), SiteParseError> {
     let page = Html::parse_document(body);
 
-    let table = match page.select(&TABLE_SELECTOR).next() {
-        Some(i) => i,
-        None => panic!("missing table on page"),
-    };
+    let table = page
+        .select(&TABLE_SELECTOR)
+        .next()
+        .ok_or(SiteParseError::MissingTable)?;
 
     let main_node = table.parent().unwrap();
     let main_el = ElementRef::wrap(main_node).unwrap();
@@ -94,4 +113,31 @@ fn extract_table_row_info(tr: ElementRef) -> (Option<char>, Vec<usize>) {
     // drop the "sum" item
     items.truncate(items.len() - 1);
     (header_char, items)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const CAPTCHA_BODY: &str = r#"<html lang="en"><head><title>nytimes.com</title></head><body style="margin:0"><p id="cmsg">Please enable JS and disable any ad blocker</p><script data-cfasync="false">var dd={'rt':'c'}</script><script data-cfasync="false" src="https://ct.captcha-delivery.com/c.js"></script></body></html>"#;
+
+    #[test]
+    fn detects_captcha_page() {
+        assert!(is_captcha(CAPTCHA_BODY));
+        assert!(!is_captcha("<html><body>just a page</body></html>"));
+    }
+
+    #[test]
+    fn detects_missing_table() {
+        assert!(!has_table(CAPTCHA_BODY));
+        assert!(has_table(
+            r#"<html><body><table class="table"><tr class="row"><td class="cell">A</td></tr></table></body></html>"#
+        ));
+    }
+
+    #[test]
+    fn parse_content_errors_without_panic() {
+        let err = parse_content(CAPTCHA_BODY).unwrap_err();
+        assert!(matches!(err, SiteParseError::MissingTable));
+    }
 }

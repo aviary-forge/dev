@@ -1,11 +1,10 @@
-use chrono_tz::Tz;
-use clap::Parser;
-use gridder::sheets::{NewSheetError, SheetCreationError, SheetManager};
-
 use std::path::PathBuf;
 
-use gridder::fetch::{fetch_for_date, FetchDataError};
-use gridder::parse::parse_content;
+use chrono_tz::Tz;
+use clap::Parser;
+use gridder::fetch::{FetchDataError, fetch_for_date};
+use gridder::parse::{SiteParseError, parse_content};
+use gridder::sheets::{NewSheetError, SheetCreationError, SheetManager};
 
 // New releases happen at midnight US-West time
 const US_WEST_TZ: Tz = chrono_tz::America::Los_Angeles;
@@ -33,6 +32,8 @@ enum Error {
     ParsingDate(String, chrono::ParseError),
     #[error("failed to fetch site data: {0}")]
     FetchingSiteData(#[from] FetchDataError),
+    #[error("failed to parse site data: {0}")]
+    ParsingSiteData(#[from] SiteParseError),
     #[error("failed to create Sheets API client: {0}")]
     CreatingSheetManager(#[from] NewSheetError),
     #[error("failed to create new daily sheet: {0}")]
@@ -51,7 +52,7 @@ async fn real_main() -> Result<(), Error> {
         .unwrap_or_else(|| chrono::Utc::now().with_timezone(&US_WEST_TZ).date_naive());
 
     let body = fetch_for_date(date, args.binary_path).await?;
-    let (pairs, table_info) = parse_content(&body).expect("failed to extract info from document");
+    let (pairs, table_info) = parse_content(&body)?;
 
     let sheets_client = SheetManager::new(&args.spreadsheet_id, args.service_account_file).await?;
     sheets_client
