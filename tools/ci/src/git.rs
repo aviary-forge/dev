@@ -121,27 +121,63 @@ pub fn rev_parse(repo_root: &Path, rev: &str) -> Result<String> {
         .ok_or_else(|| anyhow::anyhow!("empty output from git rev-parse"))
 }
 
-/// Run `git merge-base HEAD <branch>` and return the commit SHA.
-pub fn merge_base(repo_root: &Path, branch: &str) -> Result<String> {
+/// Run `git merge-base --all HEAD <rev>` and return the best commit SHA.
+///
+/// Criss-cross history can produce several equally-good merge-base
+/// candidates, and plain `git merge-base` returns an arbitrary one of
+/// them. Ask for all candidates, warn when there's more than one, and
+/// deterministically pick the newest by committer date.
+pub fn merge_base(repo_root: &Path, rev: &str) -> Result<String> {
     let output = Command::new("git")
-        .args(["merge-base", "HEAD", branch])
+        .args(["merge-base", "--all", "HEAD", rev])
         .current_dir(repo_root)
         .output()
-        .with_context(|| format!("git merge-base HEAD {branch}"))?;
+        .with_context(|| format!("git merge-base --all HEAD {rev}"))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         anyhow::bail!("git merge-base failed: {stderr}");
     }
 
-    String::from_utf8(output.stdout)
+    let candidates: Vec<String> = String::from_utf8(output.stdout)
         .context("invalid UTF-8 from git merge-base")?
-        .trim()
-        .to_string()
         .lines()
-        .next()
-        .map(|s| s.to_string())
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(String::from)
+        .collect();
+
+    if candidates.len() > 1 {
+        tracing::warn!(
+            "multiple merge-base candidates for HEAD vs {rev} (criss-cross history?): {candidates:?}; picking newest by committer date"
+        );
+    }
+
+    // max_by_key on a single candidate is that candidate.
+    candidates
+        .into_iter()
+        .max_by_key(|sha| commit_time(repo_root, sha).unwrap_or(i64::MIN))
         .ok_or_else(|| anyhow::anyhow!("empty output from git merge-base"))
+}
+
+/// Committer timestamp of a commit, via `git show -s --format=%ct`.
+fn commit_time(repo_root: &Path, sha: &str) -> Result<i64> {
+    let output = Command::new("git")
+        .args(["show", "-s", "--format=%ct", sha])
+        .current_dir(repo_root)
+        .output()
+        .with_context(|| format!("git show -s --format=%ct {sha}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("git show {sha} failed: {stderr}");
+    }
+
+    String::from_utf8(output.stdout)
+        .context("invalid UTF-8 from git show")?
+        .trim()
+        .parse::<i64>()
+        .context("non-numeric committer timestamp from git show")
 }
 
 #[cfg(test)]
