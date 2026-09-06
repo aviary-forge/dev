@@ -8,6 +8,7 @@
 let
   inherit (lib)
     mkIf
+    optional
     mkOption
     types
     ;
@@ -17,6 +18,7 @@ let
   # We only need to explicitly wrap if we're on linux and we are _not_ on NixOS
   inherit (config.dev.denbeigh.ghostty)
     enable
+    enableTerminfo
     shouldGlWrap
     fontSize
     fontFamily
@@ -34,6 +36,14 @@ in
       default = config.dev.denbeigh.machine.graphical;
       description = ''
         Whether to install and manage Ghostty.
+      '';
+    };
+
+    enableTerminfo = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Whether to install terminfo for Ghostty.
       '';
     };
 
@@ -62,8 +72,10 @@ in
     };
   };
 
-  config = mkIf enable {
-    programs.ghostty = {
+  config = {
+    # install terminfo if requested and we aren't installing the package itself
+    home.packages = optional (!enable && enableTerminfo) package.terminfo;
+    programs.ghostty = mkIf enable {
       enable = true;
       inherit package;
       settings = {
