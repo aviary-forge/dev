@@ -8,6 +8,7 @@ let
     zsh = ./zsh;
     linux = ./linux.nix;
     graphical = ./graphical.nix;
+    pi = ./pi.nix;
     scripts = ./scripts.nix;
     standard = ./standard.nix;
     webcam = ./webcam.nix;

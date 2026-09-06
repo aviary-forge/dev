@@ -18,6 +18,7 @@ in
     ./htop.nix
     ./zsh
     ./graphical.nix
+    ./pi.nix
     ./scripts.nix
     ./use-nix-cache.nix
     ./webcam.nix
