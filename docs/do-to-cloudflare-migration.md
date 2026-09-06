@@ -1,8 +1,16 @@
 # Migration: DigitalOcean → Cloudflare (denbeigh.cloud)
 
 **Status:** zone cutover has been triggered by hand (registrar NS change to
-Cloudflare). Everything below the DNS layer — terraform, nix, secrets — still
-references DigitalOcean and needs to be migrated.
+Cloudflare). Code migration is COMPLETE on branch `do-to-cloudflare-migration`
+(in worktree `~/dev/dev-terraform-migration`): terraform ported to cloudflare,
+DO provider dropped from nix wrappers, `cfdyndnsApiToken.age` renamed to
+`cloudflareApiToken.age` (token rotated + scoped to both zones), aviary ACME
+switched to cloudflare. Remaining: run the import/plan via
+`infra/terraform/import-denbeigh-cloud.sh` (needs `CF_API_TOKEN` in the shell —
+the age secret is aviary-keyed and unreadable elsewhere), deploy aviary, verify
+a CF-based cert renewal, THEN delete `digitalOceanAPIKey.age` + close DO.
+Everything below the DNS layer — terraform, nix, secrets — was migrated as
+described below.
 
 This document is written to be picked up by an agent (or a human) later, with
 enough context to finish the migration without re-deriving the inventory.
