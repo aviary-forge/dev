@@ -1,10 +1,3 @@
-variable "digitalocean_api_key" {
-  description = "DigitalOcean API token for managing DNS records"
-  type        = string
-  sensitive   = true
-  nullable    = false
-}
-
 variable "aws_access_key_id" {
   description = "AWS access key ID for S3 backend and Route53"
   type        = string
