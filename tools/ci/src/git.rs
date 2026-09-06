@@ -77,9 +77,11 @@ pub fn remove_worktree(worktree_path: &Path, repo_root: &Path) -> Result<()> {
 /// `refs/remotes/origin/<branch>` may be missing or stale (trunk is
 /// force-pushed), and `git fetch origin <branch>` only records the
 /// fetched tip in FETCH_HEAD. Resolve the tip from FETCH_HEAD rather
-/// than trusting any tracking ref. Returns None if the fetch failed;
-/// the caller falls back to the symbolic ref.
-pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<Option<String>> {
+/// than trusting any tracking ref.
+///
+/// Fails hard on fetch errors: merging against a stale ref silently
+/// diffs against the wrong base, which is worse than no pipeline.
+pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<String> {
     tracing::info!("fetching origin/{branch}");
 
     let output = Command::new("git")
@@ -90,12 +92,10 @@ pub fn fetch_branch(repo_root: &Path, branch: &str) -> Result<Option<String>> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        // Not fatal — the caller falls back to the symbolic ref.
-        tracing::warn!("git fetch origin {branch} failed (continuing with local ref): {stderr}");
-        return Ok(None);
+        anyhow::bail!("git fetch origin {branch} failed: {stderr}");
     }
 
-    rev_parse(repo_root, "FETCH_HEAD").map(Some)
+    rev_parse(repo_root, "FETCH_HEAD")
 }
 
 /// Resolve a revision to a commit SHA via `git rev-parse`.

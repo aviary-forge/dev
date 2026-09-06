@@ -156,10 +156,11 @@ fn cmd_pipeline_gen(
 
     // Fetch the trunk tip explicitly: Buildkite SHA-checkouts have no
     // fetch refspec, so refs/remotes/origin/<branch> can be missing or
-    // stale (trunk gets force-pushed). Prefer the fetched tip; fall
-    // back to the symbolic ref only if the fetch failed.
+    // stale (trunk gets force-pushed). The fetch resolves the tip from
+    // FETCH_HEAD and fails hard on error — merging against a stale ref
+    // would silently diff against the wrong base.
     let fetched_tip = if let Some(branch) = trunk_branch.strip_prefix("origin/") {
-        git::fetch_branch(repo_root, branch)?
+        Some(git::fetch_branch(repo_root, branch)?)
     } else {
         None
     };
