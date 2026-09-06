@@ -23,6 +23,7 @@
   dev,
   pkgs,
   lib,
+  members,
   ...
 }:
 
@@ -41,6 +42,7 @@ pkgs.runCommand "pi-coding-agent-host-${pkgs.pi-coding-agent.version}"
     nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
     passthru.piTree = piTree;
     meta = pkgs.pi-coding-agent.meta // {
+      owners = with members; [ denbeigh ];
       description = "${
         pkgs.pi-coding-agent.meta.description or "pi coding agent"
       } (with async-runner peer packages)";

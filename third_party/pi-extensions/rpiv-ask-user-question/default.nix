@@ -6,7 +6,7 @@
 # injected by pi at load time.
 {
   dev,
-  lib,
+  members,
   ...
 }:
 let
@@ -27,4 +27,6 @@ dev.nix.mkPiPackage {
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
+
+  meta.owners = with members; [ denbeigh ];
 }

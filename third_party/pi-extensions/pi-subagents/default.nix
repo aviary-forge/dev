@@ -15,7 +15,7 @@
 # it, and the shim directory is not shipped in the npm tarball.
 {
   dev,
-  lib,
+  members,
   ...
 }:
 let
@@ -35,4 +35,6 @@ dev.nix.mkPiPackage {
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
+
+  meta.owners = with members; [ denbeigh ];
 }

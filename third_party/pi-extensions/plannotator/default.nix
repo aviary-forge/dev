@@ -9,7 +9,7 @@
 # needed here. `pi.extensions` is "./" — pi loads the package dir itself.
 {
   dev,
-  lib,
+  members,
   ...
 }:
 let
@@ -30,4 +30,6 @@ dev.nix.mkPiPackage {
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
+
+  meta.owners = with members; [ denbeigh ];
 }
