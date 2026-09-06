@@ -12,7 +12,9 @@
 # readTree derivations.
 
 {
-  dev ? { },
+  # the niv pin set (//third_party/nix). Explicit so this file can be
+  # evaluated outside the readTree fixpoint (e.g. as the global <nixpkgs>).
+  pins ? import ../nix { },
   externalArgs ? { },
   devOverlays ? true,
   localSystem ? externalArgs.localSystem or builtins.currentSystem,
@@ -53,12 +55,12 @@ let
   # argument. This is intended for use-cases where the monorepo is
   # bisected against nixpkgs to find the root cause of an issue in a
   # channel bump.
-  nixpkgsSrc = externalArgs.nixpkgsBisectPath or (import ../nix { }).nixpkgs;
+  nixpkgsSrc = externalArgs.nixpkgsBisectPath or pins.nixpkgs;
   # Overlay to expose the nixpkgs commits we are using to other Nix code.
   commitsOverlay = _: _: {
     nixpkgsCommits = {
-      stable = dev.third_party.nix.nixpkgs.rev;
-      unstable = dev.third_party.nix.nixpkgs-unstable.dev;
+      stable = pins.nixpkgs.rev;
+      unstable = pins.nixpkgs-unstable.rev;
     };
   };
 
@@ -70,7 +72,7 @@ let
       isIntelX86Platform = final.system == "x86_64-linux";
     in
     {
-      nixgl = import dev.third_party.nix.nixgl {
+      nixgl = import pins.nixgl {
         pkgs = final;
         enable32bits = isIntelX86Platform;
         enableIntelX86Extensions = isIntelX86Platform;
@@ -80,16 +82,16 @@ let
   rustOverlay =
     final: prev:
     let
-      fenixSrc = import "${dev.third_party.nix.fenix}/default.nix";
+      fenixSrc = import "${pins.fenix}/default.nix";
       fenix = prev.callPackage fenixSrc { };
-      craneLib = prev.callPackage "${dev.third_party.nix.crane}/lib" { };
+      craneLib = prev.callPackage "${pins.crane}/lib" { };
     in
     {
       inherit fenix;
       inherit craneLib;
     };
 
-  nixpkgsUnstable = import dev.third_party.nix.nixpkgs-unstable commonNixpkgsArgs;
+  nixpkgsUnstable = import pins.nixpkgs-unstable commonNixpkgsArgs;
   unstableOverlay = final: prev: {
     # Pull these from unstable to get newer versions than the stable channel
     inherit (nixpkgsUnstable)
@@ -134,14 +136,17 @@ import nixpkgsSrc (
       nixglOverlay
       overridesOverlay
     ]
+    # devOverlays controls the repo-specific dev overlays (rust/fenix).
     ++ (
       if devOverlays then
         [
-          # (import "${dev.third_party.nix.fenix}/overlay.nix")
+          # (import "${pins.fenix}/overlay.nix")
           rustOverlay
         ]
       else
-        additionalOverlays
-    );
+        [ ]
+    )
+    # additionalOverlays is always applied, on top of everything above.
+    ++ additionalOverlays;
   }
 )
