@@ -62,7 +62,12 @@ let
             types: [file]
           - id: typos-check
             name: typos
-            entry: ${typos}/bin/typos
+            # Config is store-pinned like the rustfmt path above; typos' own
+            # root-file discovery is version-dependent, so don't rely on it.
+            entry: ${typos}/bin/typos --config ${../../_typos.toml}
+            # pre-commit passes staged paths explicitly; ripgrep-style tools
+            # bypass exclude filters for explicitly-named files without this.
+            args: [--force-exclude]
             exclude: '^rust/Cargo\.nix$|/_build/|^third_party/nix/sources\.json$'
             language: system
             types: [file]

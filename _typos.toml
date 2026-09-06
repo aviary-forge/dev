@@ -1,0 +1,3 @@
+# Encrypted age blobs are random ciphertext — spell-checking them is noise.
+[files]
+extend-exclude = ["*.age"]
