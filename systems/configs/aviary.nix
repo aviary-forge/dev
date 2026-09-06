@@ -24,7 +24,7 @@ dev.nix.nixos.eval {
         ../../users/denbeigh/modules/nixos/nix-cache.nix
         ../../users/denbeigh/modules/nixos/terraform.nix
         ../../users/denbeigh/modules/nixos/update-fonts.nix
-        # ../../users/denbeigh/modules/nixos/3rdparty/cfdyndns  # disabled: key rotation
+        ../../users/denbeigh/gridder/nixos/module.nix
 
         # Infrastructure
         ../modules/nixos/ci
@@ -50,13 +50,14 @@ dev.nix.nixos.eval {
               enable = true;
               keyFile = "/var/lib/denbeigh/nix-cache/serve-key";
             };
-
-            # cfdyndns = {
-            #   enable = true;
-            #   records = [ "aviary.denbeigh.cloud" ];
-            #   secretKeyPath = config.age.secrets.cfdyndnsApiToken.path;
-            # };
           };
+        };
+
+        gridder = {
+          enable = true;
+          package = dev.users.denbeigh.gridder;
+          spreadsheetID = "14ArkUcM0k4nhNE_Ng-p0Ahb06yh_CBr4SgjiBrj6FFA";
+          serviceAccountPath = config.age.secrets.gridderServiceAccount.path;
         };
 
         services.dev.reverse-proxy = {
@@ -114,6 +115,12 @@ dev.nix.nixos.eval {
             // {
               digitalOceanKey = {
                 file = dev.secrets."digitalOceanAPIKey.age";
+              };
+
+              gridderServiceAccount = {
+                file = dev.secrets."gridderServiceAccount.age";
+                # readable by the gridder service user
+                owner = "gridder";
               };
             };
         };
