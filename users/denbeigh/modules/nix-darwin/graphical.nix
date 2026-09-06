@@ -51,7 +51,7 @@
           shift + alt - h : yabai -m window --resize left:0:-20
           shift + alt - j : yabai -m window --resize top:0:20
 
-          ctrl + cmd - return: /Applications/Nix\ Apps/Alacritty.app/Contents/MacOS/alacritty
+          ctrl + cmd - return: /Applications/Nix\ Apps/Ghostty.app/Contents/MacOS/ghostty
         '';
       };
     };

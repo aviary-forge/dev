@@ -21,7 +21,7 @@ in
     # NOTE: Not compatible with home-manager
     # (nixos and darwin only)
     environment.systemPackages = with pkgs; [
-      alacritty
+      (if pkgs.stdenv.hostPlatform.isDarwin then ghostty-bin else ghostty)
       discord-canary
       mpv
       yubikey-manager

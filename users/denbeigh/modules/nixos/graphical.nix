@@ -6,7 +6,7 @@
 }:
 
 let
-  inherit (pkgs) alacritty;
+  inherit (pkgs) ghostty;
   inherit (lib) mkIf;
   inherit (config.dev.denbeigh.user) username;
   inherit (config.dev.denbeigh.machine) graphical;
@@ -53,7 +53,7 @@ in
           i3lock
         ];
         extraSessionCommands = ''
-          export TERMINAL="${alacritty}/bin/alacritty"
+          export TERMINAL="${ghostty}/bin/ghostty"
         '';
       };
     };
