@@ -137,10 +137,9 @@ in
         type = types.str;
         description = ''
           DNS provider name for the ACME DNS-01 challenge. Must be a
-          provider supported by lego (e.g. `digitalocean`, `cloudflare`,
-          `route53`).
+          provider supported by lego (e.g. `cloudflare`, `route53`).
         '';
-        example = "digitalocean";
+        example = "cloudflare";
       };
 
       credentialFiles = mkOption {
@@ -149,12 +148,12 @@ in
         description = ''
           Credential files for the DNS provider. Keys are environment
           variable names that lego expects (e.g.
-          `DO_AUTH_TOKEN_FILE` for DigitalOcean). Values are paths to
+          `CF_DNS_API_TOKEN_FILE` for Cloudflare). Values are paths to
           files containing the raw credential.
         '';
         example = literalExpression ''
           {
-            "DO_AUTH_TOKEN_FILE" = config.age.secrets.doToken.path;
+            "CF_DNS_API_TOKEN_FILE" = config.age.secrets.doToken.path;
           }
         '';
       };
