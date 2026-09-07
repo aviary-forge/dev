@@ -491,8 +491,9 @@ pub fn realise<F: FnMut(&BuildEvent)>(
     // or previously built) — mark it as succeeded, not skipped.
     //
     // If nix-store exited with failure, pending targets may be either
-    // already-in-store (succeeded) or truly skipped by --keep-going.
-    // Check store validity to distinguish.
+    // already-in-store (succeeded) or truly skipped by --keep-going
+    // (e.g. dependents of a failed third-party derivation not in the
+    // drvmap). Check the derivation's *output* paths to distinguish.
     let build_succeeded = output.status.success();
     for entry in results.values_mut() {
         if entry.status == "pending" {
@@ -501,9 +502,11 @@ pub fn realise<F: FnMut(&BuildEvent)>(
                 // Any still-pending target was already in the store.
                 true
             } else {
-                // Some targets failed. Check if this specific drvPath
-                // actually exists in the store.
-                std::path::Path::new(&entry.drv_path).exists()
+                // Realise failed: a pending target is either already in
+                // the store (built or substituted earlier) or was skipped
+                // by --keep-going, typically because a dependency not in
+                // the drvmap failed.
+                outputs_realised(&entry.drv_path)
             };
 
             if already_valid {
@@ -542,10 +545,41 @@ pub fn realise<F: FnMut(&BuildEvent)>(
         }
     }
 
-    // Determine overall success
-    let all_succeeded = results.values().all(|r| r.status != "failed");
+    // Overall success means every target was realised. A target can end up
+    // "skipped" without anything reporting "failed" — e.g. --keep-going
+    // drops dependents of a third-party drv that isn't in the drvmap — so
+    // nix-store's exit status alone is not sufficient signal.
+    let all_succeeded = results.values().all(|r| r.status == "succeeded");
 
     Ok((results, all_succeeded))
+}
+
+/// Return whether every output of `drv_path` is present in the store.
+///
+/// Used to classify targets that never emitted a start/result event after
+/// `nix-store --realise` exited non-zero: outputs present means the target
+/// was realised (possibly by an earlier run); outputs missing means it was
+/// skipped by `--keep-going`.
+///
+/// Store-path lifecycle, for the curious: a .drv file exists from the
+/// moment it is instantiated, which always precedes realisation — so the
+/// .drv's existence carries no signal about whether the build ran. Only
+/// its output paths do.
+fn outputs_realised(drv_path: &str) -> bool {
+    let probe = Command::new("nix-store")
+        .args(["--query", "--outputs", drv_path])
+        .output();
+
+    let output = match probe {
+        Ok(o) if o.status.success() => o,
+        _ => return false,
+    };
+
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .all(|out| std::path::Path::new(out).exists())
 }
 
 /// Extract just the drvPaths from a drvmap for passing to nix-store.

@@ -5,7 +5,8 @@
 //! 1. A persistent main table (context `build-{system}`) showing all targets
 //!    with status, duration, and owners. Updated live during the build.
 //! 2. A failure summary (context `build-{system}-failures`, only when failures
-//!    exist) listing failed targets with owners and log tails.
+//!    exist) listing failed targets with owners and log tails, plus skipped
+//!    targets (not built because a dependency failed).
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::Write;
@@ -220,6 +221,16 @@ impl AnnotationTracker {
         let (pending, building, succeeded, failed, skipped) = self.counts();
         let mut out = String::new();
 
+        // Skipped targets count as failures: they were not built because a
+        // dependency failed (either a tracked failed target, or a third-party
+        // drv outside the drvmap that nix refused via --keep-going).
+        let failure_count = failed + skipped;
+        let skipped_note = if skipped > 0 {
+            format!(" ({} skipped: dependency failure)", skipped)
+        } else {
+            String::new()
+        };
+
         // Header with summary
         let building_str = if building > 0 {
             format!(" | {} building", building)
@@ -231,15 +242,10 @@ impl AnnotationTracker {
         } else {
             String::new()
         };
-        let skipped_str = if skipped > 0 {
-            format!(" | {} skipped", skipped)
-        } else {
-            String::new()
-        };
 
         out.push_str(&format!(
             "### Build: {} — {} succeeded, {} failed{}{}{}\n\n",
-            self.system, succeeded, failed, building_str, pending_str, skipped_str
+            self.system, succeeded, failure_count, skipped_note, building_str, pending_str
         ));
 
         // Table header
@@ -303,7 +309,8 @@ impl AnnotationTracker {
     }
 
     /// Render the failure summary annotation (only when failures exist).
-    /// Returns `None` if there are no failures.
+    /// Skipped targets are failures too — they were not built because a
+    /// dependency failed. Returns `None` if there are neither.
     pub fn render_failure_summary(&self) -> Option<String> {
         let failed: Vec<&TargetStatus> = self
             .targets
@@ -311,7 +318,13 @@ impl AnnotationTracker {
             .filter(|t| t.state == BuildState::Failed)
             .collect();
 
-        if failed.is_empty() {
+        let skipped: Vec<&TargetStatus> = self
+            .targets
+            .values()
+            .filter(|t| t.state == BuildState::Skipped)
+            .collect();
+
+        if failed.is_empty() && skipped.is_empty() {
             return None;
         }
 
@@ -357,14 +370,50 @@ impl AnnotationTracker {
             out.push_str("---\n\n");
         }
 
+        if !skipped.is_empty() {
+            out.push_str(&format!(
+                "### :no_entry_sign: Skipped — {}\n\nNot built: a dependency failed.\n\n",
+                self.system
+            ));
+
+            for t in &skipped {
+                let owners_str = if t.owners.is_empty() {
+                    "none".to_string()
+                } else {
+                    t.owners
+                        .iter()
+                        .map(|o| {
+                            format!(
+                                "@{}",
+                                o.github
+                                    .as_deref()
+                                    .unwrap_or(o.discord.as_deref().unwrap_or("?"))
+                            )
+                        })
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                };
+
+                let type_badge = type_badge(&t.dev_attr_type);
+                out.push_str(&format!(
+                    "**`{}`** ({}) — skipped (dependency failure)  \nOwners: {}\n\n",
+                    t.tree_path, type_badge, owners_str
+                ));
+            }
+        }
+
         Some(out)
     }
 
     /// Did all targets succeed?
+    ///
+    /// Skipped targets are failures: they were not built because a
+    /// dependency failed. This must agree with the exit-code decision,
+    /// which is driven by `realise::realise`'s own `all_succeeded`.
     pub fn all_succeeded(&self) -> bool {
         self.targets
             .values()
-            .all(|t| matches!(t.state, BuildState::Succeeded | BuildState::Skipped))
+            .all(|t| t.state == BuildState::Succeeded)
     }
 
     /// Get failed targets for results file.
