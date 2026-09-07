@@ -1,11 +1,10 @@
-use chrono_tz::Tz;
-use clap::Parser;
-use gridder::sheets::{NewSheetError, SheetCreationError, SheetManager};
-
 use std::path::PathBuf;
 
-use gridder::fetch::{fetch_for_date, FetchDataError};
+use chrono_tz::Tz;
+use clap::Parser;
+use gridder::fetch::{FetchDataError, fetch_for_date};
 use gridder::parse::parse_content;
+use gridder::sheets::{NewSheetError, SheetCreationError, SheetManager};
 
 // New releases happen at midnight US-West time
 const US_WEST_TZ: Tz = chrono_tz::America::Los_Angeles;

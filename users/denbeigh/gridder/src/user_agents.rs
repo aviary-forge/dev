@@ -1,4 +1,5 @@
-use base64::{prelude::BASE64_STANDARD, Engine};
+use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
 use rand::seq::SliceRandom;
 
 const BROWSER_UA_SRC_URL: &str = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL21pY3JvbGlua2hxL3RvcC11c2VyLWFnZW50cy9yZWZzL2hlYWRzL21hc3Rlci9zcmMvZGVza3RvcC5qc29u";

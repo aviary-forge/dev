@@ -4,12 +4,15 @@ use std::path::Path;
 
 use chrono::NaiveDate;
 use google_sheets4::api::{
-    BatchUpdateSpreadsheetRequest, BatchUpdateValuesRequest, DuplicateSheetRequest, Request,
+    BatchUpdateSpreadsheetRequest,
+    BatchUpdateValuesRequest,
+    DuplicateSheetRequest,
+    Request,
     ValueRange,
 };
 use google_sheets4::hyper::client::HttpConnector;
 use google_sheets4::hyper_rustls::HttpsConnector;
-use google_sheets4::{hyper, hyper_rustls, oauth2, Sheets};
+use google_sheets4::{Sheets, hyper, hyper_rustls, oauth2};
 use serde_json::json;
 
 use crate::{LengthInfo, PairInfo};
