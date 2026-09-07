@@ -1,18 +1,16 @@
 use std::path::PathBuf;
 
-use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
 use chrono::NaiveDate;
 use cuimp::CuimpOptions;
 
-use crate::user_agents::{get_user_agent, UserAgentConstructionError};
+use crate::user_agents::{UserAgentConstructionError, get_user_agent};
 
-const URL_PREFIX: &str = "aHR0cHM6Ly93d3cubnl0aW1lcy5jb20=";
-const URL_SUFFIX: &str = "Y3Jvc3N3b3Jkcy9zcGVsbGluZy1iZWUtZm9ydW0uaHRtbA==";
+const URL_PREFIX: &str = "aHR0cHM6Ly93d3cubnl0aW1lcy5jb20vcHV6emxlcy9zcGVsbGluZy1iZWUv";
 
 lazy_static::lazy_static! {
     static ref STR_URL_PREFIX: Vec<u8> = BASE64_STANDARD.decode(URL_PREFIX).unwrap();
-    static ref STR_URL_SUFFIX: Vec<u8> = BASE64_STANDARD.decode(URL_SUFFIX).unwrap();
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -23,6 +21,12 @@ pub enum FetchDataError {
     GettingUserAgent(#[from] UserAgentConstructionError),
     #[error("error fetching NYT game page: {0}")]
     GettingData(#[from] cuimp::CuimpError),
+    #[error(
+        "NYT returned 404 for {0}: the puzzle page endpoint only serves the past two weeks of puzzles"
+    )]
+    NotFound(NaiveDate),
+    #[error("NYT returned unexpected status {0} fetching {1}")]
+    UnexpectedStatus(u16, String),
 }
 
 pub async fn fetch_for_date(
@@ -30,9 +34,8 @@ pub async fn fetch_for_date(
     binary_path: Option<PathBuf>,
 ) -> Result<String, FetchDataError> {
     let prefix = String::from_utf8_lossy(&STR_URL_PREFIX);
-    let suffix = String::from_utf8_lossy(&STR_URL_SUFFIX);
-    let date_str = date.format("%Y/%m/%d");
-    let url_str = format!("{prefix}/{date_str}/{suffix}");
+    let date_str = date.format("%Y-%m-%d");
+    let url_str = format!("{prefix}{date_str}");
     let user_agent = get_user_agent().await?;
     let curl_args = [
         "--compressed".to_string(),
@@ -51,5 +54,11 @@ pub async fn fetch_for_date(
     let mut client = cuimp::CuimpHttp::new(options).map_err(FetchDataError::BuildingClient)?;
 
     let resp = client.get(&url_str).await?;
+    if resp.status == 404 {
+        return Err(FetchDataError::NotFound(date));
+    }
+    if !(200..300).contains(&resp.status) {
+        return Err(FetchDataError::UnexpectedStatus(resp.status, url_str));
+    }
     Ok(resp.data)
 }
