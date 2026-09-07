@@ -320,12 +320,11 @@ fn cmd_build(
     }
 
     // Post failure summary if any failures exist
-    if let Some(failure_summary) = tracker.render_failure_summary() {
-        if let Err(e) =
+    if let Some(failure_summary) = tracker.render_failure_summary()
+        && let Err(e) =
             annotation::post_annotation(&tracker.failure_context(), "error", &failure_summary)
-        {
-            tracing::warn!("failed to post failure annotation: {e:#}");
-        }
+    {
+        tracing::warn!("failed to post failure annotation: {e:#}");
     }
 
     // Write results file for post-build consumption
