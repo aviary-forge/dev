@@ -173,10 +173,10 @@ impl AnnotationTracker {
                     // Mark all transitive dependents as skipped.
                     let dependents = self.transitive_dependents(&event.tree_path);
                     for dep_path in &dependents {
-                        if let Some(dep_target) = self.targets.get_mut(dep_path) {
-                            if dep_target.state == BuildState::Pending {
-                                dep_target.state = BuildState::Skipped;
-                            }
+                        if let Some(dep_target) = self.targets.get_mut(dep_path)
+                            && dep_target.state == BuildState::Pending
+                        {
+                            dep_target.state = BuildState::Skipped;
                         }
                     }
                 },

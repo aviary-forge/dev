@@ -7,18 +7,25 @@ use anyhow::{Context, Result};
 
 /// Create a temporary git worktree at the given commit and return its path.
 ///
-/// The worktree is created in a temp directory. Callers are responsible
-/// for cleanup via [`remove_worktree`].
+/// The worktree is created in a per-run temp directory, keyed by the
+/// Buildkite build id (or the pid outside CI), so concurrent runs and
+/// reruns after a crash never collide on the same path. Callers are
+/// responsible for cleanup via [`remove_worktree`].
 pub fn create_worktree(repo_root: &Path, commit: &str, prefix: &str) -> Result<PathBuf> {
-    let temp_dir = std::env::temp_dir().join(format!("ci-worktree-{}-", prefix));
+    let run_id = std::env::var("BUILDKITE_BUILD_ID").unwrap_or_else(|_| {
+        // Pids recycle, so mix in the current nanos to make an
+        // accidental collision with a stale dir from a previous run
+        // vanishingly unlikely.
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        format!("pid{}-t{nanos}", std::process::id())
+    });
+    let temp_dir = std::env::temp_dir().join(format!("ci-worktree-{prefix}-{run_id}"));
     let worktree_path = temp_dir.join("worktree");
     std::fs::create_dir_all(&temp_dir)
         .with_context(|| format!("creating temp dir {}", temp_dir.display()))?;
-
-    // If the worktree already exists from a previous run, remove it.
-    if worktree_path.exists() {
-        remove_worktree(&worktree_path, repo_root)?;
-    }
 
     let output = Command::new("git")
         .args([
@@ -40,7 +47,7 @@ pub fn create_worktree(repo_root: &Path, commit: &str, prefix: &str) -> Result<P
     Ok(worktree_path)
 }
 
-/// Remove a git worktree and prune the worktree list.
+/// Remove a git worktree, then prune stale worktree registrations.
 pub fn remove_worktree(worktree_path: &Path, repo_root: &Path) -> Result<()> {
     // Remove the worktree
     let output = Command::new("git")
@@ -65,6 +72,22 @@ pub fn remove_worktree(worktree_path: &Path, repo_root: &Path) -> Result<()> {
     // Clean up the parent temp dir if it's empty now
     if let Some(parent) = worktree_path.parent() {
         let _ = std::fs::remove_dir(parent);
+    }
+
+    prune_worktrees(repo_root)
+}
+
+/// Drop worktree registrations whose checkout directory no longer exists.
+fn prune_worktrees(repo_root: &Path) -> Result<()> {
+    let output = Command::new("git")
+        .args(["worktree", "prune"])
+        .current_dir(repo_root)
+        .output()
+        .context("git worktree prune")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("git worktree prune failed: {stderr}");
     }
 
     Ok(())
