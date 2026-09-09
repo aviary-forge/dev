@@ -92,6 +92,7 @@ in
 
       timers.gridder = {
         enable = true;
+        wantedBy = [ "timers.target" ];
         description = "Run gridder generation task daily";
         timerConfig = {
           Unit = "gridder.service";
