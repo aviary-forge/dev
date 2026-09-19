@@ -20,9 +20,9 @@ in
 dev.nix.mkPiPackage {
   pname = "pi-mcp-adapter";
   version = versions.pi-mcp-adapter;
-  # sha512 of the npm tarball, from registry.npmjs.org dist.integrity
-  srcHash = "sha256-X3t5/hGGmZZ7HFJNi7ku5ZOdEIrNk0Is7q5+sqOWMIc=";
-  npmDepsHash = "sha256-TQgQGQ3BWegALSBGqhbdg8IwppCz7mRiDuVHd11zcSc=";
+  # sha256 of the npm tarball (`nix hash file --type sha256 --base64`)
+  srcHash = "sha256-XMqQDfWXKZ45+svjt4/ye9qu6RAwV3AHdFQb+c+yYCw=";
+  npmDepsHash = "sha256-NbkcutrT1cnGssuKHW1fDuJNy7HGHuy7L11+MfycI9A=";
 
   # The npm tarball ships no package-lock.json. The vendored lockfile was
   # generated with `npm install --package-lock-only --lockfile-version 3
