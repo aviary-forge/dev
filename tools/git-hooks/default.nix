@@ -85,10 +85,16 @@ let
             types: [file]
           - id: ty-check
             name: ty
+            # Scoped to staged files: ty is fast only because it reuses its
+            # cache, but repo-wide it trips over pre-existing diagnostics in
+            # unrelated trees (users/, tools/ci), blocking every .py commit.
+            # ty check <paths> reports only those paths while still resolving
+            # modules project-wide. require_serial keeps one invocation for
+            # the whole staged set (one cache pass, consistent resolution).
             entry: ${ty}/bin/ty check
             language: system
             files: \.py$
-            pass_filenames: false
+            require_serial: true
           - id: uv-lock-check
             name: uv lock --check
             entry: ${uv}/bin/uv lock --check
