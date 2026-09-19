@@ -154,6 +154,26 @@ let
       };
     };
 
+  # pre-commit's check suite needs dotnet-sdk, which must be bootstrapped
+  # from source on darwin (pain), and is only necessary for testing.
+  #   doCheck = false     — drops the check inputs (incl. dotnet-sdk)
+  #   preCheck = ""       — package.nix exports DOTNET_ROOT unconditionally;
+  #                         the string context would keep dotnet-sdk as a
+  #                         drv input
+  #   dontUsePytestCheck  — this pin's `identify` propagates pytestCheckHook
+  #                         from `dependencies` (upstream bug), which
+  #                         registers pytestCheckPhase in preDistPhases
+  #                         regardless of doCheck; pre-commit's
+  #                         pytestFlags = [ "--forked" ] then fails without
+  #                         pytest-forked installed
+  preCommitNoChecksOverlay = final: prev: {
+    pre-commit = prev.pre-commit.overridePythonAttrs {
+      doCheck = false;
+      preCheck = "";
+      dontUsePytestCheck = true;
+    };
+  };
+
 in
 import nixpkgsSrc (
   commonNixpkgsArgs
@@ -163,6 +183,7 @@ import nixpkgsSrc (
       unstableOverlay
       nixglOverlay
       curlCffiTestSkipOverlay
+      preCommitNoChecksOverlay
       overridesOverlay
     ]
     # devOverlays controls the repo-specific dev overlays (rust/fenix).
