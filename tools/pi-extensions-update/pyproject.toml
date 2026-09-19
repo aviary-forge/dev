@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pi-extensions-update"
+version = "0.1.0"
+requires-python = ">=3.12"
+description = "Bump, add, and audit the nix-packaged pi extensions in third_party/pi-extensions"
+
+[project.scripts]
+pi-extensions-update = "pi_extensions_update.cli:main"
+
+[tool.setuptools.package-data]
+# The `add` subcommand renders this template at runtime; the nix-wrapped
+# binary imports the installed package, so it must ship as package data.
+pi_extensions_update = ["package-template.nix"]
