@@ -62,6 +62,13 @@ let
         ${name} = workspace.deps.default.${name} or [ ];
       };
       src = repoRoot + "/${memberPath}";
+      # src is the member dir alone; hand ruff the repo-root baseline
+      # explicitly (see buildPythonProject's ruffToml comment).
+      ruffToml = repoRoot + "/ruff.toml";
+      # known-first-party is maintained statically in the root ruff.toml so
+      # dev checkouts and builds classify identically from the same config.
+      # Only pass firstPartyModules for members not listed there.
+      firstPartyModules = [ ];
     };
 
   # Attrset of member-name → derivation

@@ -1,0 +1,36 @@
+# Baseline ruff config for the monorepo Python tooling.
+#
+# Lives in ruff.toml (not pyproject.toml) because buildPythonProject passes
+# it to in-build ruff via --config, which requires a pure ruff config file.
+# Discovery still finds it from member directories: ruff skips pyproject.toml
+# files without a [tool.ruff] section, then lands here.
+#
+# Individual projects can override via their own pyproject.toml [tool.ruff].
+
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "N",   # pep8-naming
+  "UP",  # pyupgrade
+  "B",   # flake8-bugbear
+  "SIM", # flake8-simplify
+  "RUF", # ruff-specific rules
+]
+
+[lint.isort]
+# One line per workspace member's module name. ruff resolves isort's
+# first-party src paths relative to the *config file's directory*, so with
+# this config discovered at the repo root, member modules are misclassified
+# third-party and import layout diverges between dev and the build. Keeping
+# the list here makes both agree deterministically. buildPythonProject can
+# still append a generated section for members not covered here.
+known-first-party = ["mono_switch", "pi_extensions_update"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
