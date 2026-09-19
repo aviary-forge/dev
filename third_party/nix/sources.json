@@ -65,10 +65,10 @@
         "homepage": null,
         "owner": "denbeigh2000",
         "repo": "fonts",
-        "rev": "d4934f86f0523868a2fef14e42b6bc5d6808a214",
-        "sha256": "09xw2333f3vf2jvbfc25hiwrhgm3gv83f1ip3gc43im4i0x0ynqv",
+        "rev": "eaeeb570e20d1485af23321cfa3b94c5b2632a47",
+        "sha256": "0l4g6igcl387qkmka3xgjhs9n8d0493vjsdhqpwg5dinj5b52i1y",
         "type": "tarball",
-        "url": "https://github.com/denbeigh2000/fonts/archive/d4934f86f0523868a2fef14e42b6bc5d6808a214.tar.gz",
+        "url": "https://github.com/denbeigh2000/fonts/archive/eaeeb570e20d1485af23321cfa3b94c5b2632a47.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "home-manager": {
