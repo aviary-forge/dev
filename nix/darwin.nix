@@ -6,6 +6,8 @@ let
     pkgs.writeShellApplication {
       name = "activate";
 
+      runtimeInputs = [ pkgs.nix ];
+
       text = ''
         if [[ "$EUID" -ne "0" ]]
         then

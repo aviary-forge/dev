@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ config, lib, ... }:
 
 {
   imports = [ ../common/graphical.nix ];
@@ -8,7 +8,8 @@
     services = {
       yabai = {
         enable = true;
-        enableScriptingAddition = true;
+        # SIP required on work machines
+        enableScriptingAddition = !config.dev.denbeigh.machine.work;
         config = {
           layout = "bsp";
         };
