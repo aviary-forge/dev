@@ -48,6 +48,7 @@ in
         home = "/Users/${cfg.user.username}";
 
         uid = 501;
+        shell = cfg.user.shell;
       };
     };
   };
