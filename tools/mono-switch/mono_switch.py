@@ -8,6 +8,7 @@ via nix-build (streaming build output) and runs the activation script via
 `sudo -H`. Works for nixos, darwin, and home-manager configs.
 """
 
+import argparse
 import os
 import shutil
 import subprocess
@@ -20,9 +21,6 @@ ROOT_KEY = "root"
 TARGET_KEY = "target"
 
 USAGE = f"""\
-usage: mono-switch [--target | -t <target>] [--build-only | -b]
-       mono-switch --help
-
 Builds <target>.activate from the monorepo and activates it. The target and
 monorepo root are cached in $MONOREPO_TARGET_FILE (default
 {DEFAULT_TARGET_FILE}), so after the first run (or any run with --target)
@@ -34,15 +32,13 @@ resolution order:
   root:   $MONOREPO_ROOT, then git (cwd), then the cached root, then
           ~/dev/dev, ~/dev
 
-options:
-  --target, -t <target>  target to build and activate; also cached for
-                         subsequent runs
-  --build-only, -b       build and print the store path without activating
-  --help, -h             show this help
-
 Activation requires root; the tool re-execs the activation script via
 `sudo -H` automatically.
 """
+
+
+class MonoSwitchError(Exception):
+    """Fatal error; main() turns this into a message and a nonzero exit."""
 
 
 def is_monorepo(candidate: Path) -> bool:
@@ -61,7 +57,7 @@ def parse_target_file(target_file: Path) -> dict[str, str]:
     try:
         lines = target_file.read_text().splitlines()
     except OSError as exc:
-        sys.exit(f"could not read {target_file}: {exc}")
+        raise MonoSwitchError(f"could not read {target_file}: {exc}") from exc
 
     entries: dict[str, str] = {}
     for line in lines:
@@ -69,10 +65,15 @@ def parse_target_file(target_file: Path) -> dict[str, str]:
         if not line or line.startswith("#"):
             continue
         key, sep, value = line.partition("=")
-        if sep and key.strip() in (ROOT_KEY, TARGET_KEY):
+        if not sep:
+            entries.setdefault(TARGET_KEY, line)
+        elif key.strip() in (ROOT_KEY, TARGET_KEY):
             entries[key.strip()] = value.strip()
         else:
-            entries.setdefault(TARGET_KEY, line)
+            raise MonoSwitchError(
+                f"{target_file}: unexpected line '{line}' "
+                f"(expected '{ROOT_KEY}=...', '{TARGET_KEY}=...', or a bare target)"
+            )
     return entries
 
 
@@ -81,7 +82,7 @@ def resolve_root(cached_root: str | None) -> tuple[Path, str]:
     if env := os.environ.get("MONOREPO_ROOT"):
         cand = Path(env)
         if not cand.is_dir() or not is_monorepo(cand):
-            sys.exit(f"MONOREPO_ROOT={env} is not a monorepo checkout")
+            raise MonoSwitchError(f"MONOREPO_ROOT={env} is not a monorepo checkout")
         return cand, "$MONOREPO_ROOT"
 
     def _homedir(suffix: str) -> Path:
@@ -116,7 +117,7 @@ def resolve_root(cached_root: str | None) -> tuple[Path, str]:
         if cand.is_dir() and is_monorepo(cand):
             return cand, source
 
-    sys.exit(
+    raise MonoSwitchError(
         "could not locate monorepo\n"
         "tried: git rev-parse --show-toplevel, the cached root, ~/dev/dev, ~/dev\n"
         "set MONOREPO_ROOT to the checkout path"
@@ -125,27 +126,25 @@ def resolve_root(cached_root: str | None) -> tuple[Path, str]:
 
 def parse_args(argv: list[str]) -> tuple[str | None, bool]:
     """Return (target_override, build_only) from argv."""
-    target: str | None = None
-    build_only = False
-    i = 0
-    while i < len(argv):
-        arg = argv[i]
-        i += 1
-        if arg in ("--help", "-h"):
-            print(USAGE, end="")
-            sys.exit(0)
-        elif arg in ("--build-only", "-b"):
-            build_only = True
-        elif arg in ("--target", "-t"):
-            if i >= len(argv):
-                sys.exit(f"mono-switch: {arg} requires a value\n\n{USAGE}")
-            target = argv[i]
-            i += 1
-        elif arg.startswith("--target="):
-            target = arg.removeprefix("--target=")
-        else:
-            sys.exit(f"mono-switch: unrecognized argument '{arg}'\n\n{USAGE}")
-    return target, build_only
+    parser = argparse.ArgumentParser(
+        prog="mono-switch",
+        description=USAGE,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--target",
+        "-t",
+        metavar="TARGET",
+        help="target to build and activate; also cached for subsequent runs",
+    )
+    parser.add_argument(
+        "--build-only",
+        "-b",
+        action="store_true",
+        help="build and print the store path without activating",
+    )
+    args = parser.parse_args(argv)
+    return args.target, args.build_only
 
 
 def _sudo_tee(target_file: Path, contents: str) -> str | None:
@@ -170,9 +169,8 @@ def write_target_file(target_file: Path, monorepo: Path, target: str) -> None:
         target_file.write_text(contents)
     except OSError:
         # Likely /etc or similar: retry through sudo.
-        err = _sudo_tee(target_file, contents)
-        if err is not None:
-            sys.exit(f"could not write {target_file}: {err}")
+        if (err := _sudo_tee(target_file, contents)) is not None:
+            raise MonoSwitchError(f"could not write {target_file}: {err}") from None
     print(f"[mono-switch] cached root and target in {target_file}")
 
 
@@ -181,7 +179,7 @@ def create_target_file(target_file: Path, monorepo: Path) -> str:
     if not sys.stdin.isatty():
         # Refuse to "prompt" from a pipe; scripts should pass the target
         # explicitly instead.
-        sys.exit(
+        raise MonoSwitchError(
             f"no target cached in {target_file} (and stdin is not a tty)\n\n"
             "pass a target on the command line:\n"
             "  mono-switch -t systems.configs.aviary\n\n"
@@ -230,58 +228,60 @@ def build_activate(monorepo: Path, target: str) -> str:
     """
     attr = target if target.endswith(".activate") else f"{target}.activate"
     print(f"[mono-switch] building {attr}...")
-    proc = subprocess.Popen(
+    proc = subprocess.run(
         ["nix-build", "--no-out-link", str(monorepo), "-A", attr],
         stdout=subprocess.PIPE,
         text=True,
     )
-    stdout, _ = proc.communicate()
     if proc.returncode != 0:
-        sys.exit(f"nix-build failed for {attr} (exit {proc.returncode})")
+        raise MonoSwitchError(f"nix-build failed for {attr} (exit {proc.returncode})")
 
-    store_path = stdout.strip()
+    store_path = proc.stdout.strip()
     if not store_path:
-        sys.exit(f"nix-build produced no store path for {attr}")
+        raise MonoSwitchError(f"nix-build produced no store path for {attr}")
     return store_path
 
 
 def main() -> None:
-    target_flag, build_only = parse_args(sys.argv[1:])
-    target_file = Path(os.environ.get("MONOREPO_TARGET_FILE", DEFAULT_TARGET_FILE))
+    try:
+        target_flag, build_only = parse_args(sys.argv[1:])
+        target_file = Path(os.environ.get("MONOREPO_TARGET_FILE", DEFAULT_TARGET_FILE))
 
-    cached = parse_target_file(target_file) if target_file.is_file() else {}
-    monorepo, root_source = resolve_root(cached.get(ROOT_KEY))
-    print(f"[mono-switch] root {monorepo} (from {root_source})")
+        cached = parse_target_file(target_file) if target_file.is_file() else {}
+        monorepo, root_source = resolve_root(cached.get(ROOT_KEY))
+        print(f"[mono-switch] root {monorepo} (from {root_source})")
 
-    target = resolve_target(target_flag, target_file, cached, monorepo)
-    store_path = build_activate(monorepo, target)
+        target = resolve_target(target_flag, target_file, cached, monorepo)
+        store_path = build_activate(monorepo, target)
 
-    # Persist the last explicitly provided root + target for next time. The
-    # interactive bootstrap already wrote the cache; cache-served runs leave
-    # it untouched.
-    if target_flag is not None:
-        write_target_file(target_file, monorepo, target)
+        # Persist the last explicitly provided root + target for next time. The
+        # interactive bootstrap already wrote the cache; cache-served runs leave
+        # it untouched.
+        if target_flag is not None:
+            write_target_file(target_file, monorepo, target)
 
-    if build_only:
-        print(store_path)
-        return
+        if build_only:
+            print(store_path)
+            return
 
-    activate_bin = Path(store_path) / "bin" / "activate"
-    if not activate_bin.is_file():
-        sys.exit(f"activation binary not found: {activate_bin}")
+        activate_bin = Path(store_path) / "bin" / "activate"
+        if not activate_bin.is_file():
+            raise MonoSwitchError(f"activation binary not found: {activate_bin}")
 
-    # Activate as root via `sudo -H`: -H sets HOME to root's so Nix doesn't
-    # warn about the invoking user's home, and the activation wrappers
-    # (nix-darwin/NixOS) need EUID 0 anyway. No env passthrough is needed —
-    # the wrapper is self-contained.
-    if os.geteuid() != 0:
-        if shutil.which("sudo") is None:
-            sys.exit("activation requires root, but sudo is not available")
-        print("[mono-switch] activating (via sudo -H)...")
-        os.execvp("sudo", ["sudo", "-H", str(activate_bin)])
+        # Activate as root via `sudo -H`: -H sets HOME to root's so Nix doesn't
+        # warn about the invoking user's home, and the activation wrappers
+        # (nix-darwin/NixOS) need EUID 0 anyway. No env passthrough is needed —
+        # the wrapper is self-contained.
+        if os.geteuid() != 0:
+            if shutil.which("sudo") is None:
+                raise MonoSwitchError("activation requires root, but sudo is not available")
+            print("[mono-switch] activating (via sudo -H)...")
+            os.execvp("sudo", ["sudo", "-H", str(activate_bin)])
 
-    print("[mono-switch] activating...")
-    os.execv(str(activate_bin), [str(activate_bin)])
+        print("[mono-switch] activating...")
+        os.execv(str(activate_bin), [str(activate_bin)])
+    except MonoSwitchError as exc:
+        sys.exit(f"mono-switch: {exc}")
 
 
 if __name__ == "__main__":

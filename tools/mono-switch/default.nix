@@ -8,7 +8,12 @@
 dev.python."mono-switch".overrideAttrs (old: {
   nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
     pkgs.makeWrapper
+    pkgs.python313Packages.pytest
   ];
+
+  preCheck = (old.preCheck or "") + ''
+    PYTHONPATH="$src" pytest -q tests
+  '';
 
   postInstall = (old.postInstall or "") + ''
     wrapProgram $out/bin/mono-switch \
