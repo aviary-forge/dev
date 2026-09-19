@@ -15,6 +15,12 @@ let
           exit 1
         fi
 
+        # sudo(8) on macOS preserves $HOME; the invoking user's home isn't
+        # owned by root, which makes Nix warn and fall back to the passwd
+        # entry. Match darwin-rebuild's behaviour and set it up front.
+        HOME=~root
+        export HOME
+
         nix-env -p /nix/var/nix/profiles/system --set ${system}
         ${system}/sw/bin/darwin-rebuild activate
       '';

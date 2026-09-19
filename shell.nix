@@ -7,17 +7,20 @@ let
   inherit (pkgs) lib;
 in
 pkgs.mkShell {
-  packages = with pkgs; [
-    stdenv.cc
-    buildkite-cli
-    nixfmt
-    fenix.latest.rustfmt
-    pre-commit
-    uv
-    ty
-    ruff
-    statix
-  ];
+  packages =
+    with pkgs;
+    [
+      stdenv.cc
+      buildkite-cli
+      nixfmt
+      fenix.latest.rustfmt
+      pre-commit
+      uv
+      ty
+      ruff
+      statix
+    ]
+    ++ [ dev.tools.mono-switch ];
 
   shellHook = ''
     ${lib.getExe dev.tools.git-hooks.setup-pre-commit}
