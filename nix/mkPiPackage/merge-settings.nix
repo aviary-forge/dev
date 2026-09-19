@@ -8,9 +8,13 @@
 # updates only the keys we manage:
 #
 #   packages: drop the REMOVE_JSON entries (the ad-hoc "npm:..." sources
-#             replaced by nix packages), then append any PACKAGES_JSON
-#             entries not already present. Existing object-form entries
-#             (pi package filters) are left untouched.
+#             replaced by nix packages), drop stale nix store-path entries
+#             that no longer match a declared package (derivation hash
+#             changed on rebuild/version bump — the old path would otherwise
+#             linger forever and conflict with the new one at extension load
+#             time), then append every PACKAGES_JSON entry exactly once.
+#             Existing object-form entries (pi package filters) are left
+#             untouched.
 #   skills:   replaced wholesale with SKILLS_JSON when non-empty.
 #
 # All other keys (lastChangelogVersion, defaultProvider, theme, ...) are
@@ -21,6 +25,11 @@
 #   PACKAGES_JSON  JSON array of package source strings (nix store paths)
 #   REMOVE_JSON    JSON array of package source strings ("npm:...") to drop
 #   SKILLS_JSON    JSON array of skill paths, or [] to leave skills untouched
+#
+# Note: PACKAGES_JSON entries are matched by exact string equality, so a
+# package whose derivation hash changes produces a different source string;
+# the old store path is pruned and the new one appended. All declared
+# entries always end up present exactly once.
 { pkgs }:
 pkgs.writeShellScript "pi-merge-settings" ''
   set -euo pipefail
@@ -46,16 +55,23 @@ pkgs.writeShellScript "pi-merge-settings" ''
      '
     . as $root
     | .packages =
-        # drop ad-hoc npm entries superseded by nix packages. NB: the element
-        # must be bound with `as` — inside `$rm | index(.)`, `.` rebinds to
-        # $rm itself and index() would match the array in itself.
         ( (($root.packages // [])
-           # drop only the ad-hoc string entries we supersede; object-form
-           # entries (pi package filters) are kept untouched
-           | map(select(type != "string" or (. as $p | $rm | index($p) | not))))
-        # append declared entries not already present (dedupe, keep order)
-        + [ $pkgs[]
-            | select(. as $p | ($root.packages // []) | index($p) | not) ] )
+           # Keep an entry only if it is an object (pi package filters,
+           # never touched) or a string that is neither a superseded ad-hoc
+           # npm entry ($rm) nor a nix store path — strings under /nix/store
+           # are pruned wholesale and re-added from the declared list below,
+           # which kills stale hashes and collapses duplicates. NB: the
+           # element must be bound with `as` — inside `$rm | index(.)`, `.`
+           # rebinds to $rm itself and index() would match the array in
+           # itself.
+           | map(select(
+               (type == "object")
+               or (. as $p
+                   | ($rm | index($p)) == null
+                     and ($p | startswith("/nix/store/") | not)))))
+           # append the declared entries, deduped, in declaration order
+           + (reduce $pkgs[] as $p
+                ([]; if (. | index($p)) == null then . + [ $p ] else . end)))
     | (if ($skills | length) > 0 then .skills = $skills else . end)
   ' "$SETTINGS_FILE" > "$tmp"
 
