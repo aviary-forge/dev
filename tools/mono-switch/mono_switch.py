@@ -14,10 +14,9 @@ from pathlib import Path
 
 def is_monorepo(candidate: Path) -> bool:
     """Check whether `candidate` looks like the dev monorepo root."""
-    return (
-        (candidate / "nix" / "readTree" / "default.nix").is_file()
-        and (candidate / "default.nix").is_file()
-    )
+    return (candidate / "nix" / "readTree" / "default.nix").is_file() and (
+        candidate / "default.nix"
+    ).is_file()
 
 
 def resolve_root() -> Path:
@@ -36,7 +35,9 @@ def resolve_root() -> Path:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0:
             git_cand = Path(result.stdout.strip())
@@ -74,7 +75,8 @@ def main() -> None:
     print(f"[mono-switch] building {attr}...")
     result = subprocess.run(
         ["nix-build", "--no-out-link", str(monorepo), "-A", attr],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     # nix-build prints the store path to stdout on success
     if result.returncode != 0:
