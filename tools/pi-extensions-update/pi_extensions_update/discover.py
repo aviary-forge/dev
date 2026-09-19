@@ -2,12 +2,11 @@
 
 A package is a subdirectory of ``third_party/pi-extensions`` whose
 ``default.nix`` calls ``mkPiPackage`` and which has an entry in
-``versions.json`` (keyed by npm name). ``pi-coding-agent-host`` is therefore
-excluded automatically: it is the wrapped host agent, not an extension.
+``versions.json`` (keyed by npm name) — which excludes pi-coding-agent-host,
+the wrapped host agent.
 
 All ``default.nix`` parsing is line-anchored within the ``mkPiPackage { ... }``
-call region — from the ``mkPiPackage`` occurrence to end of file (the call is
-the final statement in every package file) — and fails loudly on zero or
+call region (first occurrence to end of file) and fails loudly on zero or
 multiple matches. Global uniqueness of hash lines is luck, not contract.
 """
 
@@ -89,12 +88,9 @@ def _match_one(pattern: re.Pattern[str], region: str, what: str, path: Path) -> 
 def parse_default_nix(text: str, path: Path) -> NixAttrs | None:
     """Parse pname/npmName/srcHash/npmDepsHash from a mkPiPackage default.nix.
 
-    Returns None for files that do not call mkPiPackage (e.g.
-    pi-coding-agent-host, the wrapped host agent). Files that do call it must
-    contain each attribute exactly once, or ParseError is raised.
-
-    Matching is scoped to the mkPiPackage call block (from its first
-    occurrence to end of file).
+    Returns None for files that do not call mkPiPackage (e.g. the host agent);
+    each attribute must match exactly once within the call block, else
+    ParseError.
     """
     idx = text.find("mkPiPackage")
     if idx < 0:

@@ -76,8 +76,7 @@ def main() -> None:
         sys.exit(add.run(args))
     if args.command == "check":
         sys.exit(check.run(args))
-    # argparse restricts --command to the registered subparsers, so every
-    # path above covers dispatch; no fallback is reachable.
+    # argparse restricts --command to registered subparsers; nothing below is reachable.
     raise AssertionError(f"unhandled subcommand: {args.command}")
 
 

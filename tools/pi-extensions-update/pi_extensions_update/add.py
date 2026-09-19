@@ -84,8 +84,7 @@ def add_package(
         log(f"  srcHash: {src_hash}")
 
         default_nix = target / "default.nix"
-        # npmDepsHash is filled in by resolve_npm_deps_hash below; the
-        # placeholder must be a non-empty quoted string for rewrite_attr.
+        # placeholder must be a non-empty quoted string for rewrite_attr
         default_nix.write_text(render_template(npm_name, dir_name, src_hash, "PLACEHOLDER"))
         attrs = discover.parse_default_nix(default_nix.read_text(), default_nix)
         if attrs is None:
@@ -101,8 +100,7 @@ def add_package(
             default_nix=default_nix,
             pinned_version=version,
         )
-        # The pin must exist before the verify build: default.nix evaluates
-        # versions.json (same ordering as update_package).
+        # default.nix evaluates versions.json, so the pin must land first
         update.write_versions(base, npm_name, version)
         update.resolve_npm_deps_hash(pkg, root, lockfile, do_build, log)
 

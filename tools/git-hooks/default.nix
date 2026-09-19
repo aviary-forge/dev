@@ -85,12 +85,10 @@ let
             types: [file]
           - id: ty-check
             name: ty
-            # Scoped to staged files: ty is fast only because it reuses its
-            # cache, but repo-wide it trips over pre-existing diagnostics in
-            # unrelated trees (users/, tools/ci), blocking every .py commit.
-            # ty check <paths> reports only those paths while still resolving
-            # modules project-wide. require_serial keeps one invocation for
-            # the whole staged set (one cache pass, consistent resolution).
+            # Scoped to staged files: repo-wide ty trips over pre-existing
+            # diagnostics in unrelated trees (users/, tools/ci). One
+            # invocation per commit (require_serial) for consistent
+            # module resolution and a single cache pass.
             entry: ${ty}/bin/ty check
             language: system
             files: \.py$

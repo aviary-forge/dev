@@ -11,15 +11,10 @@ let
 in
 # Standardised Python project builder.
 #
-# Wraps pyproject.nix's mkApplication to produce a clean derivation from a
+# Wraps pyproject.nix's mkApplication to produce a clean derivation from the
 # shared workspace pythonSet, with ruff lint/format and ty type-checking
-# enforced during the check phase.
-#
-# Every Python tool in the monorepo gets formatting + lint enforcement
-# automatically — no separate derivation needed, no double-build cost.
-#
-# A pyproject.toml at the repo root provides the ruff config baseline;
-# individual projects can override via their own pyproject.toml.
+# enforced in the check phase. The ruff baseline lives in the repo-root
+# ruff.toml (see ruffToml below).
 {
   # pyproject.nix package derivation (from the workspace pythonSet)
   package,
@@ -27,21 +22,17 @@ in
   venv,
   # Source tree for static analysis — must contain a pyproject.toml
   src,
-  # Run the checkPhase (ruff + ty + caller preCheck). Defaults on — stdenv
-  # would otherwise silently skip the entire phase (pyproject.nix's
-  # mkApplication doesn't force it on). Projects may set false to opt out.
+  # stdenv defaults doCheck off and mkApplication doesn't force it on, so
+  # without this the whole checkPhase silently never runs.
   doCheck ? true,
   # Extra packages for the check phase (e.g. mypy, pytest)
   nativeCheckInputs ? [ ],
-  # Optional path to a baseline ruff config (e.g. the repo-root ruff.toml).
-  # src is the member directory alone, so ruff's upward discovery in the
-  # build can't see the repo root — this file is passed via --config
-  # instead (materialized to $TMPDIR, patched with firstPartyModules if
-  # set). With known-first-party pinned, --config is location-safe: the
-  # explicit list wins before isort's config-dir-relative src matching.
+  # Baseline ruff config (the repo-root ruff.toml). src is the member dir
+  # alone, so discovery can't see the repo root — pass --config instead.
+  # Location-safe because known-first-party in the baseline wins before
+  # isort's config-dir-relative src matching.
   ruffToml ? null,
-  # Extra module names for the generated [lint.isort] known-first-party
-  # section (normally unnecessary — the root ruff.toml keeps the list).
+  # Extra known-first-party entries beyond the root ruff.toml list.
   firstPartyModules ? [ ],
   # Shell snippet to run before ruff checks
   preCheck ? "",
@@ -59,11 +50,7 @@ let
     known-first-party = [${lib.concatStringsSep ", " (map (m: "\"" + m + "\"") firstPartyModules)}]
   '';
 
-  # Materialize the baseline ruff config into $TMPDIR (optionally patched
-  # with extra first-party modules) for --config. No copy of $src is
-  # needed: with cache redirection + PYTHONDONTWRITEBYTECODE + the pytest
-  # cacheprovider disabled, all check tools run read-only in place
-  # (docs/buildPythonProject-checkphase-caches.md).
+  # Config copy in $TMPDIR; store paths are read-only.
   materializeRuffConfig =
     if ruffToml == null then
       if isortToml != "" then
@@ -76,8 +63,7 @@ let
         cp ${ruffToml} "$checkCfg"
       ''
       + lib.optionalString (isortToml != "") ''
-        # The copied config inherits the store's read-only mode (444).
-        chmod u+w "$checkCfg"
+        chmod u+w "$checkCfg"  # store copy is mode 444
         cat >> "$checkCfg" <<'ISORT_EOF'
         ${isortToml}ISORT_EOF
       '';
@@ -97,12 +83,9 @@ app.overrideAttrs (old: {
     ++ nativeCheckInputs;
 
   preCheck = ''
-    # $src is a read-only store path, and the check tools want to write into
-    # the tree they check. Instead of copying the tree, redirect every
-    # writer to $TMPDIR and run in place (evidence + tool-by-tool breakdown:
-    # docs/buildPythonProject-checkphase-caches.md). --config points at the
-    # baseline ruff config rather than relying on discovery, which cannot
-    # see the repo root from inside the member store path.
+    # $src is read-only; redirect the check tools' writes (ruff/pytest
+    # caches, bytecode) to $TMPDIR and run in place. Details:
+    # docs/buildPythonProject-checkphase-caches.md
     ${materializeRuffConfig}
     cd "$src"
     export RUFF_CACHE_DIR="$TMPDIR/ruff-cache"
