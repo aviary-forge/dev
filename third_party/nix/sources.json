@@ -17,10 +17,10 @@
         "homepage": "https://crane.dev",
         "owner": "ipetkov",
         "repo": "crane",
-        "rev": "7930f6c291de6f83c257839d434592aa085f290a",
-        "sha256": "0y49sj1pn2garc7gn7424qa68xn03cz6zrfcvnjcbzsm28vdci2f",
+        "rev": "73b980519cefc727a5f6cc8e5c0947a2f9be6edd",
+        "sha256": "1agklawjcaczp41a4fxkvlvlbya8jb2k0hkrc8gcniv92v5zim4f",
         "type": "tarball",
-        "url": "https://github.com/ipetkov/crane/archive/7930f6c291de6f83c257839d434592aa085f290a.tar.gz",
+        "url": "https://github.com/ipetkov/crane/archive/73b980519cefc727a5f6cc8e5c0947a2f9be6edd.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "crate2nix": {
@@ -53,10 +53,10 @@
         "homepage": "",
         "owner": "nix-community",
         "repo": "fenix",
-        "rev": "58d7d6171b8f226fbac2eddb3adf922863f82352",
-        "sha256": "168d6kjy4imdfi90qlzvf1dsxqkfdza2dwc1r4apy3djzhhgrqb1",
+        "rev": "8a48addcc05a99a34eb7e94d3f4b39c48beb9c71",
+        "sha256": "05bqihxijjl6a1wxlsi61c0m9pr72x5wx277f6zbvic6jwiza3kx",
         "type": "tarball",
-        "url": "https://github.com/nix-community/fenix/archive/58d7d6171b8f226fbac2eddb3adf922863f82352.tar.gz",
+        "url": "https://github.com/nix-community/fenix/archive/8a48addcc05a99a34eb7e94d3f4b39c48beb9c71.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "fonts": {
@@ -65,10 +65,10 @@
         "homepage": null,
         "owner": "denbeigh2000",
         "repo": "fonts",
-        "rev": "25a437d0ccdeecc3efb2ac9d391371570caef3c7",
-        "sha256": "1zdfw4qw5dwrrjbz8w5pafkaf5ria7wl1psdg2d4gdzl563sf8lh",
+        "rev": "d4934f86f0523868a2fef14e42b6bc5d6808a214",
+        "sha256": "09xw2333f3vf2jvbfc25hiwrhgm3gv83f1ip3gc43im4i0x0ynqv",
         "type": "tarball",
-        "url": "https://github.com/denbeigh2000/fonts/archive/25a437d0ccdeecc3efb2ac9d391371570caef3c7.tar.gz",
+        "url": "https://github.com/denbeigh2000/fonts/archive/d4934f86f0523868a2fef14e42b6bc5d6808a214.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "home-manager": {
@@ -77,10 +77,10 @@
         "homepage": "https://nix-community.github.io/home-manager/",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "65258d5c65a250189fde2e35f490d15e064c4c62",
-        "sha256": "1qsx6l8z2v2rzr47chfqvmr9585lcrb2wihixbklmz63nhsba6sb",
+        "rev": "ec172013fa62135f58fb58dd17ae9651e8f39727",
+        "sha256": "02mrnlirg3jxqfgkv3jh8ar9hqiwhwqq9m7n5jv5hq40vjzq2s1d",
         "type": "tarball",
-        "url": "https://github.com/nix-community/home-manager/archive/65258d5c65a250189fde2e35f490d15e064c4c62.tar.gz",
+        "url": "https://github.com/nix-community/home-manager/archive/ec172013fa62135f58fb58dd17ae9651e8f39727.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixgl": {
@@ -101,10 +101,10 @@
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "a5cc6f2c37bf518436dc8d1c288ccd0c43c2f4c4",
-        "sha256": "15gl76i4rq9q4744zsskc2avzx1di6x6179kywm5iii29jhzarxg",
+        "rev": "cf9d2fb3e50fa1cd5114c47505ea9177f7ff5f49",
+        "sha256": "16fa6vir35h0pajdrs1ws7d3ly28ifks2g9y67y3j7zw1hqyqm3h",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/a5cc6f2c37bf518436dc8d1c288ccd0c43c2f4c4.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/cf9d2fb3e50fa1cd5114c47505ea9177f7ff5f49.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "e9183409c2be80e2cd9d633582fdab543bb8d084"
     },
@@ -114,10 +114,10 @@
         "homepage": "",
         "owner": "nix-community",
         "repo": "nixpkgs-terraform-providers-bin",
-        "rev": "4ff8b52d609815d152011fad300c443369ed3e7a",
-        "sha256": "0bxcxflmydzqf1qsi89ik98i403cg5fya4lzvs4qlyljdk3i4x90",
+        "rev": "6f5dbe9186d4a26da7c8a554b45260aa95e24add",
+        "sha256": "0i7s50xaz7w18ikqg0qvdmwllpcb2dwyi0bsfz7sk6bd40xs3y7k",
         "type": "tarball",
-        "url": "https://github.com/nix-community/nixpkgs-terraform-providers-bin/archive/4ff8b52d609815d152011fad300c443369ed3e7a.tar.gz",
+        "url": "https://github.com/nix-community/nixpkgs-terraform-providers-bin/archive/6f5dbe9186d4a26da7c8a554b45260aa95e24add.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "3d9d667c5f669d4b93a86a42650aa78d06df16d5"
     },
@@ -127,10 +127,10 @@
         "homepage": "",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
-        "sha256": "061x1hflyz80rfmzs3vp4kaf29i8qdsw8pasczyyabn7dd7j61pd",
+        "rev": "20b1ddd1aa5ace70c9468305030aa4f9ef79671b",
+        "sha256": "17c8rash8751zwzq426b54754znickr50nwd4ziq4pklm0pid3h7",
         "type": "tarball",
-        "url": "https://github.com/nixos/nixpkgs/archive/c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/20b1ddd1aa5ace70c9468305030aa4f9ef79671b.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixvim": {
@@ -139,10 +139,10 @@
         "homepage": "https://nix-community.github.io/nixvim",
         "owner": "nix-community",
         "repo": "nixvim",
-        "rev": "e2c3f9f36326d07340626847543c557e2b95fb50",
-        "sha256": "1ar9v173j513d2h6fn52zz9ymx3yysd08x2dw9awcpvd9xi7j638",
+        "rev": "0043fc97e267fee06ac0d858399ff6fac4242a92",
+        "sha256": "10ags2rpyw7igxddlsp4z5lc3a80yf66apphxy0fkqdipcs1bnr4",
         "type": "tarball",
-        "url": "https://github.com/nix-community/nixvim/archive/e2c3f9f36326d07340626847543c557e2b95fb50.tar.gz",
+        "url": "https://github.com/nix-community/nixvim/archive/0043fc97e267fee06ac0d858399ff6fac4242a92.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "opam2nix": {
@@ -158,7 +158,7 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "pnpm2nix-nzbr": {
-        "branch": "master",
+        "branch": "main",
         "description": "Build pnpm packages with Nix",
         "homepage": "https://github.com/FliegendeWurst/pnpm2nix-nzbr",
         "owner": "FliegendeWurst",
@@ -170,39 +170,39 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "pyproject-build-systems": {
-        "branch": "main",
+        "branch": "master",
         "description": "Build system dependency packages for pyproject.nix",
         "homepage": "https://github.com/pyproject-nix/build-system-pkgs",
         "owner": "pyproject-nix",
         "repo": "build-system-pkgs",
-        "rev": "5c4cc964cfb1e3cab9134dabe2d86bc4858f3867",
-        "sha256": "1ydwmqhx2gmsbhjp3219sp4s69dldsjwvkgdnwj5bn3cr2ia76pb",
+        "rev": "e97f24221b3e1b9a6b492a7137b499031be6f078",
+        "sha256": "15qgdqa2si82zwy9awik1nmlzgvrpdmp6ibi66c6fs44ji4hlg9s",
         "type": "tarball",
-        "url": "https://github.com/pyproject-nix/build-system-pkgs/archive/5c4cc964cfb1e3cab9134dabe2d86bc4858f3867.tar.gz",
+        "url": "https://github.com/pyproject-nix/build-system-pkgs/archive/e97f24221b3e1b9a6b492a7137b499031be6f078.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "pyproject-nix": {
-        "branch": "main",
+        "branch": "master",
         "description": "Nix tooling for Python projects & metadata",
         "homepage": "https://pyproject-nix.github.io/pyproject.nix/",
         "owner": "pyproject-nix",
         "repo": "pyproject.nix",
-        "rev": "e3b599ca2e7fcf93d4edf65d7f19bbf6491724f3",
-        "sha256": "1csknfjk7yv95lrdl4844zpzzd6qjmgynk6n003fyikb7ilddzyc",
+        "rev": "6a8a7881d75b6f98967e7b8069f4ead331384301",
+        "sha256": "1grz8w8x6pznvlnvn292d8a9rb0ii7kwgid1a53fbmd6gk8qz0y5",
         "type": "tarball",
-        "url": "https://github.com/pyproject-nix/pyproject.nix/archive/e3b599ca2e7fcf93d4edf65d7f19bbf6491724f3.tar.gz",
+        "url": "https://github.com/pyproject-nix/pyproject.nix/archive/6a8a7881d75b6f98967e7b8069f4ead331384301.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "uv2nix": {
-        "branch": "main",
+        "branch": "master",
         "description": "Ingest uv workspaces using Nix",
         "homepage": "https://pyproject-nix.github.io/uv2nix/",
         "owner": "pyproject-nix",
         "repo": "uv2nix",
-        "rev": "49dac8d206c42175b069b7c6050ba27060a21106",
-        "sha256": "19y6hgc60vix6s0607vbzhvjjqi9i5w7gbj842yqsfwqshaaxxxq",
+        "rev": "079be4e68c529c4cbc44dbf1afc692e4b30695b3",
+        "sha256": "0a3c7wkpyxc8p75ki6kh53942lfcq577f8vvbrny9zvbhn034fgq",
         "type": "tarball",
-        "url": "https://github.com/pyproject-nix/uv2nix/archive/49dac8d206c42175b069b7c6050ba27060a21106.tar.gz",
+        "url": "https://github.com/pyproject-nix/uv2nix/archive/079be4e68c529c4cbc44dbf1afc692e4b30695b3.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
