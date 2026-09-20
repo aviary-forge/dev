@@ -137,8 +137,21 @@ let
     final: prev:
     let
       mkLlama = import ../overrides/llama-cpp.nix;
+
+      # Wrap an mkShell-family constructor so its results carry the CI
+      # discovery marker.
+      mkStampedShell =
+        mkShell': args:
+        (mkShell' args).overrideAttrs (old: {
+          passthru = old.passthru or { } // {
+            __devAttrType = "shell";
+          };
+        });
     in
     {
+      # Stamp shells so we can enumerate them for CI.
+      mkShell = args: mkStampedShell prev.mkShell args;
+      mkShellNoCC = args: mkStampedShell prev.mkShellNoCC args;
 
       llama-cpp-server = mkLlama {
         inherit (prev) llama-cpp fetchFromGitHub;

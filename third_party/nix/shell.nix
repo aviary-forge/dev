@@ -1,5 +1,6 @@
 {
   dev ? import ../.. { },
+  ...
 }:
 
 let
@@ -10,4 +11,6 @@ mkShell {
   packages = [
     niv
   ];
+
+  meta.owners = with dev.members; [ denbeigh ];
 }

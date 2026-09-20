@@ -23,6 +23,7 @@ fn type_badge(attr_type: &Option<String>) -> &'static str {
         Some("darwin-system") => ":mac:",
         Some("home-manager-system") => ":house_with_garden:",
         Some("formatting-check") => ":mag:",
+        Some("shell") => ":shell:",
         _ => ":package:",
     }
 }

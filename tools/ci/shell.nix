@@ -1,5 +1,6 @@
 {
   dev ? import ../.. { },
+  ...
 }:
 
 # nix-repl> third_party.nixpkgs.fenix.stable.

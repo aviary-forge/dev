@@ -1,5 +1,6 @@
 {
   dev ? import ./. { },
+  ...
 }:
 
 let
@@ -12,4 +13,5 @@ pkgs.mkShell {
 
     dev.rust.regenerate
   ];
+  meta.owners = with dev.members; [ denbeigh ];
 }

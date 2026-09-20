@@ -132,5 +132,10 @@ crates
   inherit regenerate;
   __readTreeChildrenOverride = crates // {
     inherit regenerate;
+
+    # Sibling shell.nix, imported explicitly: __readTreeChildrenOverride
+    # replaces the children readTree would otherwise derive (which would
+    # have picked up the sibling automatically).
+    shell = import ./shell.nix { inherit (args) dev; };
   };
 }

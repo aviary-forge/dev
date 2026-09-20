@@ -96,5 +96,7 @@ in
       echo ""
       echo "Run 'tofu plan' to check changes, 'tofu apply' to apply."
     '';
+
+    meta.owners = with members; [ denbeigh ];
   };
 }

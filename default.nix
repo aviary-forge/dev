@@ -41,10 +41,11 @@ readTree.fix (
     pkgs = self.third_party.nixpkgs;
     lib = self.third_party.nixpkgs.lib;
 
-    # Convenience/nice to have this at a top level
     members = import ./members.nix;
   })
-  // rec {
+  // {
+    # Convenience/nice to have this at a top level
+    members = import ./members.nix;
 
     # Only git-tracked files. Any system referencing dev.path (nixos
     # activation copies, the NIX_PATH <nixpkgs> shim) copies this into the
@@ -139,6 +140,8 @@ readTree.fix (
             target: target ? __devAttrType && target.__devAttrType == "home-manager-system"
           );
         };
+
+        shells = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "shell");
 
         # Static-analysis / meta checks (formatting, linting, etc.).
         # Use `ci.checks.formatting.targets` to get all formatting-check targets.
