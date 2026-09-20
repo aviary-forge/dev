@@ -1,7 +1,7 @@
 { pkgs, dev, ... }:
 
 {
-  imports = [ ../../../modules/nixos/docker.nix ];
+  imports = [ ../../../../modules/nixos/docker.nix ];
 
   environment.systemPackages = with pkgs; [
     dev.third_party.agenix.cli
