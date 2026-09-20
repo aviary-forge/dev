@@ -1,6 +1,7 @@
 # Client-side config for the personal nix cache. Subtly different from
 # dev.denbeigh.services.nix-cache (the serve-side module, NixOS-only).
 {
+  config,
   pkgs,
   lib,
   ...
