@@ -13,7 +13,7 @@ let
 in
 {
   imports = [
-    ../../../../modules/nixos/reverse-proxy
+    ../../../../modules/reverse-proxy
     ./transmission.nix
   ];
 
