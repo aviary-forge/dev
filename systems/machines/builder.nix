@@ -7,7 +7,7 @@ dev.nix.darwin.eval {
     {
       imports = [
         ../../users/denbeigh/profiles/darwin.nix
-        ../../modules/darwin/nix-maintenance.nix
+        ../../modules/nix-maintenance
       ];
       config = {
         dev.denbeigh = {
