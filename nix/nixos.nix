@@ -20,8 +20,8 @@ let
       '';
     };
 
-  baseModule = _: {
-    nixpkgs.pkgs = dev.third_party.nixpkgs;
+  mkBaseModule = pkgs': {
+    nixpkgs.pkgs = pkgs';
 
     # ad-hoc tooling (nix-shell -p, nix-build '<nixpkgs>') resolves to the
     # monorepo's pinned, overlaid nixpkgs — the same set the system is built
@@ -36,9 +36,8 @@ let
   };
 
 in
-
 {
-  inherit baseModule;
+  inherit mkBaseModule;
 
   # eval: produce a NixOS system target.
   #
@@ -64,18 +63,35 @@ in
       meta ? { },
     }:
     let
+      # Cross-eval: when forcing a machine fixpoint whose platform differs
+      # from the eval host, re-import the pinned nixpkgs for the machine's
+      # platform. Otherwise every `pkgs.stdenv.hostPlatform` guard in
+      # modules/ sees the *host's* platform (e.g. darwin-only modules get
+      # imported into a NixOS machine, setting launchd-only options), and
+      # the derived-system check below fails. Pure evaluation only — the
+      # derivations still build on/for the target platform.
+      targetPkgs =
+        if system == pkgs.system then
+          pkgs
+        else
+          import (dev.path + "/third_party/nixpkgs") { localSystem = system; };
+
       nixosEval = dev.third_party.nixos {
         configuration =
           { ... }:
           {
             imports = [
-              baseModule
+              (mkBaseModule targetPkgs)
               configuration
             ];
           };
 
+        # NB: specialArgs.pkgs shadows the module system's pkgs resolution;
+        # that's intentional (see the nixpkgs specialArgs warning) — modules
+        # must see the same pkgs set that nixpkgs.pkgs pins.
         specialArgs = {
-          inherit dev pkgs;
+          inherit dev;
+          pkgs = targetPkgs;
         };
       };
 
