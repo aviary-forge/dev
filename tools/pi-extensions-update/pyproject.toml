@@ -14,4 +14,4 @@ pi-extensions-update = "pi_extensions_update.cli:main"
 [tool.setuptools.package-data]
 # The `add` subcommand renders this template at runtime; the nix-wrapped
 # binary imports the installed package, so it must ship as package data.
-pi_extensions_update = ["package-template.nix"]
+pi_extensions_update = ["package-template.nix.in"]
