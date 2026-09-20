@@ -4,6 +4,7 @@
 # darwin, launchd coalesces missed calendar intervals into one run at wake,
 # so no persistence knob exists or is needed.
 {
+  config,
   pkgs,
   lib,
   ...
