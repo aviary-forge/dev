@@ -31,23 +31,35 @@ in
     };
 
     url = mkOption {
-      type = types.str;
-      default = "https://nix-cache.denbeigh.cloud";
+      type = types.nullOr types.str;
+      default = null;
       description = ''
-        URL of our nix cache.
+        URL of the nix cache. Required when enable is set; supplied by
+        the persona layer.
       '';
     };
 
     publicKey = mkOption {
-      type = types.str;
-      default = "nix-cache.denbeigh.cloud-1:UeYPpNKlT8gTl7jRqOb+hawFbI5B20pPfSUbpWvSe9U=";
+      type = types.nullOr types.str;
+      default = null;
       description = ''
-        Public key of our nix cache for trusting purposes.
+        Public key of the nix cache for trusting purposes. Required when
+        enable is set; supplied by the persona layer.
       '';
     };
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.url != null && cfg.publicKey != null;
+        message = ''
+          dev.denbeigh.nix-cache: url and publicKey must be set when the
+          client-side cache is enabled.
+        '';
+      }
+    ];
+
     nix.settings = {
       # Sometimes we may not be connected to Tailscale.
       connect-timeout = 3;
