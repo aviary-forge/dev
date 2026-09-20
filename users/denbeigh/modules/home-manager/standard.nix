@@ -88,8 +88,19 @@ in
   };
 
   config = {
-    # Home Manager needs a bit of information about you and the
-    # paths it should manage.
+    # Default pi extension set; machines may override or extend.
+    programs.pi-coding-agent.myPackages = with dev.third_party.pi-extensions; [
+      context-mode
+      pi-intercom
+      pi-mcp-adapter
+      pi-prompt-template-model
+      pi-subagents
+      pi-rewind
+      plannotator
+      rpiv-ask-user-question
+      rpiv-todo
+    ];
+
     home = {
       inherit username;
       homeDirectory = lib.mkDefault (if isDarwin then "/Users/${username}" else "/home/${username}");
