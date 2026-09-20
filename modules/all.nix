@@ -5,20 +5,22 @@
 # darwin.nix), imported only on that platform, so foreign eval contexts
 # never see undeclared options. modules/common is excluded: always-on
 # base that depends on persona options.
+#
+# Plain attrset, no function args: module arguments are evaluated during
+# the module fixpoint and cause infinite recursion here.
 {
-  excluded ? [ "common" ],
-  lib,
-  ...
-}:
+  imports =
+    let
+      # Always-on base (depends on persona options), imported explicitly
+      # by the profiles instead.
+      excluded = [ "common" ];
 
-let
-  featureDirs = lib.filterAttrs (
-    name: type:
-    type == "directory"
-    && builtins.pathExists (./. + "/${name}/default.nix")
-    && !builtins.elem name excluded
-  ) (builtins.readDir ./.);
-in
-{
-  imports = map (name: ./. + "/${name}") (builtins.attrNames featureDirs);
+      entries = builtins.readDir ./.;
+      isFeature =
+        name:
+        !(builtins.elem name excluded)
+        && entries.${name} == "directory"
+        && builtins.pathExists (./. + "/${name}/default.nix");
+    in
+    map (name: ./. + "/${name}") (builtins.filter isFeature (builtins.attrNames entries));
 }
