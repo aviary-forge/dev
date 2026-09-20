@@ -8,6 +8,7 @@
 {
   excluded ? [ "common" ],
   lib,
+  ...
 }:
 
 let
