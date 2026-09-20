@@ -14,16 +14,16 @@ in
   imports = [
     (dev.third_party.agenix.src + "/modules/age.nix")
 
-    ../common/standard.nix
-    ../common/variables.nix
-    ./denbeigh.nix
-    ./utils.nix
-    ./graphical.nix
+    ../../../modules/common/standard.nix
+    ../modules/common/variables.nix
+    ../modules/nixos/denbeigh.nix
+    ../modules/nixos/utils.nix
+    ../modules/nixos/graphical.nix
     ../../../modules/nixos/use-nix-cache.nix
 
     # Disabled by default
     ../../../modules/nixos/ssh.nix
-    ./webcam.nix
+    ../modules/nixos/webcam.nix
   ];
 
   options.dev.denbeigh.machine = {

@@ -62,7 +62,7 @@ in
       useUserPackages = true;
 
       users.${cfg.user.username} = {
-        imports = [ ../home-manager/standard.nix ];
+        imports = [ ../../profiles/home-manager.nix ];
 
         dev.denbeigh = {
           machine = {

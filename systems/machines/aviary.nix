@@ -16,7 +16,7 @@ dev.nix.nixos.eval {
     {
       imports = [
         # Personal NixOS standard module chain (agenix, user, home-manager, common config)
-        ../../users/denbeigh/modules/nixos/standard.nix
+        ../../users/denbeigh/profiles/nixos.nix
 
         # Services
         ../../modules/nixos/tailscale.nix

@@ -12,13 +12,13 @@ let
 in
 {
   imports = [
-    ./graphical.nix
-    # ./use-nix-cache.nix
-    ./home.nix
-    ./system-options.nix
-    # ./upload-daemon.nix
-    ../common/standard.nix
-    ../common/variables.nix
+    ../modules/nix-darwin/graphical.nix
+    # ../../../modules/darwin/use-nix-cache.nix (stub, disabled)
+    ../modules/nix-darwin/home.nix
+    ../modules/nix-darwin/system-options.nix
+    # ../modules/nix-darwin/upload-daemon.nix
+    ../../../modules/common/standard.nix
+    ../modules/common/variables.nix
     ../../../modules/common/tailscale.nix
   ];
 

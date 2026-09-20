@@ -12,7 +12,7 @@ mkConfig {
       { ... }:
 
       {
-        imports = [ ../../users/denbeigh/modules/home-manager/standard.nix ];
+        imports = [ ../../users/denbeigh/profiles/home-manager.nix ];
         config.dev.denbeigh.machine = {
           username = "discord";
           hostname = "denbeigh";

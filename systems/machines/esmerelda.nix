@@ -10,7 +10,7 @@ dev.nix.nixos.eval {
     }:
     {
       imports = [
-        ../../users/denbeigh/modules/nixos/standard.nix
+        ../../users/denbeigh/profiles/nixos.nix
       ];
 
       config = {

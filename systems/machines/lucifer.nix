@@ -5,7 +5,7 @@ dev.nix.darwin.eval {
     { pkgs, ... }:
     {
       imports = [
-        ../../users/denbeigh/modules/nix-darwin/standard.nix
+        ../../users/denbeigh/profiles/darwin.nix
       ];
       config = {
         dev.denbeigh = {

@@ -13,15 +13,15 @@ let
 in
 {
   imports = [
-    ./dev.nix
-    ./git.nix
-    ./htop.nix
-    ./zsh
-    ./graphical.nix
-    ./pi.nix
-    ./scripts.nix
-    ./use-nix-cache.nix
-    ./webcam.nix
+    ../modules/home-manager/dev.nix
+    ../modules/home-manager/git.nix
+    ../modules/home-manager/htop.nix
+    ../modules/home-manager/zsh
+    ../modules/home-manager/graphical.nix
+    ../modules/home-manager/pi.nix
+    ../modules/home-manager/scripts.nix
+    ../modules/home-manager/use-nix-cache.nix
+    ../modules/home-manager/webcam.nix
   ];
 
   options.dev.denbeigh = {

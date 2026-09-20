@@ -11,7 +11,6 @@ let
     denbeigh = ./denbeigh.nix;
     development = ./development.nix;
     gaming = ./gaming.nix;
-    standard = ./standard.nix;
     terraform = ./terraform.nix;
     update-fonts = ./update-fonts.nix;
   };
