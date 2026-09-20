@@ -6,8 +6,23 @@
 }:
 
 let
-  inherit (builtins) toString;
+  inherit (builtins) toString listToAttrs map;
   cfg = config.services.dev.ci;
+
+  # GraphQL API token for ci-orchestrator's parent-drvmap artifact lookup.
+  # Optional: agents only need it if the orchestrator should recover parent
+  # drvmaps from previous builds' artifacts. Exported via the agent's
+  # "environment" hook (this nixpkgs pin has no per-agent env option), and
+  # readable by agent users through the ci group on the agenix secret.
+  graphqlTokenHook =
+    if cfg.graphqlTokenPath != null then
+      {
+        environment = ''
+          export BUILDKITE_TOKEN_PATH="${cfg.graphqlTokenPath}"
+        '';
+      }
+    else
+      { };
 
   mkAgent = n: {
     name = "aviary-worker-${toString n}";
@@ -19,6 +34,8 @@ let
         privateSshKeyPath
         ;
       extraGroups = [ cfg.groupName ];
+
+      hooks = graphqlTokenHook;
 
       tags = {
         arch = pkgs.stdenvNoCC.hostPlatform.parsed.cpu.name;
@@ -42,7 +59,6 @@ let
     };
   };
 
-  inherit (builtins) listToAttrs map;
   inherit (lib.lists) range;
   inherit (lib.modules) mkIf;
 

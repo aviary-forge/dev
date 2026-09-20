@@ -139,6 +139,24 @@ changes between pushes, the old cached entry is treated as stale and
 re-evaluated.  The base commit's Nix code is already pinned by the
 commit SHA — no need to hash the entire worktree.
 
+**Buildkite artifact fallback** (`src/buildkite.rs`): on a local cache miss,
+pipeline-gen queries the Buildkite GraphQL API for recent trunk builds (last
+50, states RUNNING/PASSED) whose `pipeline-gen` step uploaded
+`pipeline/drvmap.json`, and accepts the first build whose **commit exactly
+matches the merge-base SHA**.drvPath diffing requires identical evaluation
+inputs, so a merely-close commit would spuriously mark everything changed —
+no fuzzy matching. The artifact is validated the same way as the local cache:
+`git show <commit>:tools/ci/drvmap.nix` must byte-equal the current checkout's
+entry point. On a hit, the map is also stored into the local cache so later
+pushes skip the GraphQL round trip. Falls through to the worktree eval on any
+error. Requires `BUILDKITE_ORGANIZATION_SLUG`/`BUILDKITE_PIPELINE_SLUG` (set
+on Buildkite agents) and an API token at `BUILDKITE_TOKEN_PATH` (local
+fallback: `~/buildkite-token`). On NixOS agents the CI module exports this
+via the agent's `environment` hook, pointing at the `buildkite-graphql-token`
+agenix secret — a GraphQL API token, distinct from the agent registration
+token. Adapted from the legacy `fetch-parent-targets` task, which this
+replaces.
+
 **Trunk caching**: When `BUILDKITE_BRANCH` is `"trunk"`, the
 orchestrator also caches the HEAD drvmap under its own commit SHA (via
 `git rev-parse HEAD`).  This way a feature branch whose merge-base is
