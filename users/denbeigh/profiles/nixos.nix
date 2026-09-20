@@ -19,7 +19,7 @@ in
     ../modules/nixos/denbeigh.nix
     ../modules/nixos/utils.nix
     ../modules/nixos/graphical.nix
-    ../../../modules/nixos/use-nix-cache.nix
+    ../../../modules/use-nix-cache
 
     # Disabled by default
     ../../../modules/nixos/ssh.nix

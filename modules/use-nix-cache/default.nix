@@ -1,16 +1,28 @@
-{ config, lib, ... }:
+# Client-side config for the personal nix cache. Subtly different from
+# dev.denbeigh.services.nix-cache (the serve-side module, NixOS-only).
+{
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   inherit (lib) mkIf mkOption types;
 
   cfg = config.dev.denbeigh.nix-cache;
+
+  # pkgs, not config: reading config in imports recurses; the repo doesn't
+  # cross-eval, so pkgs' hostPlatform always matches the target machine.
+  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
 in
 {
-  # NOTE: Subtly different from denbeigh.services.nix-cache
+  imports = lib.optionals (!isDarwin) [ ./nixos.nix ];
+
   options.dev.denbeigh.nix-cache = {
     enable = mkOption {
       type = types.bool;
-      # This is overridden in OS-specific modules that import this module.
+      # On NixOS, ./nixos.nix defaults this to the inverse of the
+      # serve-side toggle.
       default = false;
       description = ''
         Whether to enable personal nix cache.
