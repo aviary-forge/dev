@@ -1,7 +1,7 @@
 { dev, ... }:
 
 let
-  inherit (dev.users.denbeigh.systems.home-manager.lib) mkConfig;
+  inherit (dev.systems.home-manager.lib) mkConfig;
 in
 mkConfig {
   # system = "x86_64-linux";
@@ -12,7 +12,7 @@ mkConfig {
       { ... }:
 
       {
-        imports = [ ../../modules/home-manager/standard.nix ];
+        imports = [ ../../users/denbeigh/modules/home-manager/standard.nix ];
         config.dev.denbeigh.machine = {
           username = "discord";
           hostname = "denbeigh";
