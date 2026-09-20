@@ -9,7 +9,7 @@ use crate::drvmap::Drvmap;
 
 /// Path to the Nix expression that produces a drvmap.
 /// Relative to the repo root.
-const DRVMAP_EXPR: &str = "tools/ci/drvmap.nix";
+pub const DRVMAP_EXPR: &str = "tools/ci/drvmap.nix";
 
 /// Run `nix eval --json -f <expr> drvmap` in the given directory
 /// and parse the JSON output into a Drvmap.
