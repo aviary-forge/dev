@@ -17,10 +17,7 @@ in
       # Needed to grant any access over SSH at all
       isNormalUser = true;
       group = "nix-copy-receiver";
-      openssh.authorizedKeys.keys = [
-        # SSH Key to permit remote build uploads to service user
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHn3tzQJW1Fwt3n5xSK+V6MhS7ULddEW0mTNcrigHbp0"
-      ];
+      openssh.authorizedKeys.keys = cfg.receiverAuthorizedKeys;
     };
     users.groups.nix-copy-receiver = { };
 

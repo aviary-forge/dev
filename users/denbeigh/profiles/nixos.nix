@@ -54,5 +54,13 @@ in
       age.secrets.tailscaleAuthKey.file = dev.secrets."tailscaleAuthKey.age";
       dev.denbeigh.tailscale.authKeyFile = config.age.secrets.tailscaleAuthKey.path;
     })
+
+    # persona value for the universal nix-cache serve-side module: the
+    # remote-build upload key
+    {
+      dev.denbeigh.services.nix-cache.receiverAuthorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHn3tzQJW1Fwt3n5xSK+V6MhS7ULddEW0mTNcrigHbp0"
+      ];
+    }
   ];
 }

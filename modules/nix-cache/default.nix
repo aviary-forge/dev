@@ -16,5 +16,14 @@
         Key file to authenticate requests from cache.
       '';
     };
+
+    receiverAuthorizedKeys = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        SSH keys permitted to upload to the cache (the nix-copy-receiver
+        user).
+      '';
+    };
   };
 }
