@@ -98,6 +98,7 @@ in
       plannotator
       rpiv-ask-user-question
       rpiv-todo
+      pi-spinner
     ];
 
     home = {
