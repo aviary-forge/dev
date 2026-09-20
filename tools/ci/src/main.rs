@@ -12,6 +12,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
 mod annotation;
+mod buildkite;
 mod cache;
 mod drvmap;
 mod git;
@@ -185,45 +186,62 @@ fn cmd_pipeline_gen(
         .ok();
     let cache = cache::DrvmapCache::open();
 
-    // Instantiate drvmap at base commit: cache first, worktree eval fallback.
+    // Instantiate drvmap at base commit: local cache, then a previous
+    // Buildkite build's uploaded artifact (exact commit match), then the
+    // worktree eval as the correctness backstop.
     let parent_drvmap = match cache.load(&base_commit, entry_point.as_deref()) {
         Some(cached) => {
             tracing::info!("parent drvmap cache hit for {base_commit}");
             cached
         },
-        None => {
-            // Create a worktree at the base commit
-            tracing::info!("parent drvmap cache miss; evaluating base commit in worktree");
-            let worktree = git::create_worktree(repo_root, &base_commit, "base")?;
+        None => match buildkite::fetch_drvmap(
+            repo_root,
+            trunk_branch.strip_prefix("origin/").unwrap_or(trunk_branch),
+            &base_commit,
+            entry_point.as_deref(),
+        ) {
+            Some(remote) => {
+                // Populate the local cache so later pushes skip the lookup.
+                cache.store(&base_commit, entry_point.as_deref(), &remote);
+                remote
+            },
+            None => {
+                // Create a worktree at the base commit
+                tracing::info!("parent drvmap cache miss; evaluating base commit in worktree");
+                let worktree = git::create_worktree(repo_root, &base_commit, "base")?;
 
-            // Fail-open: if the base commit can't be evaluated (e.g. trunk
-            // history contains a commit that breaks full-tree eval), fall back
-            // to an empty parent map. The diff then treats every current
-            // target as added, so CI builds everything instead of refusing to
-            // generate a pipeline. This is the right failure direction for a
-            // skip-optimization: an overly broad build is wasted compute, a
-            // missing build is a broken trunk.
-            //
-            // NB: until a fixing commit lands in trunk, the merge-base is
-            // fixed history, so the base eval keeps failing no matter what the
-            // branch does — the fallback fires for every descendant PR in that
-            // window.
-            let parent_drvmap = match instantiate::instantiate_drvmap(repo_root, Some(&worktree)) {
-                Ok(drvmap) => {
-                    cache.store(&base_commit, entry_point.as_deref(), &drvmap);
-                    drvmap
-                },
-                Err(err) => {
-                    tracing::warn!(
-                        "base-commit drvmap eval failed, building everything (fail-open): {err:#}"
-                    );
-                    drvmap::Drvmap::new()
-                },
-            };
+                // Fail-open: if the base commit can't be evaluated (e.g. trunk
+                // history contains a commit that breaks full-tree eval), fall back
+                // to an empty parent map. The diff then treats every current
+                // target as added, so CI builds everything instead of refusing to
+                // generate a pipeline. This is the right failure direction for a
+                // skip-optimization: an overly broad build is wasted compute, a
+                // missing build is a broken trunk.
+                //
+                // NB: until a fixing commit lands in trunk, the merge-base is
+                // fixed history, so the base eval keeps failing no matter what the
+                // branch does — the fallback fires for every descendant PR in that
+                // window.
+                let parent_drvmap = match instantiate::instantiate_drvmap(
+                    repo_root,
+                    Some(&worktree),
+                ) {
+                    Ok(drvmap) => {
+                        cache.store(&base_commit, entry_point.as_deref(), &drvmap);
+                        drvmap
+                    },
+                    Err(err) => {
+                        tracing::warn!(
+                            "base-commit drvmap eval failed, building everything (fail-open): {err:#}"
+                        );
+                        drvmap::Drvmap::new()
+                    },
+                };
 
-            // Clean up the worktree
-            git::remove_worktree(&worktree, repo_root)?;
-            parent_drvmap
+                // Clean up the worktree
+                git::remove_worktree(&worktree, repo_root)?;
+                parent_drvmap
+            },
         },
     };
     tracing::info!("parent drvmap has {} targets", parent_drvmap.len());

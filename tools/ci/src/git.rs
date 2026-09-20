@@ -183,6 +183,24 @@ pub fn merge_base(repo_root: &Path, rev: &str) -> Result<String> {
         .ok_or_else(|| anyhow::anyhow!("empty output from git merge-base"))
 }
 
+/// Read a file's contents at a revision, via `git show <rev>:<path>`.
+/// Returns raw bytes; the caller owns UTF-8 interpretation.
+pub fn show_file(repo_root: &Path, rev: &str, path: &str) -> Result<Vec<u8>> {
+    let rev_path = format!("{rev}:{path}");
+    let output = Command::new("git")
+        .args(["show", &rev_path])
+        .current_dir(repo_root)
+        .output()
+        .with_context(|| format!("git show {rev_path}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("git show {rev_path} failed: {stderr}");
+    }
+
+    Ok(output.stdout)
+}
+
 /// Committer timestamp of a commit, via `git show -s --format=%ct`.
 fn commit_time(repo_root: &Path, sha: &str) -> Result<i64> {
     let output = Command::new("git")
