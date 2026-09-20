@@ -8,8 +8,7 @@
     services = {
       yabai = {
         enable = true;
-        # SIP required on work machines
-        enableScriptingAddition = !config.dev.denbeigh.machine.work;
+        enableScriptingAddition = true;
         config = {
           layout = "bsp";
         };

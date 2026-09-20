@@ -17,6 +17,7 @@ in
     ../../../modules/all.nix
     ../../../modules/common/standard.nix
     ../modules/common/variables.nix
+    ../modules/common/work.nix
     ../modules/nixos/denbeigh.nix
     ../modules/nixos/utils.nix
     ../modules/nixos/graphical.nix
@@ -39,7 +40,7 @@ in
       # utils.nix); kept explicit now that modules/docker is enable-gated
       dev = {
         docker.enable = true;
-        nix-cache.enable = !config.dev.nix-cache-serve.enable;
+        nix-cache.enable = lib.mkDefault (!config.dev.nix-cache-serve.enable);
       };
 
       networking = {

@@ -18,7 +18,7 @@
         enable = mkOption {
           description = "Whether to manage the default set of build tools";
           type = types.bool;
-          default = !config.dev.denbeigh.machine.work;
+          default = true;
         };
         languages = {
           go.enable = mkOption {

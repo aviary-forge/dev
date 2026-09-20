@@ -18,12 +18,13 @@ in
     ../../../modules/all.nix
     ../../../modules/common/standard.nix
     ../modules/common/variables.nix
+    ../modules/common/work.nix
   ];
 
   config = {
     dev = {
       tailscale.enable = mkDefault true;
-      nix-cache.enable = !config.dev.nix-cache-serve.enable;
+      nix-cache.enable = mkDefault (!config.dev.nix-cache-serve.enable);
     };
 
     networking.hostName = cfg.machine.hostname;

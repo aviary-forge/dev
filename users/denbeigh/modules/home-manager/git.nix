@@ -1,12 +1,6 @@
-{ config, ... }:
-
 let
-  inherit (config.dev.denbeigh.machine) work;
-  workEmail = "denbeigh.stevens@discordapp.com";
-  personalEmail = "denbeigh@denbeighstevens.com";
-
   name = "Denbeigh Stevens";
-  email = if work then workEmail else personalEmail;
+  email = "denbeigh@denbeighstevens.com";
 in
 {
   programs.git = {

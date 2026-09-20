@@ -13,6 +13,7 @@ let
 in
 {
   imports = [
+    ../modules/common/work.nix
     ../modules/home-manager/dev.nix
     ../modules/home-manager/git.nix
     ../modules/home-manager/htop.nix
@@ -116,7 +117,7 @@ in
       aria2.enable = true;
       fzf.enable = true;
       gh.enable = true;
-      jq.enable = !config.dev.denbeigh.machine.work;
+      jq.enable = true;
       tmux.enable = true;
 
       keychain = {
