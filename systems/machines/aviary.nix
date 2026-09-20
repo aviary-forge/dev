@@ -18,17 +18,11 @@ dev.nix.nixos.eval {
         # Personal NixOS standard module chain (agenix, user, home-manager, common config)
         ../../users/denbeigh/profiles/nixos.nix
 
-        # Services
-        ../../modules/tailscale
+        # Personal modules not under the auto-imported modules/ tree
         ../../users/denbeigh/modules/nixos/ahoy.nix
-        ../../modules/nix-cache
         ../../users/denbeigh/modules/nixos/terraform.nix
         ../../users/denbeigh/modules/nixos/update-fonts.nix
         ../../users/denbeigh/gridder/nixos/module.nix
-
-        # Infrastructure
-        ../../modules/ci
-        ../../modules/reverse-proxy
       ];
 
       config = {

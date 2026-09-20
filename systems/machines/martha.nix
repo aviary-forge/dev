@@ -13,7 +13,6 @@ dev.nix.nixos.eval {
       imports = [
         ../../users/denbeigh/profiles/nixos.nix
         ../../users/denbeigh/modules/nixos/development.nix
-        ../../modules/tailscale
       ];
 
       config = {

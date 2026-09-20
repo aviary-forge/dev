@@ -14,15 +14,12 @@ in
   imports = [
     (dev.third_party.agenix.src + "/modules/age.nix")
 
+    ../../../modules/all.nix
     ../../../modules/common/standard.nix
     ../modules/common/variables.nix
     ../modules/nixos/denbeigh.nix
     ../modules/nixos/utils.nix
     ../modules/nixos/graphical.nix
-    ../../../modules/use-nix-cache
-
-    # Disabled by default
-    ../../../modules/nixos/ssh.nix
     ../modules/nixos/webcam.nix
   ];
 
