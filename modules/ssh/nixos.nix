@@ -2,30 +2,13 @@
 
 let
   inherit (lib)
-    mkEnableOption
     mkDefault
     mkIf
-    mkOption
-    types
     ;
 
   cfg = config.dev.denbeigh.ssh;
 in
 {
-  options = {
-    dev.denbeigh.ssh = {
-      enable = mkEnableOption "ssh to the machine";
-
-      sshPort = mkOption {
-        type = types.number;
-        default = 22;
-        description = ''
-          Port to serve SSH on (if enabled).
-        '';
-      };
-    };
-  };
-
   config = {
     services.openssh = {
       # Set if enabled

@@ -1,31 +1,18 @@
-{ config, lib, ... }:
+# NOTE: Subtly different from dev.denbeigh.nix-cache (the client-side
+# module, in use-nix-cache).
+{
+  config,
+  lib,
+  ...
+}:
 
 let
-  inherit (lib)
-    mkEnableOption
-    mkIf
-    mkOption
-    types
-    ;
-
   cfg = config.dev.denbeigh.services.nix-cache;
 in
 {
-  imports = [ ./reverse-proxy ];
+  imports = [ ../reverse-proxy ];
 
-  # NOTE: Subtly different from dev.denbeigh.nix-cache (adds .services)
-  options.dev.denbeigh.services.nix-cache = {
-    enable = mkEnableOption "External Nix cache";
-
-    keyFile = mkOption {
-      type = types.path;
-      description = ''
-        Key file to authenticate requests from cache.
-      '';
-    };
-  };
-
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     users.users.nix-copy-receiver = {
       # Needed to grant any access over SSH at all
       isNormalUser = true;
