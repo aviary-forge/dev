@@ -19,10 +19,10 @@ in
     ./denbeigh.nix
     ./utils.nix
     ./graphical.nix
-    ./use-nix-cache.nix
+    ../../../modules/nixos/use-nix-cache.nix
 
     # Disabled by default
-    ./ssh.nix
+    ../../../modules/nixos/ssh.nix
     ./webcam.nix
   ];
 

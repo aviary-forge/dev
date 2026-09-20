@@ -19,9 +19,9 @@ dev.nix.nixos.eval {
         ../../users/denbeigh/modules/nixos/standard.nix
 
         # Services
-        ../../users/denbeigh/modules/nixos/tailscale.nix
+        ../../modules/nixos/tailscale.nix
         ../../users/denbeigh/modules/nixos/ahoy.nix
-        ../../users/denbeigh/modules/nixos/nix-cache.nix
+        ../../modules/nixos/nix-cache.nix
         ../../users/denbeigh/modules/nixos/terraform.nix
         ../../users/denbeigh/modules/nixos/update-fonts.nix
         ../../users/denbeigh/gridder/nixos/module.nix

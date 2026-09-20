@@ -19,7 +19,7 @@ in
     # ./upload-daemon.nix
     ../common/standard.nix
     ../common/variables.nix
-    ../common/tailscale.nix
+    ../../../modules/common/tailscale.nix
   ];
 
   config = {
