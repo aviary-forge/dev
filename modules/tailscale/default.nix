@@ -15,6 +15,15 @@ in
 
   options.dev.denbeigh.tailscale = {
     enable = lib.mkEnableOption "tailscale daemon";
+
+    authKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Path to a file containing a tailscale auth key. When set, a
+        tailscale-login oneshot auto-authenticates the node on boot.
+      '';
+    };
   };
 
   config = lib.mkIf config.dev.denbeigh.tailscale.enable {

@@ -33,17 +33,26 @@ in
     };
   };
 
-  config = {
-    # docker was previously always-on for NixOS machines (imported by
-    # utils.nix); kept explicit now that modules/docker is enable-gated
-    dev.denbeigh.docker.enable = true;
+  config = lib.mkMerge [
+    {
+      # docker was previously always-on for NixOS machines (imported by
+      # utils.nix); kept explicit now that modules/docker is enable-gated
+      dev.denbeigh.docker.enable = true;
 
-    networking = {
-      hostName = cfg.machine.hostname;
-      inherit (cfg.machine) domain;
-    };
+      networking = {
+        hostName = cfg.machine.hostname;
+        inherit (cfg.machine) domain;
+      };
 
-    services.chrony.enable = true;
-    environment.wordlist.enable = true;
-  };
+      services.chrony.enable = true;
+      environment.wordlist.enable = true;
+    }
+
+    (lib.mkIf config.dev.denbeigh.tailscale.enable {
+      # persona wiring for the universal tailscale module: auth key comes
+      # from the repo secrets store, decrypted at runtime by agenix
+      age.secrets.tailscaleAuthKey.file = dev.secrets."tailscaleAuthKey.age";
+      dev.denbeigh.tailscale.authKeyFile = config.age.secrets.tailscaleAuthKey.path;
+    })
+  ];
 }

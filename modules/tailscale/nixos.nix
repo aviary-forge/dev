@@ -1,6 +1,7 @@
 # NixOS-specific tailscale wiring: auth key + auto-login, firewall exemptions.
+# Where the auth key comes from (age secret, file) is persona/machine policy,
+# set via dev.denbeigh.tailscale.authKeyFile.
 {
-  dev,
   config,
   lib,
   pkgs,
@@ -12,8 +13,6 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
-    age.secrets.tailscaleAuthKey.file = dev.secrets."tailscaleAuthKey.age";
-
     networking.firewall = {
       checkReversePath = "loose";
       trustedInterfaces = [ config.services.tailscale.interfaceName ];
@@ -21,7 +20,7 @@ in
     };
 
     # Adapted from https://tailscale.com/blog/nixos-minecraft/
-    systemd.services.tailscale-login = {
+    systemd.services.tailscale-login = lib.mkIf (cfg.authKeyFile != null) {
       description = "Automatic connection to Tailscale";
 
       # make sure tailscale is running before trying to connect to tailscale
@@ -47,7 +46,7 @@ in
           exit 0
         fi
 
-        ${pkgs.tailscale}/bin/tailscale up -authkey "$(< ${config.age.secrets.tailscaleAuthKey.path})"
+        ${pkgs.tailscale}/bin/tailscale up -authkey "$(< ${cfg.authKeyFile})"
       '';
     };
   };
