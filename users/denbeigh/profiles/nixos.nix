@@ -37,6 +37,10 @@ in
   };
 
   config = {
+    # docker was previously always-on for NixOS machines (imported by
+    # utils.nix); kept explicit now that modules/docker is enable-gated
+    dev.denbeigh.docker.enable = true;
+
     networking = {
       hostName = cfg.machine.hostname;
       inherit (cfg.machine) domain;

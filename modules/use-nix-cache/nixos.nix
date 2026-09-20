@@ -5,7 +5,7 @@ let
 in
 {
   # Ensures the serve-side options are defined (but disabled by default)
-  imports = [ ../nixos/nix-cache.nix ];
+  imports = [ ../nix-cache ];
 
   config.dev.denbeigh.nix-cache.enable = mkDefault (!config.dev.denbeigh.services.nix-cache.enable);
 }

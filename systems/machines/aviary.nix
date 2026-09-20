@@ -21,15 +21,14 @@ dev.nix.nixos.eval {
         # Services
         ../../modules/tailscale
         ../../users/denbeigh/modules/nixos/ahoy.nix
-        ../../modules/nixos/nix-cache.nix
+        ../../modules/nix-cache
         ../../users/denbeigh/modules/nixos/terraform.nix
         ../../users/denbeigh/modules/nixos/update-fonts.nix
         ../../users/denbeigh/gridder/nixos/module.nix
 
         # Infrastructure
-        ../../modules/nixos/ci
-        ../../modules/nixos/reverse-proxy
-        ../../modules/nix-maintenance
+        ../../modules/ci
+        ../../modules/reverse-proxy
       ];
 
       config = {
@@ -45,6 +44,8 @@ dev.nix.nixos.eval {
           ssh.enable = true;
           tailscale.enable = true;
           ahoy.enable = true;
+          # Periodic store GC/optimisation
+          nix-maintenance.enable = true;
 
           services = {
             nix-cache = {

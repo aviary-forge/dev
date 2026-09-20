@@ -7,11 +7,12 @@ dev.nix.darwin.eval {
     {
       imports = [
         ../../users/denbeigh/profiles/darwin.nix
-        ../../modules/nix-maintenance
       ];
       config = {
         dev.denbeigh = {
           tailscale.enable = false;
+          # Periodic store GC/optimisation
+          nix-maintenance.enable = true;
           machine = {
             location = dev.users.denbeigh.utils.locations.locations.utc;
             hostname = "builder";
