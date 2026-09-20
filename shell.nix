@@ -26,4 +26,6 @@ pkgs.mkShell {
   shellHook = ''
     ${lib.getExe dev.tools.git-hooks.setup-pre-commit}
   '';
+
+  meta.owners = with dev.members; [ denbeigh ];
 }
