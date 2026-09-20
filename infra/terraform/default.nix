@@ -35,50 +35,54 @@ let
   };
 in
 {
-  packages = {
-    inherit tofu;
+  inherit tofu;
 
-    # Derivation that validates the terraform config in checkPhase.
-    # Build this to check formatting and syntax in CI.
-    validated = pkgs.stdenv.mkDerivation {
-      name = "terraform-config-validated";
-      src = tfSrc;
-      dontBuild = true;
-      doCheck = true;
+  # Derivation that validates the terraform config in checkPhase.
+  # Build this to check formatting and syntax in CI.
+  validated = pkgs.stdenv.mkDerivation {
+    name = "terraform-config-validated";
+    src = tfSrc;
+    dontBuild = true;
+    doCheck = true;
 
-      nativeBuildInputs = [ tofu ];
+    nativeBuildInputs = [ tofu ];
 
-      # tofu init needs a writable directory, so copy source to $TMPDIR.
-      checkPhase = ''
-        set -euo pipefail
+    # tofu init needs a writable directory, so copy source to $TMPDIR.
+    checkPhase = ''
+      set -euo pipefail
 
-        cp -r "$src"/* .
+      cp -r "$src"/* .
 
-        echo "=== tofu fmt ==="
-        ${tofu}/bin/tofu fmt -check -diff .
+      echo "=== tofu fmt ==="
+      ${tofu}/bin/tofu fmt -check -diff .
 
-        echo "=== tofu init ==="
-        # -backend=false skips S3 backend config (not needed for validation).
-        # Providers are resolved from the Nix-managed plugin cache.
-        ${tofu}/bin/tofu init -backend=false
+      echo "=== tofu init ==="
+      # -backend=false skips S3 backend config (not needed for validation).
+      # Providers are resolved from the Nix-managed plugin cache.
+      ${tofu}/bin/tofu init -backend=false
 
-        echo "=== tofu validate ==="
-        ${tofu}/bin/tofu validate
-      '';
+      echo "=== tofu validate ==="
+      ${tofu}/bin/tofu validate
+    '';
 
-      installPhase = ''
-        mkdir -p $out
-        cp -r . $out/
-      '';
+    installPhase = ''
+      mkdir -p $out
+      cp -r . $out/
+    '';
 
-      meta = {
-        ci.skip = false;
-        owners = with members; [ denbeigh ];
-      };
+    meta = {
+      ci.skip = false;
+      owners = with members; [ denbeigh ];
     };
   };
 
-  # Shell with tofu and tflint for interactive use.
+  # Hoist the validation drv so readTree's subtarget mechanism makes it
+  # a CI target (plain attrs of an attrset node are invisible to
+  # ci.targets discovery).
+  meta.ci.targets = [ "validated" ];
+
+  # Shell with tofu and tflint for interactive use. Exposed as a tree
+  # child via the sibling shell.nix re-export.
   devShell = pkgs.mkShell {
     name = "tofu-shell";
     packages = [
