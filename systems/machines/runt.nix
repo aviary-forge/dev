@@ -21,9 +21,8 @@ dev.nix.darwin.eval {
             username = "denbeigh.stevens";
             keys = [ "id_ed25519" ];
           };
-
-          tailscale.enable = false;
         };
+        dev.tailscale.enable = false;
 
         system.primaryUser = "denbeigh.stevens";
         system.stateVersion = 5;

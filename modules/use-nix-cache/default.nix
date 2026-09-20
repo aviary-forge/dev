@@ -1,5 +1,5 @@
 # Client-side config for the personal nix cache. Subtly different from
-# dev.denbeigh.services.nix-cache (the serve-side module, NixOS-only).
+# dev.nix-cache-serve (the serve-side module, NixOS-only).
 {
   config,
   pkgs,
@@ -10,7 +10,7 @@
 let
   inherit (lib) mkIf mkOption types;
 
-  cfg = config.dev.denbeigh.nix-cache;
+  cfg = config.dev.nix-cache;
 
   # pkgs, not config: reading config in imports recurses; the repo doesn't
   # cross-eval, so pkgs' hostPlatform always matches the target machine.
@@ -19,7 +19,7 @@ in
 {
   imports = lib.optionals (!isDarwin) [ ./nixos.nix ];
 
-  options.dev.denbeigh.nix-cache = {
+  options.dev.nix-cache = {
     enable = mkOption {
       type = types.bool;
       # On NixOS, ./nixos.nix defaults this to the inverse of the
@@ -54,7 +54,7 @@ in
       {
         assertion = cfg.url != null && cfg.publicKey != null;
         message = ''
-          dev.denbeigh.nix-cache: url and publicKey must be set when the
+          dev.nix-cache: url and publicKey must be set when the
           client-side cache is enabled.
         '';
       }

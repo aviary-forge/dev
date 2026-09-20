@@ -1,4 +1,4 @@
-# NOTE: Subtly different from dev.denbeigh.nix-cache (the client-side
+# NOTE: Subtly different from dev.nix-cache (the client-side
 # module, in use-nix-cache).
 {
   config,
@@ -7,7 +7,7 @@
 }:
 
 let
-  cfg = config.dev.denbeigh.services.nix-cache;
+  cfg = config.dev.nix-cache-serve;
 in
 {
   imports = [ ../reverse-proxy ];

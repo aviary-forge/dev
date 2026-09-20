@@ -7,7 +7,7 @@
 {
   imports = lib.optionals pkgs.stdenv.hostPlatform.isLinux [ ./nixos.nix ];
 
-  options.dev.denbeigh.services.nix-cache = {
+  options.dev.nix-cache-serve = {
     enable = lib.mkEnableOption "External Nix cache";
 
     keyFile = lib.mkOption {

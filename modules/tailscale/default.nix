@@ -13,7 +13,7 @@ in
 {
   imports = lib.optionals (!isDarwin) [ ./nixos.nix ];
 
-  options.dev.denbeigh.tailscale = {
+  options.dev.tailscale = {
     enable = lib.mkEnableOption "tailscale daemon";
 
     authKeyFile = lib.mkOption {
@@ -26,7 +26,7 @@ in
     };
   };
 
-  config = lib.mkIf config.dev.denbeigh.tailscale.enable {
+  config = lib.mkIf config.dev.tailscale.enable {
     services.tailscale.enable = true;
 
     environment.systemPackages = [ pkgs.tailscale ];

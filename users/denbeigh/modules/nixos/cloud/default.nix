@@ -11,5 +11,5 @@
     }
   ];
 
-  dev.denbeigh.nix-cache.enable = false;
+  dev.nix-cache.enable = false;
 }

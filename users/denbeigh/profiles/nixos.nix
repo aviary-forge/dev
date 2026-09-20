@@ -37,7 +37,7 @@ in
     {
       # docker was previously always-on for NixOS machines (imported by
       # utils.nix); kept explicit now that modules/docker is enable-gated
-      dev.denbeigh.docker.enable = true;
+      dev.docker.enable = true;
 
       networking = {
         hostName = cfg.machine.hostname;
@@ -48,17 +48,17 @@ in
       environment.wordlist.enable = true;
     }
 
-    (lib.mkIf config.dev.denbeigh.tailscale.enable {
+    (lib.mkIf config.dev.tailscale.enable {
       # persona wiring for the universal tailscale module: auth key comes
       # from the repo secrets store, decrypted at runtime by agenix
       age.secrets.tailscaleAuthKey.file = dev.secrets."tailscaleAuthKey.age";
-      dev.denbeigh.tailscale.authKeyFile = config.age.secrets.tailscaleAuthKey.path;
+      dev.tailscale.authKeyFile = config.age.secrets.tailscaleAuthKey.path;
     })
 
     # persona value for the universal nix-cache serve-side module: the
     # remote-build upload key
     {
-      dev.denbeigh.services.nix-cache.receiverAuthorizedKeys = [
+      dev.nix-cache-serve.receiverAuthorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHn3tzQJW1Fwt3n5xSK+V6MhS7ULddEW0mTNcrigHbp0"
       ];
     }

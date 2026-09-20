@@ -22,6 +22,8 @@ dev.nix.nixos.eval {
             graphical = true;
             location = dev.users.denbeigh.utils.locations.locations.sf;
           };
+        };
+        dev = {
           ssh.enable = true;
           tailscale.enable = true;
         };

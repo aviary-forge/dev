@@ -1,7 +1,7 @@
 { config, lib, ... }:
 
 {
-  config = lib.mkIf config.dev.denbeigh.nix-maintenance.enable {
+  config = lib.mkIf config.dev.nix-maintenance.enable {
     nix.gc = {
       dates = "weekly";
       randomizedDelaySec = "45min";

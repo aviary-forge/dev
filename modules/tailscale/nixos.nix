@@ -1,6 +1,6 @@
 # NixOS-specific tailscale wiring: auth key + auto-login, firewall exemptions.
 # Where the auth key comes from (age secret, file) is persona/machine policy,
-# set via dev.denbeigh.tailscale.authKeyFile.
+# set via dev.tailscale.authKeyFile.
 {
   config,
   lib,
@@ -9,7 +9,7 @@
 }:
 
 let
-  cfg = config.dev.denbeigh.tailscale;
+  cfg = config.dev.tailscale;
 in
 {
   config = lib.mkIf cfg.enable {

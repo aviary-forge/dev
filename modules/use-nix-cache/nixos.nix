@@ -7,5 +7,5 @@ in
   # Ensures the serve-side options are defined (but disabled by default)
   imports = [ ../nix-cache ];
 
-  config.dev.denbeigh.nix-cache.enable = mkDefault (!config.dev.denbeigh.services.nix-cache.enable);
+  config.dev.nix-cache.enable = mkDefault (!config.dev.nix-cache-serve.enable);
 }

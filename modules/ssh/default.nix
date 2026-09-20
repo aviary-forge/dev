@@ -7,7 +7,7 @@
 {
   imports = lib.optionals pkgs.stdenv.hostPlatform.isLinux [ ./nixos.nix ];
 
-  options.dev.denbeigh.ssh = {
+  options.dev.ssh = {
     enable = lib.mkEnableOption "ssh to the machine";
 
     sshPort = lib.mkOption {

@@ -21,7 +21,7 @@ in
   ];
 
   config = {
-    dev.denbeigh.tailscale.enable = mkDefault true;
+    dev.tailscale.enable = mkDefault true;
 
     networking.hostName = cfg.machine.hostname;
 

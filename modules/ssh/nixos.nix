@@ -6,7 +6,7 @@ let
     mkIf
     ;
 
-  cfg = config.dev.denbeigh.ssh;
+  cfg = config.dev.ssh;
 in
 {
   config = {

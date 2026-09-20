@@ -35,17 +35,18 @@ dev.nix.nixos.eval {
             graphical = false;
           };
 
+          ahoy.enable = true;
+        };
+
+        dev = {
           ssh.enable = true;
           tailscale.enable = true;
-          ahoy.enable = true;
           # Periodic store GC/optimisation
           nix-maintenance.enable = true;
 
-          services = {
-            nix-cache = {
-              enable = true;
-              keyFile = "/var/lib/denbeigh/nix-cache/serve-key";
-            };
+          nix-cache-serve = {
+            enable = true;
+            keyFile = "/var/lib/denbeigh/nix-cache/serve-key";
           };
         };
 

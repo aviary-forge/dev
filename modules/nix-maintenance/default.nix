@@ -18,9 +18,9 @@ in
 {
   imports = lib.optionals isDarwin [ ./darwin.nix ] ++ lib.optionals (!isDarwin) [ ./nixos.nix ];
 
-  options.dev.denbeigh.nix-maintenance.enable = lib.mkEnableOption "periodic nix store maintenance";
+  options.dev.nix-maintenance.enable = lib.mkEnableOption "periodic nix store maintenance";
 
-  config = lib.mkIf config.dev.denbeigh.nix-maintenance.enable {
+  config = lib.mkIf config.dev.nix-maintenance.enable {
     nix.gc = {
       automatic = true;
       options = "--delete-older-than 30d";

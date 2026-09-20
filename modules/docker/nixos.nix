@@ -6,7 +6,7 @@
 }:
 
 {
-  config = lib.mkIf config.dev.denbeigh.docker.enable {
+  config = lib.mkIf config.dev.docker.enable {
     environment.systemPackages = with pkgs; [
       docker
       docker-compose

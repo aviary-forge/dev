@@ -10,13 +10,15 @@ dev.nix.darwin.eval {
       ];
       config = {
         dev.denbeigh = {
-          tailscale.enable = false;
-          # Periodic store GC/optimisation
-          nix-maintenance.enable = true;
           machine = {
             location = dev.users.denbeigh.utils.locations.locations.utc;
             hostname = "builder";
           };
+        };
+        dev = {
+          tailscale.enable = false;
+          # Periodic store GC/optimisation
+          nix-maintenance.enable = true;
         };
         networking.domain = "sfo.denbeigh.cloud";
 

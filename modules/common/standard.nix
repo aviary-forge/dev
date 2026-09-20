@@ -6,7 +6,7 @@
 }:
 
 {
-  options.dev.denbeigh.remoteBuildPublicKeys = lib.mkOption {
+  options.dev.remoteBuildPublicKeys = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     default = [ ];
     description = ''
@@ -22,7 +22,7 @@
       ];
 
       # Remote-build keys to trust; supplied by the persona layer.
-      trusted-public-keys = config.dev.denbeigh.remoteBuildPublicKeys;
+      trusted-public-keys = config.dev.remoteBuildPublicKeys;
       trusted-users = [ config.dev.denbeigh.user.username ];
     };
 

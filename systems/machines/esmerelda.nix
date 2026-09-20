@@ -16,12 +16,14 @@ dev.nix.nixos.eval {
       config = {
         nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
         dev.denbeigh = {
-          nix-cache.enable = false;
-          ssh.enable = true;
           machine = {
             hostname = "esmerelda";
             location = dev.users.denbeigh.utils.locations.locations.sf;
           };
+        };
+        dev = {
+          nix-cache.enable = false;
+          ssh.enable = true;
         };
 
         environment.systemPackages = with pkgs; [

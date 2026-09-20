@@ -7,5 +7,5 @@
 {
   imports = lib.optionals pkgs.stdenv.hostPlatform.isLinux [ ./nixos.nix ];
 
-  options.dev.denbeigh.docker.enable = lib.mkEnableOption "docker + docker tooling";
+  options.dev.docker.enable = lib.mkEnableOption "docker + docker tooling";
 }
