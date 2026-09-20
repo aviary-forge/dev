@@ -51,6 +51,18 @@
               description = "HTTP status code or URL to return for unmatched requests.";
               example = lib.literalExpression ''"444"'';
             };
+
+            rejectTls = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = ''
+                Additionally listen on 0.0.0.0:443 in the catch-all vhost
+                with `ssl_reject_handshake on`, so unknown-SNI TLS
+                connections are dropped during the handshake instead of
+                falling through to a real service vhost. No certificate is
+                needed (the handshake is rejected before one is used).
+              '';
+            };
           };
         }
       );

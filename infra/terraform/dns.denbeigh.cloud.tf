@@ -1,5 +1,5 @@
 locals {
-  tailscale_aliases = ["bullshit", "jackett", "radarr", "sonarr", "prowlarr", "jellyfin", "transmission", "nix-cache"]
+  tailscale_aliases = ["bullshit", "jackett", "radarr", "sonarr", "prowlarr", "jellyfin", "transmission"]
 }
 
 data "tailscale_devices" "aviary" {
@@ -12,11 +12,22 @@ data "cloudflare_zone" "denbeigh_cloud" {
   }
 }
 
-# All records on this zone must stay proxied = false (grey cloud):
-# CF proxy breaks direct SSH and the nix binary cache's origin model.
+# Records on this zone stay proxied = false (grey cloud): direct SSH to
+# aviary needs it, and the nix cache is deliberately served direct as well
+# (bandwidth/abuse controls live in nginx — see
+# docs/public-nix-cache-exposure.md).
 resource "cloudflare_dns_record" "aviary_denbeigh_cloud" {
   zone_id = data.cloudflare_zone.denbeigh_cloud.id
   name    = "aviary"
+  content = "51.81.46.167"
+  type    = "A"
+  ttl     = 3600
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "nix_cache_denbeigh_cloud" {
+  zone_id = data.cloudflare_zone.denbeigh_cloud.id
+  name    = "nix-cache"
   content = "51.81.46.167"
   type    = "A"
   ttl     = 3600
