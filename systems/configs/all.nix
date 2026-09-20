@@ -1,6 +1,0 @@
-_:
-
-[
-  import
-  ./aviary.nix
-]
