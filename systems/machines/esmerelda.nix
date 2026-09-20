@@ -41,22 +41,39 @@ dev.nix.nixos.eval {
           zsh
           llama-cpp-server
           python3Packages.huggingface-hub
-        ];
 
+          # tmp: putting some vllm-specific stuff in global for ed
+          iconv
+          nvtopPackages.nvidia
+          python3
+        ];
         home-manager.users.denbeigh.programs.pi-coding-agent.enable = true;
 
-        services.openssh = {
-          enable = true;
-          openFirewall = true;
-          settings = {
-            PasswordAuthentication = false;
-            PermitRootLogin = "no";
-          };
-        };
-        programs.zsh.enable = true;
-
         # Experimenting with llama-cpp before committing
-        networking.firewall.allowedTCPPorts = [ 8001 ];
+        networking.firewall.allowedTCPPorts = [
+          8001
+          18020
+        ];
+
+        services = {
+          openssh = {
+            enable = true;
+            openFirewall = true;
+            settings = {
+              PasswordAuthentication = false;
+              PermitRootLogin = "no";
+            };
+          };
+          # Apple TV3,2 bring-up: allow unprivileged USB access to Apple DFU /
+          # Recovery devices (pwned_client etc. talk raw control transfers).
+          udev.extraRules = ''
+            SUBSYSTEM=="usb", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="1227", MODE="0660", GROUP="users"
+            SUBSYSTEM=="usb", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="1281", MODE="0660", GROUP="users"
+          '';
+
+          # Load nvidia driver for Xorg and Wayland
+          xserver.videoDrivers = [ "nvidia" ];
+        };
 
         # Enable OpenGL + NVIDIA
         hardware = {
@@ -71,9 +88,6 @@ dev.nix.nixos.eval {
           };
           cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
         };
-
-        # Load nvidia driver for Xorg and Wayland
-        services.xserver.videoDrivers = [ "nvidia" ];
 
         system.stateVersion = "25.11"; # Did you read the comment?
 
@@ -93,14 +107,26 @@ dev.nix.nixos.eval {
           extraModulePackages = [ ];
         };
 
-        users.users.denbeigh = {
-          isNormalUser = true;
-          description = "Alice";
-          extraGroups = [ "wheel" ];
-          home = "/home/denbeigh";
-        };
+        users = {
+          users = {
+            denbeigh = {
+              isNormalUser = true;
+              description = "Alice";
+              extraGroups = [ "wheel" ];
+              home = "/home/denbeigh";
+            };
+            ed = {
+              isNormalUser = true;
+              packages = [ ];
+              openssh.authorizedKeys.keys = [
+                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGQ0Kc8JurSG+a5YQpLIH9KbRuXPfD6kRFQExCNbbK7L"
+              ];
+            };
+          };
 
-        users.groups.denbeigh = { };
+          groups.denbeigh = { };
+          groups.ed = { };
+        };
 
         fileSystems."/" = {
           device = "/dev/disk/by-label/NIXROOT";
@@ -117,6 +143,12 @@ dev.nix.nixos.eval {
         };
 
         swapDevices = [ ];
+
+        # tmp: more c-building stuff in global for ed
+        environment.sessionVariables = {
+          LD_LIBRARY_PATH = "${pkgs.stdenv.cc.libc}";
+        };
+
       };
     };
 
