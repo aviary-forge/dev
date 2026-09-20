@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -9,10 +10,22 @@ let
     mkIf
     mkMerge
     optional
+    optionalAttrs
     ;
   inherit (lib.lists) map;
 
   cfg = config.services.dev.reverse-proxy;
+
+  # Throwaway self-signed pair for the TLS catch-all vhost; never used to
+  # serve traffic (ssl_reject_handshake drops the handshake first).
+  throwawayCert =
+    pkgs.runCommand "reverse-proxy-reject-tls-snakeoil" { nativeBuildInputs = [ pkgs.openssl ]; }
+      ''
+        mkdir $out
+        openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+          -subj "/CN=reject-tls.placeholder" \
+          -keyout $out/key.pem -out $out/fullchain.pem
+      '';
 
   # Flatten the services attrset into a list of {name, ...} for easier iteration.
   enabledServices = lib.filter (s: s.enable) (
@@ -61,6 +74,32 @@ in
           "default" = {
             serverName = cfg.defaultVhost.serverName;
             locations."/".return = cfg.defaultVhost.return;
+          }
+          // optionalAttrs cfg.defaultVhost.rejectTls {
+            # Unknown-SNI TLS to a public IP would otherwise fall through
+            # to a real service vhost; reject it during the handshake
+            # (nginx's ssl_reject_handshake, via NixOS's `rejectSSL`).
+            # The :80 listener is explicit so this block stays the
+            # default_server for *:80 (it previously got that implicitly).
+            listen = [
+              {
+                addr = "0.0.0.0";
+                port = 80;
+                extraParameters = [ "default_server" ];
+              }
+              {
+                addr = "0.0.0.0";
+                port = 443;
+                ssl = true;
+                extraParameters = [ "default_server" ];
+              }
+            ];
+            rejectSSL = true;
+            # The handshake is always rejected, but the nginx module
+            # still emits ssl_certificate lines for any ssl listener, so
+            # hand it a throwaway self-signed pair it can parse.
+            sslCertificate = "${throwawayCert}/fullchain.pem";
+            sslCertificateKey = "${throwawayCert}/key.pem";
           };
         })
         ++

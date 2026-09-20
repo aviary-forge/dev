@@ -70,6 +70,9 @@ dev.nix.nixos.eval {
           defaultVhost = {
             serverName = "_";
             return = "444";
+            # Public-facing box: drop unknown-SNI TLS handshakes instead of
+            # letting them reach the nix-cache vhost.
+            rejectTls = true;
           };
 
           acme = {
