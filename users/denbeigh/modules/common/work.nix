@@ -80,7 +80,7 @@ in
           with pkgs;
           [
             discord-canary
-            firefox
+            firefox-bin
           ]
         );
       }

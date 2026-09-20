@@ -42,7 +42,7 @@ in
           mpv
           yubikey-manager
           discord-canary
-          firefox
+          firefox-bin
         ];
       in
       filter (p: !elem p config.dev.denbeigh.graphical.excludePackages) base;
