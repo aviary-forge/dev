@@ -4,7 +4,6 @@
   "pi-mcp-adapter": "2.34.0",
   "pi-prompt-template-model": "0.12.2",
   "@plannotator/pi-extension": "0.27.16",
-  "@ayulab/pi-rewind": "0.4.6",
   "@juicesharp/rpiv-ask-user-question": "2.10.1",
   "@juicesharp/rpiv-todo": "2.10.1",
   "context-mode": "1.0.169"

@@ -95,7 +95,6 @@ in
       pi-mcp-adapter
       pi-prompt-template-model
       pi-subagents
-      pi-rewind
       plannotator
       rpiv-ask-user-question
       rpiv-todo
