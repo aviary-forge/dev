@@ -12,6 +12,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
 mod annotation;
+mod cache;
 mod drvmap;
 mod git;
 mod instantiate;
@@ -169,41 +170,81 @@ fn cmd_pipeline_gen(
     let base_commit = git::merge_base(repo_root, trunk_tip)?;
     tracing::info!("base commit: {}", base_commit);
 
-    // Create a worktree at the base commit
-    tracing::info!("creating worktree at base commit");
-    let worktree = git::create_worktree(repo_root, &base_commit, "base")?;
-
-    // Instantiate drvmap at base commit.
-    //
-    // Fail-open: if the base commit can't be evaluated (e.g. trunk history
-    // contains a commit that breaks full-tree eval), fall back to an empty
-    // parent map. The diff then treats every current target as added, so CI
-    // builds everything instead of refusing to generate a pipeline. This is
-    // the right failure direction for a skip-optimization: an overly broad
-    // build is wasted compute, a missing build is a broken trunk.
-    //
-    // NB: until a fixing commit lands in trunk, the merge-base is fixed
-    // history, so the base eval keeps failing no matter what the branch
-    // does — the fallback fires for every descendant PR in that window.
-    tracing::info!("instantiating drvmap at base commit");
-    let parent_drvmap = match instantiate::instantiate_drvmap(repo_root, Some(&worktree)) {
-        Ok(drvmap) => drvmap,
-        Err(err) => {
+    // The entry point is evaluated with the *current branch's* drvmap.nix
+    // (copied into the worktree when missing at the base commit), so cached
+    // entries are only valid while that file is unchanged — the cache stores
+    // its content as a sidecar and validates it on load.
+    let entry_point = std::fs::read(repo_root.join(instantiate::DRVMAP_EXPR))
+        .map_err(|err| {
             tracing::warn!(
-                "base-commit drvmap eval failed, building everything (fail-open): {err:#}"
+                "could not read {} ({}); caching disabled for this run",
+                instantiate::DRVMAP_EXPR,
+                err
             );
-            drvmap::Drvmap::new()
+        })
+        .ok();
+    let cache = cache::DrvmapCache::open();
+
+    // Instantiate drvmap at base commit: cache first, worktree eval fallback.
+    let parent_drvmap = match cache.load(&base_commit, entry_point.as_deref()) {
+        Some(cached) => {
+            tracing::info!("parent drvmap cache hit for {base_commit}");
+            cached
+        },
+        None => {
+            // Create a worktree at the base commit
+            tracing::info!("parent drvmap cache miss; evaluating base commit in worktree");
+            let worktree = git::create_worktree(repo_root, &base_commit, "base")?;
+
+            // Fail-open: if the base commit can't be evaluated (e.g. trunk
+            // history contains a commit that breaks full-tree eval), fall back
+            // to an empty parent map. The diff then treats every current
+            // target as added, so CI builds everything instead of refusing to
+            // generate a pipeline. This is the right failure direction for a
+            // skip-optimization: an overly broad build is wasted compute, a
+            // missing build is a broken trunk.
+            //
+            // NB: until a fixing commit lands in trunk, the merge-base is
+            // fixed history, so the base eval keeps failing no matter what the
+            // branch does — the fallback fires for every descendant PR in that
+            // window.
+            let parent_drvmap = match instantiate::instantiate_drvmap(repo_root, Some(&worktree)) {
+                Ok(drvmap) => {
+                    cache.store(&base_commit, entry_point.as_deref(), &drvmap);
+                    drvmap
+                },
+                Err(err) => {
+                    tracing::warn!(
+                        "base-commit drvmap eval failed, building everything (fail-open): {err:#}"
+                    );
+                    drvmap::Drvmap::new()
+                },
+            };
+
+            // Clean up the worktree
+            git::remove_worktree(&worktree, repo_root)?;
+            parent_drvmap
         },
     };
-
-    // Clean up the worktree
-    git::remove_worktree(&worktree, repo_root)?;
     tracing::info!("parent drvmap has {} targets", parent_drvmap.len());
 
     // Instantiate drvmap at HEAD
     tracing::info!("instantiating drvmap at HEAD");
     let current_drvmap = instantiate::instantiate_drvmap(repo_root, None)?;
     tracing::info!("current drvmap has {} targets", current_drvmap.len());
+
+    // Trunk builds also cache the HEAD drvmap under its own commit SHA, so a
+    // feature branch whose merge-base is exactly this commit hits the parent
+    // cache without any worktree + eval round trip.
+    if std::env::var("BUILDKITE_BRANCH").as_deref() == Ok("trunk") {
+        match git::rev_parse(repo_root, "HEAD") {
+            Ok(head_commit) => {
+                tracing::info!("caching trunk HEAD drvmap for {head_commit}");
+                cache.store(&head_commit, entry_point.as_deref(), &current_drvmap);
+            },
+            Err(err) => tracing::warn!("trunk HEAD drvmap cache: {err:#}"),
+        }
+    }
 
     // Diff
     let diff = drvmap::diff(&parent_drvmap, &current_drvmap);

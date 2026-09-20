@@ -58,6 +58,12 @@ in
 
     systemd.tmpfiles.rules = [
       "d /nix/var/nix/gcroots/dev 0775 root ${cfg.groupName}"
+      # Drvmap cache shared by ci-orchestrator pipeline-gen across agents.
+      # Setgid so files inherit the group; the binary writes entries mode
+      # 0664 (group-writable). Never cleaned up by tmpfiles (age "-");
+      # entries are keyed by commit SHA and validated against the drvmap.nix
+      # entry point on load, so stale entries are harmless.
+      "d /var/cache/ci-orchestrator/drvmap-cache 2775 root ${cfg.groupName} - -"
     ];
 
     services.buildkite-agents = listToAttrs (map mkAgent (range 0 count));
