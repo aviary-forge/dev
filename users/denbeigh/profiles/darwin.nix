@@ -21,7 +21,10 @@ in
   ];
 
   config = {
-    dev.tailscale.enable = mkDefault true;
+    dev = {
+      tailscale.enable = mkDefault true;
+      nix-cache.enable = !config.dev.nix-cache-serve.enable;
+    };
 
     networking.hostName = cfg.machine.hostname;
 

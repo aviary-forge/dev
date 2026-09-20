@@ -37,7 +37,10 @@ in
     {
       # docker was previously always-on for NixOS machines (imported by
       # utils.nix); kept explicit now that modules/docker is enable-gated
-      dev.docker.enable = true;
+      dev = {
+        docker.enable = true;
+        nix-cache.enable = !config.dev.nix-cache-serve.enable;
+      };
 
       networking = {
         hostName = cfg.machine.hostname;
