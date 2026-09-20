@@ -26,11 +26,6 @@ then
     echo "\nYou have mail."
 fi
 
-if which direnv >/dev/null
-then
-    eval "$(direnv hook zsh)"
-fi
-
 # Base16 Gruvbox dark, soft
 # Author: Dawid Kurek (dawikur@gmail.com), morhetz (https://github.com/morhetz/gruvbox)
 _gen_fzf_default_opts() {

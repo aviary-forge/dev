@@ -71,13 +71,17 @@
       python-pkgs = optionals cfg.python.enable [ python313 ];
     in
     {
+      programs.direnv = {
+        enable = true;
+        nix-direnv.enable = true;
+      };
+
       home.packages =
         with pkgs;
         [
           dev.third_party.agenix.cli
           dev.users.denbeigh.neovim
           ctags
-          direnv
         ]
         ++ rust-pkgs
         ++ go-pkgs

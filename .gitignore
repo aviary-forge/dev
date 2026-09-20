@@ -2,4 +2,8 @@
 **/result
 **/result-*
 
+# direnv/nix-direnv layout dirs: these hold the gcroots that keep dev shells
+# alive across garbage collection — never clean them out with `git clean`.
+**/.direnv/
+
 **/_build/
