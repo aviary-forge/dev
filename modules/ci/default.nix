@@ -35,6 +35,16 @@
         description = "Path to file containing Buildkite agent token";
       };
 
+      # API token for Buildkite's GraphQL API (separate credential from the
+      # agent registration token). Consumed by ci-orchestrator pipeline-gen
+      # via BUILDKITE_TOKEN_PATH to fetch parent drvmaps from previous
+      # builds' artifacts.
+      graphqlTokenPath = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Path to file containing a Buildkite GraphQL API token";
+      };
+
       agentCount = mkOption {
         type = types.int;
         description = "Number of CI workers to run";

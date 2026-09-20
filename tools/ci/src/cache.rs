@@ -138,10 +138,29 @@ fn sidecar_path(dir: &std::path::Path, commit: &str) -> PathBuf {
     dir.join(format!("{commit}.drvmap-nix"))
 }
 
-/// Create the cache directory with setgid group-shared permissions.
+/// Prepare the cache directory for use.
+///
+/// Only chmod a directory we created ourselves: when systemd-tmpfiles has
+/// provisioned it (root-owned, setgid), a non-root agent can't chmod it and
+/// gets EPERM — but the dir is perfectly usable via its group permissions.
+/// So never treat a chmod failure as fatal, and instead verify usability with
+/// a write probe.
 fn ensure_dir(dir: &std::path::Path) -> std::io::Result<()> {
-    fs::create_dir_all(dir)?;
-    fs::set_permissions(dir, fs::Permissions::from_mode(DIR_MODE))
+    if !dir.exists() {
+        fs::create_dir_all(dir)?;
+        // Best-effort: if this fails, writability is still checked below.
+        let _ = fs::set_permissions(dir, fs::Permissions::from_mode(DIR_MODE));
+    }
+
+    // Probe that we can actually write entries. A root-owned dir we can't
+    // write to (not in the group, etc.) must disable the cache — silently
+    // skipping stores would look like a working cache with zero hits.
+    let probe = dir.join(format!(".probe-{}", std::process::id()));
+    let result = fs::File::create(&probe);
+    if result.is_ok() {
+        let _ = fs::remove_file(&probe);
+    }
+    result.map(|_| ())
 }
 
 /// Write via a temp file + rename so concurrent readers never see a partial

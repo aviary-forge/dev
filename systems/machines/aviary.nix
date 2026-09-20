@@ -86,6 +86,7 @@ dev.nix.nixos.eval {
         services.dev.ci = {
           enable = true;
           tokenPath = config.age.secrets.buildkite-agent-token.path;
+          graphqlTokenPath = config.age.secrets.buildkite-graphql-token.path;
           privateSshKeyPath = config.age.secrets.buildkite-ssh-private-key.path;
           groupName = ciGroupName;
         };

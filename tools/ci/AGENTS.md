@@ -150,9 +150,12 @@ no fuzzy matching. The artifact is validated the same way as the local cache:
 entry point. On a hit, the map is also stored into the local cache so later
 pushes skip the GraphQL round trip. Falls through to the worktree eval on any
 error. Requires `BUILDKITE_ORGANIZATION_SLUG`/`BUILDKITE_PIPELINE_SLUG` (set
-on Buildkite agents) and the API token at `BUILDKITE_TOKEN_PATH` (default
-`~/buildkite-token`) — same convention as the legacy `fetch-parent-targets`
-task, which this replaces.
+on Buildkite agents) and an API token at `BUILDKITE_TOKEN_PATH` (local
+fallback: `~/buildkite-token`). On NixOS agents the CI module exports this
+via the agent's `environment` hook, pointing at the `buildkite-graphql-token`
+agenix secret — a GraphQL API token, distinct from the agent registration
+token. Adapted from the legacy `fetch-parent-targets` task, which this
+replaces.
 
 **Trunk caching**: When `BUILDKITE_BRANCH` is `"trunk"`, the
 orchestrator also caches the HEAD drvmap under its own commit SHA (via

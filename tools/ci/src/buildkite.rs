@@ -52,21 +52,26 @@ pub fn fetch_drvmap(
     let token = match read_token() {
         Ok(token) => token,
         Err(err) => {
-            tracing::debug!("buildkite drvmap lookup: {err}");
+            tracing::info!("buildkite drvmap lookup: skipping: {err:#}");
             return None;
         },
     };
 
     // The artifact was produced by the entry point at `commit`; validate
     // against the current checkout's copy before trusting the map.
-    let commit_entry_point =
-        match crate::git::show_file(repo_root, commit, crate::instantiate::DRVMAP_EXPR) {
-            Ok(content) => Some(content),
-            Err(err) => {
-                tracing::debug!("buildkite drvmap lookup: no {DRVMAP_EXPR} at {commit}: {err}");
-                None
-            },
-        };
+    let commit_entry_point = match crate::git::show_file(
+        repo_root,
+        commit,
+        crate::instantiate::DRVMAP_EXPR,
+    ) {
+        Ok(content) => Some(content),
+        Err(err) => {
+            tracing::info!(
+                "buildkite drvmap lookup: no {DRVMAP_EXPR} at {commit} ({err}); cannot validate artifact"
+            );
+            None
+        },
+    };
 
     match (commit_entry_point.as_deref(), current_entry_point) {
         (Some(produced), Some(current)) if produced == current => {},
@@ -78,7 +83,9 @@ pub fn fetch_drvmap(
         },
         // Can't validate — don't trust.
         _ => {
-            tracing::debug!("buildkite drvmap lookup: cannot validate entry point for {commit}");
+            tracing::info!(
+                "buildkite drvmap lookup: cannot validate entry point for {commit}; ignoring artifact"
+            );
             return None;
         },
     }
