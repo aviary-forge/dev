@@ -7,7 +7,10 @@
 # base that depends on persona options.
 #
 # Plain attrset, no function args: module arguments are evaluated during
-# the module fixpoint and cause infinite recursion here.
+# the module fixpoint and cause infinite recursion here. readTree skips this
+# directory entirely (.skip-subtree): these are modules imported by path,
+# not readTree targets, and readTree requires every .nix file it sees to be
+# a callable lambda.
 {
   imports =
     let
