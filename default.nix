@@ -41,10 +41,11 @@ readTree.fix (
     pkgs = self.third_party.nixpkgs;
     lib = self.third_party.nixpkgs.lib;
 
-    # Convenience/nice to have this at a top level
     members = import ./members.nix;
   })
-  // rec {
+  // {
+    # Convenience/nice to have this at a top level
+    members = import ./members.nix;
 
     # Only git-tracked files. Any system referencing dev.path (nixos
     # activation copies, the NIX_PATH <nixpkgs> shim) copies this into the
