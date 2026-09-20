@@ -173,9 +173,28 @@ fn cmd_pipeline_gen(
     tracing::info!("creating worktree at base commit");
     let worktree = git::create_worktree(repo_root, &base_commit, "base")?;
 
-    // Instantiate drvmap at base commit
+    // Instantiate drvmap at base commit.
+    //
+    // Fail-open: if the base commit can't be evaluated (e.g. trunk history
+    // contains a commit that breaks full-tree eval), fall back to an empty
+    // parent map. The diff then treats every current target as added, so CI
+    // builds everything instead of refusing to generate a pipeline. This is
+    // the right failure direction for a skip-optimization: an overly broad
+    // build is wasted compute, a missing build is a broken trunk.
+    //
+    // NB: until a fixing commit lands in trunk, the merge-base is fixed
+    // history, so the base eval keeps failing no matter what the branch
+    // does — the fallback fires for every descendant PR in that window.
     tracing::info!("instantiating drvmap at base commit");
-    let parent_drvmap = instantiate::instantiate_drvmap(repo_root, Some(&worktree))?;
+    let parent_drvmap = match instantiate::instantiate_drvmap(repo_root, Some(&worktree)) {
+        Ok(drvmap) => drvmap,
+        Err(err) => {
+            tracing::warn!(
+                "base-commit drvmap eval failed, building everything (fail-open): {err:#}"
+            );
+            drvmap::Drvmap::new()
+        },
+    };
 
     // Clean up the worktree
     git::remove_worktree(&worktree, repo_root)?;
