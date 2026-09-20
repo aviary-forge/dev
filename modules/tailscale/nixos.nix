@@ -1,3 +1,4 @@
+# NixOS-specific tailscale wiring: auth key + auto-login, firewall exemptions.
 {
   dev,
   config,
@@ -7,14 +8,10 @@
 }:
 
 let
-  inherit (lib) mkIf;
-
   cfg = config.dev.denbeigh.tailscale;
 in
 {
-  imports = [ ../common/tailscale.nix ];
-
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     age.secrets.tailscaleAuthKey.file = dev.secrets."tailscaleAuthKey.age";
 
     networking.firewall = {

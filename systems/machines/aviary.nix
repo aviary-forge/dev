@@ -19,7 +19,7 @@ dev.nix.nixos.eval {
         ../../users/denbeigh/profiles/nixos.nix
 
         # Services
-        ../../modules/nixos/tailscale.nix
+        ../../modules/tailscale
         ../../users/denbeigh/modules/nixos/ahoy.nix
         ../../modules/nixos/nix-cache.nix
         ../../users/denbeigh/modules/nixos/terraform.nix
@@ -29,7 +29,7 @@ dev.nix.nixos.eval {
         # Infrastructure
         ../../modules/nixos/ci
         ../../modules/nixos/reverse-proxy
-        ../../modules/nixos/nix-maintenance.nix
+        ../../modules/nix-maintenance
       ];
 
       config = {

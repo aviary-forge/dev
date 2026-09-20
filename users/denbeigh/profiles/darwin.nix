@@ -19,7 +19,7 @@ in
     # ../modules/nix-darwin/upload-daemon.nix
     ../../../modules/common/standard.nix
     ../modules/common/variables.nix
-    ../../../modules/common/tailscale.nix
+    ../../../modules/tailscale
   ];
 
   config = {
