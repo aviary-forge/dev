@@ -148,8 +148,11 @@ fn read_token() -> anyhow::Result<String> {
 /// SHA so we can require an exact match. `RUNNING` is included because a
 /// still-running trunk build has already finished its pipeline-gen job.
 fn build_query(org: &str, pipeline: &str, branch: &str) -> String {
+    // 11 selection sets open here (pipeline, builds, edges, node, jobs,
+    // edges, node, JobTypeCommand, artifacts, edges, node); the tail must
+    // close all of them. The test asserts the full rendered query.
     format!(
-        r#"{{ pipeline(slug: "{org}/{pipeline}") {{ builds(first: {MAX_BUILDS}, branch: ["{branch}"], state: [RUNNING, PASSED]) {{ edges {{ node {{ commit jobs(passed: true, first: 1, type: [COMMAND], step: {{key: ["pipeline-gen"]}}) {{ edges {{ node {{ ... on JobTypeCommand {{ artifacts(first: 10) {{ edges {{ node {{ path downloadURL }} }} }} }} }} }} }} }} }} }} }}"#
+        r#"{{ pipeline(slug: "{org}/{pipeline}") {{ builds(first: {MAX_BUILDS}, branch: ["{branch}"], state: [RUNNING, PASSED]) {{ edges {{ node {{ commit jobs(passed: true, first: 1, type: [COMMAND], step: {{key: ["pipeline-gen"]}}) {{ edges {{ node {{ ... on JobTypeCommand {{ artifacts(first: 10) {{ edges {{ node {{ path downloadURL }} }} }} }} }} }} }} }} }} }} }} }}"#
     )
 }
 
@@ -302,5 +305,26 @@ mod tests {
         assert!(query.contains("branch: [\"trunk\"]"));
         assert!(query.contains("state: [RUNNING, PASSED]"));
         assert!(query.contains("step: {key: [\"pipeline-gen\"]}"));
+    }
+
+    /// Regression: the format! tail once closed only 10 of the 11 selection
+    /// sets, producing `Expected NAME, not end of file` from Buildkite.
+    #[test]
+    fn test_build_query_braces_balanced() {
+        let query = build_query("my-org", "my-pipe", "trunk");
+        assert_eq!(query.matches('{').count(), query.matches('}').count());
+    }
+
+    /// Full rendered query for sample inputs — pinned so any format!-escape
+    /// regression shows up as a diff here rather than a prod GraphQL error.
+    /// (Structure verified against the legacy fetch-parent-targets query and
+    /// parse-checked with graphql-core; local tokens lack GraphQL scope, so
+    /// live validation isn't possible from a dev machine.)
+    #[test]
+    fn test_build_query_exact() {
+        assert_eq!(
+            build_query("my-org", "my-pipe", "trunk"),
+            "{ pipeline(slug: \"my-org/my-pipe\") { builds(first: 50, branch: [\"trunk\"], state: [RUNNING, PASSED]) { edges { node { commit jobs(passed: true, first: 1, type: [COMMAND], step: {key: [\"pipeline-gen\"]}) { edges { node { ... on JobTypeCommand { artifacts(first: 10) { edges { node { path downloadURL } } } } } } } } } } } }"
+        );
     }
 }
