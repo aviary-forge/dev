@@ -11,9 +11,9 @@ dev.nix.nixos.eval {
 
     {
       imports = [
-        ../../../modules/nixos/standard.nix
-        ../../../modules/nixos/development.nix
-        ../../../modules/nixos/tailscale.nix
+        ../../users/denbeigh/modules/nixos/standard.nix
+        ../../users/denbeigh/modules/nixos/development.nix
+        ../../users/denbeigh/modules/nixos/tailscale.nix
       ];
 
       config = {
