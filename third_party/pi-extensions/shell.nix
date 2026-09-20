@@ -1,5 +1,6 @@
 {
   dev ? import ../.. { },
+  ...
 }:
 
 dev.third_party.nixpkgs.mkShell {

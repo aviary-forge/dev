@@ -140,6 +140,8 @@ readTree.fix (
           );
         };
 
+        shells = mkSystemDiscovery (target: target ? __devAttrType && target.__devAttrType == "shell");
+
         # Static-analysis / meta checks (formatting, linting, etc.).
         # Use `ci.checks.formatting.targets` to get all formatting-check targets.
         # These are lightweight checks that gate merges but aren't real builds.

@@ -180,7 +180,18 @@ let
           ) (filter (child: child.value ? ok) filteredChildren);
 
       # Import Nix files
-      nixFiles = if skipSubtree then [ ] else filter (f: f != null) (map nixFileName (attrNames dir));
+      #
+      # always explicitly import `shell.nix` files, even when the
+      # directory also has a default.nix, so we can validate our shells
+      # in CI.
+      nixFiles =
+        if skipSubtree then
+          [ ]
+        else
+          let
+            siblings = filter (f: f != null && f != "default") (map nixFileName (attrNames dir));
+          in
+          if dir ? "default.nix" then (if dir ? "shell.nix" then [ "shell" ] else [ ]) else siblings;
       nixChildren = map (
         c:
         let
@@ -196,7 +207,7 @@ let
 
       nodeValue = if dir ? "default.nix" then self else { };
 
-      allChildren = listToAttrs (if dir ? "default.nix" then children else nixChildren ++ children);
+      allChildren = listToAttrs (nixChildren ++ children);
       # Recursively set readTree attrs on children if provided, so we can
       # effectively inject subtrees into readTree when integrating third-party
       # systems
