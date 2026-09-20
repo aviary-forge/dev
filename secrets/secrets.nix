@@ -20,4 +20,5 @@ in
   "terraform.age" = key [ systems.aviary ];
   "fontDeployKey.age" = key [ systems.aviary ];
   "gridderServiceAccount.age" = key [ systems.aviary ];
+  "harmoniaServingKey.age" = key [ systems.aviary ];
 }

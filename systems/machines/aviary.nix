@@ -50,7 +50,7 @@ dev.nix.nixos.eval {
 
           nix-cache-serve = {
             enable = true;
-            keyFile = "/var/lib/denbeigh/nix-cache/serve-key";
+            keyFile = config.age.secrets.harmoniaServingKey.path;
           };
         };
 
@@ -127,6 +127,9 @@ dev.nix.nixos.eval {
                 # readable by the gridder service user
                 owner = "gridder";
               };
+
+              # note: read via systemd LoadCredential, as root
+              harmoniaServingKey.file = dev.secrets."harmoniaServingKey.age";
             };
         };
 
