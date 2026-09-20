@@ -1,6 +1,10 @@
 { dev, members, ... }:
 
 dev.nix.darwin.eval {
+  # Platform declared as data: reading .system on the target must not force
+  # the module fixpoint (CI drvmap filters foreign systems without eval).
+  system = "aarch64-darwin";
+
   configuration =
     { pkgs, ... }:
 

@@ -49,15 +49,30 @@ rec {
 
   # eval: produce a nix-darwin system target.
   #
-  # Accepts either a configuration function directly (legacy) or an
-  # attrset with `configuration` and optional `meta` (preferred).
-  # `meta.owners` is threaded through to the drvmap for CI ownership.
+  # Takes an attrset with:
+  #
+  #   configuration: the machine's configuration module.
+  #   system:        the machine's platform (e.g. "aarch64-darwin"), declared
+  #                  as data. Exposed cheaply — reading `.system` on the
+  #                  target does NOT force the module fixpoint, which is
+  #                  what lets CI's drvmap filter out foreign-system
+  #                  targets without cross-evaluating them. (It used to be
+  #                  the toplevel derivation itself, which leaked a store
+  #                  path into the drvmap's system field.)
+  #   meta:          optional metadata, threaded through to the drvmap
+  #                  for CI ownership.
+  #
+  # Platform declaration vs. derivation: when the fixpoint IS forced
+  # (same-platform builds), the derived system is checked against the
+  # declaration, so a typo'd declaration fails loudly instead of silently
+  # mislabelling the target.
   eval =
-    arg:
+    {
+      configuration,
+      system,
+      meta ? { },
+    }:
     let
-      configuration = if builtins.isFunction arg then arg else arg.configuration;
-      meta = if builtins.isFunction arg then { } else arg.meta or { };
-
       darwinEval = dev.third_party.darwin.eval {
         configuration = { ... }: {
           imports = [
@@ -68,11 +83,22 @@ rec {
 
         specialArgs = { inherit dev pkgs; };
       };
+
+      # Forces the fixpoint; only read where the eval happens anyway.
+      derivedSystem = darwinEval.toplevel.system;
+
+      checkedDrvPath =
+        if derivedSystem != system then
+          throw "darwin machine declares system '${system}' but evaluates as '${derivedSystem}' — fix the declaration"
+        else
+          darwinEval.toplevel.drvPath;
+
     in
     {
-      inherit (darwinEval) system;
-      inherit (darwinEval.toplevel) outPath drvPath;
-      inherit meta;
+      inherit system meta;
+      inherit (darwinEval) toplevel;
+      drvPath = checkedDrvPath;
+      outPath = darwinEval.toplevel.outPath;
       activate = activateSystem darwinEval.toplevel;
       __devAttrType = "darwin-system";
     };

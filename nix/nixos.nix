@@ -42,15 +42,28 @@ in
 
   # eval: produce a NixOS system target.
   #
-  # Accepts either a configuration function directly (legacy) or an
-  # attrset with `configuration` and optional `meta` (preferred).
-  # `meta.owners` is threaded through to the drvmap for CI ownership.
+  # Takes an attrset with:
+  #
+  #   configuration: the machine's configuration module.
+  #   system:        the machine's platform (e.g. "x86_64-linux"), declared
+  #                  as data. Exposed cheaply — reading `.system` on the
+  #                  target does NOT force the module fixpoint, which is
+  #                  what lets CI's drvmap filter out foreign-system
+  #                  targets without cross-evaluating them.
+  #   meta:          optional metadata, threaded through to the drvmap
+  #                  for CI ownership.
+  #
+  # Platform declaration vs. derivation: when the fixpoint IS forced
+  # (same-platform builds), the derived system is checked against the
+  # declaration, so a typo'd declaration fails loudly instead of silently
+  # mislabelling the target.
   eval =
-    arg:
+    {
+      configuration,
+      system,
+      meta ? { },
+    }:
     let
-      configuration = if builtins.isFunction arg then arg else arg.configuration;
-      meta = if builtins.isFunction arg then { } else arg.meta or { };
-
       nixosEval = dev.third_party.nixos {
         configuration =
           { ... }:
@@ -66,12 +79,21 @@ in
         };
       };
 
+      # Forces the fixpoint; only read where the eval happens anyway.
+      derivedSystem = nixosEval.system.system;
+
+      checkedDrvPath =
+        if derivedSystem != system then
+          throw "nixos machine declares system '${system}' but evaluates as '${derivedSystem}' — fix the declaration"
+        else
+          nixosEval.system.drvPath;
+
     in
     {
       inherit (nixosEval) vm;
-      system = nixosEval.system.system;
-      inherit (nixosEval.system) outPath drvPath;
-      inherit meta;
+      inherit system meta;
+      drvPath = checkedDrvPath;
+      outPath = nixosEval.system.outPath;
       activate = activateSystem nixosEval.system;
       __devAttrType = "nixos-system";
     };
