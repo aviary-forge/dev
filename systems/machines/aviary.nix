@@ -27,9 +27,9 @@ dev.nix.nixos.eval {
         ../../users/denbeigh/gridder/nixos/module.nix
 
         # Infrastructure
-        ../modules/nixos/ci
-        ../modules/nixos/reverse-proxy
-        ../modules/nixos/nix-maintenance.nix
+        ../../modules/nixos/ci
+        ../../modules/nixos/reverse-proxy
+        ../../modules/nixos/nix-maintenance.nix
       ];
 
       config = {
