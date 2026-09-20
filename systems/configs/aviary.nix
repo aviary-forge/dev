@@ -29,6 +29,7 @@ dev.nix.nixos.eval {
         # Infrastructure
         ../modules/nixos/ci
         ../modules/nixos/reverse-proxy
+        ../modules/nixos/nix-maintenance.nix
       ];
 
       config = {
