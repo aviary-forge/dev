@@ -13,10 +13,8 @@ in
 {
   imports = [
     ../modules/nix-darwin/graphical.nix
-    # ../../../modules/darwin/use-nix-cache.nix (stub, disabled)
     ../modules/nix-darwin/home.nix
     ../modules/nix-darwin/system-options.nix
-    # ../modules/nix-darwin/upload-daemon.nix
     ../../../modules/common/standard.nix
     ../modules/common/variables.nix
     ../../../modules/tailscale
