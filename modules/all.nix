@@ -1,3 +1,4 @@
+{ ... }:
 # Auto-import of feature modules.
 #
 # Contract: a module here must be inert unless its enable option is set,
