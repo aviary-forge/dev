@@ -7,15 +7,14 @@
 
 let
   inherit (lib)
+    mkDefault
     mkIf
     optional
     mkOption
     types
     ;
-  inherit (pkgs.stdenv.hostPlatform) isLinux isDarwin;
-  inherit (config.dev.denbeigh.machine) isNixOS;
+  inherit (pkgs.stdenv.hostPlatform) isDarwin;
 
-  # We only need to explicitly wrap if we're on linux and we are _not_ on NixOS
   inherit (config.dev.denbeigh.ghostty)
     enable
     enableTerminfo
@@ -49,9 +48,10 @@ in
 
     shouldGlWrap = mkOption {
       type = types.bool;
-      default = isLinux && !isNixOS;
+      default = false;
       description = ''
-        Whether to wrap Ghostty in NixGL.
+        Whether to wrap Ghostty in NixGL. Defaulted from
+        targets.genericLinux.enable in config.
       '';
     };
 
@@ -73,6 +73,8 @@ in
   };
 
   config = {
+    dev.denbeigh.ghostty.shouldGlWrap = mkDefault config.targets.genericLinux.enable;
+
     # install terminfo if requested and we aren't installing the package itself
     home.packages = optional (!enable && enableTerminfo) package.terminfo;
     programs.ghostty = mkIf enable {

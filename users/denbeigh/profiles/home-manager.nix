@@ -20,7 +20,6 @@ in
     ../modules/home-manager/graphical.nix
     ../modules/home-manager/pi.nix
     ../modules/home-manager/scripts.nix
-    ../modules/home-manager/use-nix-cache.nix
     ../modules/home-manager/webcam.nix
   ];
 
@@ -50,13 +49,6 @@ in
       };
 
       # TODO: Make naming consistent
-      isNixOS = mkOption {
-        type = types.bool;
-        description = ''
-          Whether the machine being provisioned is running NixOS.
-        '';
-      };
-
       work = mkOption {
         type = types.bool;
         default = false;

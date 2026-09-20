@@ -16,7 +16,6 @@ in
     "${dev.third_party.home-manager.src}/nixos"
     # NOTE: These have to be defined before we import common/denbeigh.nix
     {
-      dev.denbeigh.machine.isNixOS = true;
       users.users.${cfg.user.username}.isNormalUser = true;
     }
     ../common/denbeigh.nix

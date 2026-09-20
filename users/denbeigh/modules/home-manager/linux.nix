@@ -19,7 +19,7 @@ in
 
   config = mkIf isLinux (
     let
-      inherit (config.dev.denbeigh.machine) graphical isNixOS location;
+      inherit (config.dev.denbeigh.machine) graphical location;
 
       hasCoordinates = location != null && location ? coordinates;
       enableRedshift = graphical && isLinux && hasCoordinates;
@@ -34,7 +34,6 @@ in
 
       # TODO: Check if necessary on NixOS?
       fonts.fontconfig.enable = true;
-      targets.genericLinux.enable = isLinux && !isNixOS;
 
       services = {
         dunst.enable = mkDefault graphical;

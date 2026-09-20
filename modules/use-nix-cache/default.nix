@@ -2,7 +2,6 @@
 # dev.nix-cache-serve (the serve-side module, NixOS-only).
 {
   config,
-  pkgs,
   lib,
   ...
 }:
@@ -11,13 +10,8 @@ let
   inherit (lib) mkIf mkOption types;
 
   cfg = config.dev.nix-cache;
-
-  # pkgs, not config: reading config in imports recurses; the repo doesn't
-  # cross-eval, so pkgs' hostPlatform always matches the target machine.
-  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
 in
 {
-  imports = lib.optionals (!isDarwin) [ ./nixos.nix ];
 
   options.dev.nix-cache = {
     enable = mkOption {

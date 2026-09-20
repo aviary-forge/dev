@@ -3,7 +3,7 @@
 {
   options =
     let
-      inherit (config.dev.denbeigh) graphical isNixOS;
+      inherit (config.dev.denbeigh) graphical;
       inherit (lib) mkOption types;
     in
     {

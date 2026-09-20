@@ -9,13 +9,6 @@
       extraSpecialArgs ? { },
     }:
     let
-      # pkgs = import dev.third_party.nixpkgs {
-      #   inherit system;
-      #   overlays = [
-      #     # dev.third_party.nixgl.overlays.default
-      #   ];
-      # };
-
       # Ensure we avoid conflicting with any work-provided packages
       priority = if work then 10 else 5;
 
@@ -24,7 +17,12 @@
 
       config = homeManagerConfiguration {
         inherit pkgs;
-        modules = [ { dev.denbeigh.machine.isNixOS = false; } ] ++ modules;
+        modules = [
+          {
+            targets.genericLinux.enable = pkgs.lib.mkDefault pkgs.stdenv.hostPlatform.isLinux;
+          }
+        ]
+        ++ modules;
         extraSpecialArgs = {
           inherit dev;
         }

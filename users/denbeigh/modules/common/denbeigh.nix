@@ -46,14 +46,6 @@ in
         '';
       };
     };
-
-    machine.isNixOS = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        If this machine is running NixOS.
-      '';
-    };
   };
 
   config = {
@@ -69,7 +61,6 @@ in
             # work = false;
             inherit (cfg.machine)
               work
-              isNixOS
               graphical
               hostname
               ;

@@ -8,10 +8,7 @@ in
   # denbeigh's cache and remote-build credentials; the option definitions
   # live in the modules themselves.
   config = {
-    dev.nix-cache = {
-      url = "https://nix-cache.denbeigh.cloud";
-      publicKey = "nix-cache.denbeigh.cloud-1:UeYPpNKlT8gTl7jRqOb+hawFbI5B20pPfSUbpWvSe9U=";
-    };
+    dev.nix-cache = import ./cache-pins.nix;
 
     dev.remoteBuildPublicKeys = [
       "remote-build:gmaC+UE4JxbR6wcMtuZ6WZF0nL1Jh2D3REY9zdwZFWg="
