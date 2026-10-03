@@ -48,7 +48,7 @@ resource "cloudflare_dns_record" "tailscale_denbeigh_cloud" {
 
   zone_id = data.cloudflare_zone.denbeigh_cloud.id
   name    = each.key
-  content = "aviary.tailscale.denbeigh.cloud."
+  content = "aviary.tailscale.denbeigh.cloud"
   type    = "CNAME"
   ttl     = 3600
   proxied = false

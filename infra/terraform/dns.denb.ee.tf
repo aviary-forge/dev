@@ -60,7 +60,7 @@ resource "cloudflare_dns_record" "autodiscover_denb_ee" {
 resource "cloudflare_dns_record" "mail_denb_ee" {
   zone_id  = data.cloudflare_zone.denb_ee.id
   name     = "@"
-  content  = "denb-ee.mail.protection.outlook.com."
+  content  = "denb-ee.mail.protection.outlook.com"
   type     = "MX"
   priority = 30
   ttl      = 3600
