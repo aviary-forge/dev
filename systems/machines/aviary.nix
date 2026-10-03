@@ -26,6 +26,7 @@ dev.nix.nixos.eval {
         ../../users/denbeigh/modules/nixos/ahoy.nix
         ../../users/denbeigh/modules/nixos/terraform.nix
         ../../users/denbeigh/modules/nixos/update-fonts.nix
+        ../../users/denbeigh/modules/nixos/vikunja.nix
         ../../users/denbeigh/gridder/nixos/module.nix
       ];
 
@@ -40,6 +41,7 @@ dev.nix.nixos.eval {
           };
 
           ahoy.enable = true;
+          services.vikunja.enable = true;
         };
 
         dev = {

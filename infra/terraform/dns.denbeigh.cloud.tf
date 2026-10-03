@@ -1,5 +1,5 @@
 locals {
-  tailscale_aliases = ["bullshit", "jackett", "radarr", "sonarr", "prowlarr", "jellyfin", "transmission"]
+  tailscale_aliases = ["bullshit", "jackett", "radarr", "sonarr", "prowlarr", "jellyfin", "transmission", "vikunja"]
 }
 
 data "tailscale_devices" "aviary" {
