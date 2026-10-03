@@ -93,11 +93,12 @@ in
         before = [ "vikunja.service" ];
         # No-op once the key exists, so it stays stable across rebuilds
         # and reboots. Same shape as reverse-proxy-reject-tls-cert.
-        unitConfig = {
-          ConditionPathExists = "!${secretPath}";
-          StateDirectory = "vikunja-secret";
-        };
+        unitConfig.ConditionPathExists = "!${secretPath}";
         serviceConfig = {
+          # StateDirectory is a [Service] directive. In unitConfig it lands
+          # in [Unit], where systemd ignores it, and the directory never
+          # gets created — the script then fails with ENOENT.
+          StateDirectory = "vikunja-secret";
           Type = "oneshot";
           RemainAfterExit = true;
         };

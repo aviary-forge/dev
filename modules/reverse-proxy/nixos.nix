@@ -70,11 +70,12 @@ in
         description = "Generate throwaway cert for the nginx TLS catch-all vhost";
         wantedBy = [ "nginx.service" ];
         before = [ "nginx.service" ];
-        unitConfig = {
-          ConditionPathExists = "!${rejectTlsCertDir}/key.pem";
-          StateDirectory = "reverse-proxy-reject-tls-cert";
-        };
+        unitConfig.ConditionPathExists = "!${rejectTlsCertDir}/key.pem";
         serviceConfig = {
+          # StateDirectory is a [Service] directive. In unitConfig it lands
+          # in [Unit], where systemd ignores it, and the directory never
+          # gets created — the script then fails with ENOENT.
+          StateDirectory = "reverse-proxy-reject-tls-cert";
           Type = "oneshot";
           RemainAfterExit = true;
         };
