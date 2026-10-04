@@ -22,16 +22,19 @@ let
     providers.providers.tailscale.tailscale
   ]);
 
-  # The .tf source files to validate (exclude Nix and git files).
+  # Allowlist, not denylist: a local .terraform/ or .direnv/ is gitignored but
+  # present in the tree, and a stale .terraform/ makes `tofu init` reach for S3
+  # backend credentials, which the sandbox can't provide. This nixpkgs has no
+  # gitignore-aware cleanSource, and selecting positively needs no such help.
   tfSrc = pkgs.lib.cleanSourceWith {
     name = "terraform-src";
     src = ./.;
     filter =
-      path: type:
+      path: _:
       let
-        base = baseNameOf path;
+        name = baseNameOf path;
       in
-      base != "default.nix" && base != ".gitignore" && base != "secrets.env";
+      !(pkgs.lib.hasPrefix "." name) && pkgs.lib.hasSuffix ".tf" name;
   };
 in
 {
@@ -57,8 +60,8 @@ in
       ${tofu}/bin/tofu fmt -check -diff .
 
       echo "=== tofu init ==="
-      # -backend=false skips S3 backend config (not needed for validation).
-      # Providers are resolved from the Nix-managed plugin cache.
+      # -backend=false skips the S3 backend; providers come from the
+      # Nix-managed plugin cache, so no network is needed.
       ${tofu}/bin/tofu init -backend=false
 
       echo "=== tofu validate ==="
