@@ -93,9 +93,11 @@ let
 
   nixpkgsUnstable = import pins.nixpkgs-unstable commonNixpkgsArgs;
   unstableOverlay = final: prev: {
-    # Pull these from unstable to get newer versions than the stable channel
+    # Pull these from unstable to track newer versions than the stable channel.
+    # On the current pins they are all also the stable version, so this list is
+    # doing nothing but carrying unstable's glibc into their closures — re-check
+    # it whenever nixpkgs is bumped and drop whatever stops being a real upgrade.
     inherit (nixpkgsUnstable)
-      curl-impersonate
       llama-cpp
       opentofu
       pi-coding-agent
@@ -104,15 +106,28 @@ let
       prowlarr
       jackett
       ;
+
+    # curl-impersonate is upgraded for real (1.5.6 -> 2.1.1), and is the one
+    # that can't just be inherited: inherited outputs link unstable's glibc
+    # (2.44) and fail to dlopen from a stable (2.42) process, e.g. curl-cffi
+    # dying in pythonImportsCheck with "GLIBC_2.43 not found". 2.x vendors its
+    # own TLS/zlib deps, so toolchain and glibc are all that need to match.
+    curl-impersonate = final.callPackage (
+      pins.nixpkgs-unstable + "/pkgs/by-name/cu/curl-impersonate/package.nix"
+    ) { };
   };
 
-  # curl-cffi 0.14.0's test suite breaks against the newer curl-impersonate
-  # in the pins: the three test_verify tests expect the old CA-failure error
-  # wording ("SSL certificate problem"), but the newer backend reports the
-  # hostname mismatch first (the test cert only covers "localhost" while the
-  # test server binds 127.0.0.1), and test_delete_cookies fails on cookie
-  # store behaviour. nixpkgs skips the same four tests since 76f3d156.
-  # Self-removes once the pin moves past 0.14.0.
+  # curl-cffi 0.14.0 (the stable pin's version) fails against
+  # curl-impersonate 2.x: three test_verify cases assert on the wording of the
+  # TLS failure, and 2.x reports the hostname mismatch before the CA problem;
+  # test_delete_cookies asserts cookie-jar behaviour that changed.
+  #
+  # These run on every build — python package checks live in distPhase, not
+  # behind doCheck — but only surfaced once the ABI above was fixed, since the
+  # glibc break killed pythonImportsCheck before pytest was reached.
+  #
+  # Redundant once the stable pin carries curl-cffi >= 0.16.0: upstream fixed
+  # the assertions in the curl-cffi source, not in nixpkgs.
   curlCffiTestSkipOverlay = final: prev: {
     # override the interpreter, not python3Packages.overrideScope —
     # the latter recurses against python3Packages = python313.pkgs.
