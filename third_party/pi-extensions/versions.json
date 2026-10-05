@@ -5,6 +5,5 @@
   "@plannotator/pi-extension": "0.27.25",
   "@juicesharp/rpiv-ask-user-question": "2.12.0",
   "@juicesharp/rpiv-todo": "2.12.0",
-  "context-mode": "1.0.169",
-  "@zenspc/pi-spinner": "0.5.0"
+  "context-mode": "1.0.169"
 }
