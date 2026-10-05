@@ -85,9 +85,9 @@ in
     programs.pi-coding-agent.myPackages = with dev.third_party.pi-extensions; [
       context-mode
       pi-intercom
-      pi-mcp-adapter
       pi-prompt-template-model
       pi-subagents
+      pi-spinner
       plannotator
       rpiv-ask-user-question
       rpiv-todo

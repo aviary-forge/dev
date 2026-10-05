@@ -17,8 +17,8 @@ dev.nix.mkPiPackage {
   npmName = "@juicesharp/rpiv-todo";
   version = versions."@juicesharp/rpiv-todo";
   # sha256 of the npm tarball (`nix hash file --type sha256 --base64`)
-  srcHash = "sha256-a1tVGhYwgRZFab8V6Za7/oanrCeeyWJgEsL3P06Yn04=";
-  npmDepsHash = "sha256-XYLm1L3UN4wCVSPnB6CiMezFuxdICztzaPRxlKWPin8=";
+  srcHash = "sha256-+N8nTfx6AayZaG8fcPWkmY9P9ne5l9EKczZb9HvspIQ=";
+  npmDepsHash = "sha256-Kj8/U45bbK//sX56mCSFyTAd8+0KXeAkcX6OOa9SmPQ=";
 
   # The npm tarball ships no package-lock.json. The vendored lockfile was
   # generated with `npm install --package-lock-only --lockfile-version 3

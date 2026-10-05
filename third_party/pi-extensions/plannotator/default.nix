@@ -20,8 +20,8 @@ dev.nix.mkPiPackage {
   npmName = "@plannotator/pi-extension";
   version = versions."@plannotator/pi-extension";
   # sha256 of the npm tarball (`nix hash file --type sha256 --base64`)
-  srcHash = "sha256-5jhoZPqgH/vbmAWGoU36eo0G/WyG1fsJcMra+GycUtg=";
-  npmDepsHash = "sha256-V+VvOkHn8BhpjyznqNWj+3ol3RFyjSsqkYAInG/PLdE=";
+  srcHash = "sha256-4be2kC7jcPXwDAy+mHPKCgnwE9CyombA/9hsuEDYx9A=";
+  npmDepsHash = "sha256-fLUusFLoPjBTC1I2jZITU7sZKnKKGsapvKy8uTfetlA=";
 
   # The npm tarball ships no root package-lock.json. The vendored lockfile
   # was generated with `npm install --package-lock-only --lockfile-version 3

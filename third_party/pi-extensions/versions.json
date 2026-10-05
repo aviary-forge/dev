@@ -1,11 +1,10 @@
 {
-  "pi-intercom": "0.13.0",
-  "pi-subagents": "0.69.0",
-  "pi-mcp-adapter": "2.34.0",
-  "pi-prompt-template-model": "0.12.2",
-  "@plannotator/pi-extension": "0.27.16",
-  "@juicesharp/rpiv-ask-user-question": "2.10.1",
-  "@juicesharp/rpiv-todo": "2.10.1",
+  "pi-intercom": "0.16.0",
+  "pi-subagents": "0.76.0",
+  "pi-prompt-template-model": "0.12.3",
+  "@plannotator/pi-extension": "0.27.25",
+  "@juicesharp/rpiv-ask-user-question": "2.12.0",
+  "@juicesharp/rpiv-todo": "2.12.0",
   "context-mode": "1.0.169",
   "@zenspc/pi-spinner": "0.5.0"
 }

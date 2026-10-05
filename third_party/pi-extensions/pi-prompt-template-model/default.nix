@@ -14,9 +14,9 @@ in
 dev.nix.mkPiPackage {
   pname = "pi-prompt-template-model";
   version = versions.pi-prompt-template-model;
-  # sha512 of the npm tarball, from registry.npmjs.org dist.integrity
-  srcHash = "sha256-Ahc67gDkGsxGV3oee4OlULSBGgzADRe3svK2xNYV82w=";
-  npmDepsHash = "sha256-/aen9BURRdRkMRJCOUlg0v60inwxi49Qi5rAz/u2IBY=";
+  # sha256 of the npm tarball (`nix hash file --type sha256 --base64`)
+  srcHash = "sha256-7BuVPL1f65LUiDpPA6C33iomsum88Vvm20B95idG1Vs=";
+  npmDepsHash = "sha256-sBDbm92XLE3k4jV9GhIY9K374BILaD72R7WPdtdYMMw=";
 
   # The npm tarball ships no package-lock.json. The vendored lockfile was
   # generated with `npm install --package-lock-only --lockfile-version 3

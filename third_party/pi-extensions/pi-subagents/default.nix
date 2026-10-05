@@ -25,8 +25,8 @@ dev.nix.mkPiPackage {
   pname = "pi-subagents";
   version = versions.pi-subagents;
   # sha256 of the npm tarball (`nix hash file --type sha256 --base64`)
-  srcHash = "sha256-V1eFdugYfiz3oKbfKgQ/P8X9MyMLUHmQYIgWuT+l8h8=";
-  npmDepsHash = "sha256-dLURUbO/2VD2keu6JFaz9Fli9Ml7+XbAlsIj8wKO/h0=";
+  srcHash = "sha256-uwsMKw9ypeSTi5IWUkfxzKhm8VMl3lZ/ZD8sAT08YJo=";
+  npmDepsHash = "sha256-sPB9lBxMlGsgUvDzitLNBUqojccwNst/gIzliDN5ebo=";
 
   # The npm tarball ships no package-lock.json. The vendored lockfile was
   # generated with `npm install --package-lock-only --lockfile-version 3
