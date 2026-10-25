@@ -169,14 +169,14 @@ let
       mkShellNoCC = args: mkStampedShell prev.mkShellNoCC args;
 
       llama-cpp-server = mkLlama {
-        inherit (prev) llama-cpp fetchFromGitHub;
+        inherit (final) llama-cpp fetchFromGitHub fetchNpmDeps;
         cudaSupport = true;
         blasSupport = true;
         metalSupport = false;
       };
 
       llama-cpp-client = mkLlama {
-        inherit (prev) llama-cpp fetchFromGitHub;
+        inherit (final) llama-cpp fetchFromGitHub fetchNpmDeps;
         cudaSupport = false;
         metalSupport = prev.stdenvNoCC.targetPlatform.isDarwin;
       };

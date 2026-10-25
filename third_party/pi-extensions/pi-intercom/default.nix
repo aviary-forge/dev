@@ -15,8 +15,8 @@ dev.nix.mkPiPackage {
   pname = "pi-intercom";
   version = versions.pi-intercom;
   # sha256 of the npm tarball (`nix hash file --type sha256 --base64`)
-  srcHash = "sha256-c6SNvA4ecu8+fLvOjvbFnID4lvp+Sq1GhDuBuef5V1Y=";
-  npmDepsHash = "sha256-giQOJewFJ/bZpV0ugadncGjY8sgW60nEtE+hVv3MbU0=";
+  srcHash = "sha256-FmOlMOtIKyPaZtkOJwvTJrvlaKnHw9PMdXW8f0U1p+0=";
+  npmDepsHash = "sha256-+OFRfukm9U0f18T5MaPRxt2WKuLnamxUxh49e5Cpd7o=";
 
   # The npm tarball ships no package-lock.json. The vendored lockfile was
   # generated with `npm install --package-lock-only --lockfile-version 3
